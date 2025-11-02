@@ -1,0 +1,134 @@
+# 文件名: publish.yml / File name: publish.yml
+# 作者: JQQ / Author: JQQ
+# 创建日期: 2025/11/02 / Created: 2025/11/02
+# 版权: 2025 JQQ. All rights reserved. / Copyright: 2025 JQQ. All rights reserved.
+# 依赖: GitHub Actions, Python 3.11, uv, pypa/gh-action-pypi-publish / Deps: GitHub Actions, Python 3.11, uv, pypa/gh-action-pypi-publish
+# 描述:
+#   中文: 基于 GitHub Release 触发，构建并发布到 TestPyPI（预发布）或 PyPI（正式发布）。
+#   English: Build and publish to TestPyPI (for prereleases) or PyPI (for final releases) triggered by GitHub Release.
+
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # 启用 OIDC 以支持 PyPI Trusted Publishing（无 Token）
+  # Enable OIDC for PyPI Trusted Publishing (passwordless)
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Build package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 安装 uv
+      # Install uv
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Validate tag matches project version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          python - << 'PY'
+          import os, sys
+          import tomllib
+          tag = os.environ.get('TAG_NAME', '')
+          if not tag:
+              print('No tag found from release context', file=sys.stderr)
+              sys.exit(1)
+          tag = tag.lstrip('v')
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+          ver = data['project']['version']
+          if ver != tag:
+              print(f'Version mismatch: pyproject {ver} != tag {tag}', file=sys.stderr)
+              sys.exit(2)
+          print(f'Version OK: {ver}')
+          PY
+
+      # 安装构建依赖（仅主依赖）
+      # Install build dependencies (only main dependencies)
+      - name: Install dependencies
+        run: |
+          uv sync --no-dev
+
+      # 使用 uv 构建 sdist 和 wheel
+      # Build sdist and wheel using uv
+      - name: Build sdist and wheel
+        run: |
+          uv build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/*
+
+  publish-testpypi:
+    name: Publish to TestPyPI (Pre-release)
+    needs: [build-and-publish]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.release.prerelease == true }}
+    environment:
+      name: testpypi
+      # 环境展示链接：指向 TestPyPI 包页面 / Environment URL: link to TestPyPI project page
+      url: https://test.pypi.org/project/office4ai/
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist
+
+      - name: List distributions
+        run: ls -lh dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          verbose: true
+
+  publish-pypi:
+    name: Publish to PyPI (Release)
+    needs: [build-and-publish]
+    runs-on: ubuntu-latest
+    if: ${{ github.event.release.prerelease == false && github.event.release.target_commitish == 'main' }}
+    environment:
+      name: pypi
+      # 环境展示链接：指向 PyPI 包页面 / Environment URL: link to PyPI project page
+      url: https://pypi.org/project/office4ai/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist
+
+      - name: List distributions
+        run: ls -lh dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+          verbose: true

@@ -1,0 +1,109 @@
+# 文件名: tests.yml / File name: tests.yml
+# 作者: JQQ / Author: JQQ
+# 创建日期: 2025/11/02 / Created: 2025/11/02
+# 版权: 2025 JQQ. All rights reserved. / Copyright: 2025 JQQ. All rights reserved.
+# 依赖: GitHub Actions, Python 3.11, uv, poethepoet / Deps: GitHub Actions, Python 3.11, uv, poethepoet
+# 描述: 普通测试工作流，安装依赖后运行测试和代码检查 / Description: Regular test workflow that installs deps then runs tests and code checks
+
+name: Tests
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run tests and code quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 安装系统依赖（LibreOffice）
+      # Install system dependencies (LibreOffice)
+      - name: Install LibreOffice
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice libreoffice-script-provider-python
+
+      # 安装 uv（快速的 Python 包管理器）
+      # Install uv (fast Python package manager)
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      # 缓存 uv 缓存目录
+      # Cache uv cache directory
+      - name: Cache uv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock', '**/pyproject.toml') }}-v1
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      # 安装依赖（包含 dev 组，确保 poethepoet、ruff、mypy 等可用）
+      # Install dependencies (include dev group to ensure poethepoet, ruff, mypy are available)
+      - name: Install dependencies
+        run: |
+          uv --version
+          uv sync
+
+      # 验证 LibreOffice 安装
+      # Verify LibreOffice installation
+      - name: Verify LibreOffice installation
+        run: |
+          soffice --version
+          python3 -c "import uno; print('UNO module available')" || echo "UNO module not available (expected in some environments)"
+
+      # 运行代码格式检查
+      # Run code format check
+      - name: Check code formatting
+        run: |
+          uv run poe format-check
+
+      # 运行 lint 检查
+      # Run lint checks
+      - name: Run linting
+        run: |
+          uv run poe lint
+
+      # 运行类型检查
+      # Run type checking
+      - name: Run type checking
+        run: |
+          uv run poe typecheck
+
+      # 运行测试
+      # Run tests
+      - name: Run tests
+        run: |
+          uv run pytest tests --tb=short
+
+      # 可选：上传覆盖率报告（如需可开启）
+      # Optional: upload coverage report (uncomment if needed)
+      # - name: Generate coverage report
+      #   if: always()
+      #   run: |
+      #     uv run poe test-cov
+      #
+      # - name: Upload coverage report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: coverage-report
+      #     path: htmlcov/

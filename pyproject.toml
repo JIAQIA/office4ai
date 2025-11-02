@@ -1,0 +1,197 @@
+[project]
+name = "office4ai"
+version = "0.1.0"
+description = "A powerful Office document management environment designed for AI agents to interact with Office documents"
+readme = "README.md"
+authors = [
+    { name = "JQQ", email = "jqq1716@gmail.com" }
+]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "pydantic>=2.11.0,<3.0.0",
+    "gymnasium>=0.29.1",
+    "simple-parsing>=0.1.5",
+    "docker>=7.0.0",
+    "paramiko>=3.4.0",
+    "emoji>=2.11.1",
+    "loguru>=0.7.2",
+    "cachetools>=5.3.2",
+    "jinja2>=3.1.6",
+    "regex>=2025.10.23",
+    "pexpect>=4.9.0",
+    "mcp>=1.19.0",
+    "confz>=2.1.0",
+    # MCP HTTP/SSE 传输支持 | MCP HTTP/SSE transport support
+    "starlette>=0.27.0",
+    "uvicorn>=0.23.0",
+    "sse-starlette>=2.0.0",
+    # LibreOffice Python 集成 | LibreOffice Python integration
+    "python-docx>=1.1.0",
+    "openpyxl>=3.1.2",
+    "python-pptx>=0.6.23",
+    # UNO (LibreOffice API) 支持 | UNO (LibreOffice API) support
+    # 注意: uno 需要系统安装 LibreOffice | Note: uno requires LibreOffice installed on system
+]
+license = { text = "MIT" }
+keywords = ["ai", "office", "libreoffice", "document-management", "ai-agent", "docx", "xlsx", "pptx"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Office/Business :: Office Suites",
+]
+
+[project.urls]
+Homepage = "https://github.com/JQQ/office4ai"
+Repository = "https://github.com/JQQ/office4ai"
+Documentation = "https://github.com/JQQ/office4ai#readme"
+Issues = "https://github.com/JQQ/office4ai/issues"
+
+[project.scripts]
+# MCP 服务器命令 | MCP server command
+office4ai-mcp = "office4ai.office.mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by formatter
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "flaky: mark test as flaky (may need multiple retries)",
+]
+# Coverage options removed from default to allow debugging
+# Use: pytest --cov=office4ai --cov-report=term-missing --cov-report=html
+# Or use the poe task: poe test-cov
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+# 收紧并提升问题发现
+ignore_missing_imports = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+strict_equality = true
+show_error_codes = true
+pretty = true
+mypy_path = ["."]
+
+[tool.coverage.run]
+source = ["office4ai"]
+omit = ["*/tests/*", "*/.cache/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "\\.\\.\\.",
+]
+
+[tool.poe.tasks]
+# Linting tasks
+lint = "ruff check office4ai tests"
+lint-fix = "ruff check --fix office4ai tests"
+format = "ruff format office4ai tests"
+format-check = "ruff format --check office4ai tests"
+
+# Type checking
+typecheck = "mypy office4ai"
+
+# Testing tasks
+test = "pytest tests"
+test-unit = "pytest tests -k 'not integration'"
+test-integration = "pytest tests/integration"
+test-cov = "pytest tests --cov=office4ai --cov-report=html --cov-report=term-missing"
+test-verbose = "pytest tests -vv"
+test-format = ["test", "format"]
+
+# Combined quality checks
+check = ["lint", "format-check", "typecheck"]
+fix = ["lint-fix", "format"]
+
+# Clean tasks
+clean-pyc = "find . -type f -name '*.pyc' -delete && find . -type d -name '__pycache__' -delete"
+clean-cov = "rm -rf .coverage htmlcov .pytest_cache"
+clean = ["clean-pyc", "clean-cov"]
+
+# Development setup
+install = "uv sync"
+install-dev = "uv sync --all-extras"
+
+[tool.poe.tasks.docs]
+help = "Build documentation (placeholder for future)"
+cmd = "echo 'Documentation build not yet configured'"
+
+[tool.poe.tasks.pre-commit]
+help = "Run all pre-commit checks"
+sequence = ["format", "lint-fix", "typecheck", "test"]
+
+[dependency-groups]
+dev = [
+    # 测试框架 / Testing framework
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "pytest-timeout>=2.3.1",
+    # 代码质量工具 / Code quality tools
+    "ruff>=0.1.11",
+    "mypy>=1.16.0",
+    # 任务运行器 / Task runner
+    "poethepoet>=0.24.0",
+    # 版本管理工具 / Version management tool
+    "bump-my-version>=1.2.4",
+    # 环境变量管理 / Environment variable management
+    "python-dotenv>=1.0.0",
+    # 类型存根 / Type stubs
+    "types-cachetools>=6.2.0.20251022",
+    "types-regex>=2025.10.23.20251023",
+    "pyfakefs>=5.10.0",
+    "types-pexpect>=4.9.0.20250916",
+]
