@@ -1,10 +1,11 @@
 """
 Pytest configuration and fixtures for Office4AI tests.
 """
+
 import os
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import pytest
 
@@ -42,10 +43,11 @@ def libreoffice_path() -> str:
         "linux": "/usr/bin/soffice",
         "win32": "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
     }
-    
+
     import sys
+
     platform = sys.platform
-    
+
     if platform.startswith("darwin"):
         default = default_paths["darwin"]
     elif platform.startswith("linux"):
@@ -54,5 +56,5 @@ def libreoffice_path() -> str:
         default = default_paths["win32"]
     else:
         default = "soffice"
-    
+
     return os.environ.get("LIBREOFFICE_PATH", default)
