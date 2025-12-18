@@ -160,9 +160,76 @@ Office4AI 支持三类操作：
 
 ### LibreOffice 集成
 
+Office4AI 提供了两种 LibreOffice 集成方式：
+
+#### 1. UNO Bridge（推荐）- 双层客户端-服务器架构
+
+UNO Bridge 采用双层架构，完全解耦 Python 版本依赖：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Python 3.11+ 客户端 (你的项目)                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  使用 xmlrpc.client 调用服务器                       │    │
+│  │  无需安装 LibreOffice 或 uno 库                     │    │
+│  └────────────────────────────────────────────────────┘    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ XML-RPC over HTTP (端口 2003)
+┌──────────────────────▼──────────────────────────────────────┐
+│  Python 3.8 服务器 (LibreOffice 自带)                        │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  处理 XML-RPC 请求并调用 UNO API                    │    │
+│  └────────────────────────────────────────────────────┘    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ UNO Bridge (端口 2002)
+┌──────────────────────▼──────────────────────────────────────┐
+│  LibreOffice 进程 (无头模式)                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**优势**：
+- ✅ **完全解耦**：项目使用 Python 3.11+，LibreOffice 使用 Python 3.8
+- ✅ **依赖隔离**：项目依赖（如 MCP SDK）与 LibreOffice 依赖完全分离
+- ✅ **易于维护**：LibreOffice 升级不影响项目代码
+- ✅ **灵活部署**：可以将 LibreOffice 服务部署在不同的机器上
+
+**使用方法**：
+
+```bash
+# 1. 启动 UNO Bridge 服务器（使用 LibreOffice Python）
+./scripts/start_uno_server.sh
+
+# 2. 在你的项目中使用客户端（使用项目 Python 3.11+）
+```
+
+```python
+from office4ai.uno_bridge.client import UnoClient
+
+# 创建客户端
+client = UnoClient(server="127.0.0.1", port=2003)
+
+# 测试连接
+if client.ping():
+    print("连接成功！")
+
+# 替换文档中的文本
+result = client.replace_text(
+    file_path="/path/to/document.docx",
+    search_text="旧文本",
+    replace_text="新文本"
+)
+
+if result["success"]:
+    print(f"替换成功！替换了 {result['count']} 处")
+```
+
+#### 2. 直接 UNO API 调用
+
 - **UNO API** - 完整的 LibreOffice UNO API 支持
 - **文档转换** - 支持多种格式之间的转换
 - **批处理** - 批量处理多个文档
+
+**注意**：直接使用 UNO API 需要项目 Python 版本与 LibreOffice Python 版本一致
 
 ## 🛠️ 开发
 
@@ -261,6 +328,10 @@ office4ai/
 │   ├── libreoffice.py   # LibreOffice 集成
 │   └── mcp/            # MCP 服务器
 │       └── server.py
+├── uno_bridge/          # UNO Bridge 双层架构
+│   ├── __init__.py
+│   ├── server.py        # 服务器端（Python 3.8）
+│   └── client.py        # 客户端（Python 3.11+）
 └── py.typed
 ```
 

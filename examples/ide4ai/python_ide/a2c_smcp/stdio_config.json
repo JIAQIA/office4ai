@@ -1,0 +1,23 @@
+{
+  "name": "python-ide-stdio",
+  "type": "stdio",
+  "disabled": false,
+  "forbidden_tools": [],
+  "tool_meta": {},
+  "server_parameters": {
+    "command": "uvx",
+    "args": [
+      "--from", "ide4ai",
+      "py-ide4ai-mcp",
+      "--transport", "stdio",
+      "--root-dir", "/tmp/test-workspace",
+      "--project-name", "test-project",
+      "--cmd-white-list", "ls,pwd,echo,cat,grep,find,head,tail,wc",
+      "--cmd-timeout", "30"
+    ],
+    "env": null,
+    "cwd": null,
+    "encoding": "utf-8",
+    "encoding_error_handler": "strict"
+  }
+}
