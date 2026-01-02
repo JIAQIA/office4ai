@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for Office4AI tests.
+Office4AI 测试的 Pytest 配置和 fixtures | Pytest configuration and fixtures for Office4AI tests
 """
 
 import os
@@ -12,32 +12,32 @@ import pytest
 
 @pytest.fixture
 def temp_dir() -> Generator[Path, None, None]:
-    """Create a temporary directory for tests."""
+    """为测试创建临时目录 | Create a temporary directory for tests."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
 
 
 @pytest.fixture
 def sample_docx_path(temp_dir: Path) -> Path:
-    """Create a sample docx file path."""
+    """创建示例 docx 文件路径 | Create a sample docx file path."""
     return temp_dir / "sample.docx"
 
 
 @pytest.fixture
 def sample_xlsx_path(temp_dir: Path) -> Path:
-    """Create a sample xlsx file path."""
+    """创建示例 xlsx 文件路径 | Create a sample xlsx file path."""
     return temp_dir / "sample.xlsx"
 
 
 @pytest.fixture
 def sample_pptx_path(temp_dir: Path) -> Path:
-    """Create a sample pptx file path."""
+    """创建示例 pptx 文件路径 | Create a sample pptx file path."""
     return temp_dir / "sample.pptx"
 
 
 @pytest.fixture
 def libreoffice_path() -> str:
-    """Get LibreOffice path from environment or use default."""
+    """从环境变量获取 LibreOffice 路径或使用默认值 | Get LibreOffice path from environment or use default."""
     default_paths = {
         "darwin": "/Applications/LibreOffice.app/Contents/MacOS/soffice",
         "linux": "/usr/bin/soffice",

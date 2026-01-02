@@ -95,6 +95,7 @@ addopts = [
 ]
 markers = [
     "flaky: mark test as flaky (may need multiple retries)",
+    "integration: mark test as integration test",
 ]
 # Coverage options removed from default to allow debugging
 # Use: pytest --cov=office4ai --cov-report=term-missing --cov-report=html
@@ -144,11 +145,11 @@ format-check = "ruff format --check office4ai tests"
 typecheck = "mypy office4ai"
 
 # Testing tasks
-test = "pytest tests"
-test-unit = "pytest tests -k 'not integration'"
-test-integration = "pytest tests/integration"
-test-cov = "pytest tests --cov=office4ai --cov-report=html --cov-report=term-missing"
-test-verbose = "pytest tests -vv"
+test = "pytest tests/unit_tests tests/integration_tests"
+test-unit = "pytest tests/unit_tests"
+test-integration = "pytest tests/integration_tests -m integration"
+test-cov = "pytest tests/unit_tests tests/integration_tests --cov=office4ai --cov-report=html --cov-report=term-missing"
+test-verbose = "pytest tests/unit_tests tests/integration_tests -vv"
 test-format = ["test", "format"]
 
 # Combined quality checks

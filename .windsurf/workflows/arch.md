@@ -21,3 +21,5 @@ description: 项目架构
 3. 相较于 ide4ai, office4ai 不需要提供额外的大工具封装（比如 ide4ai 需要额外封装Terminal模块），因为 office4ai 所需的工具（浏览器）非常独立，而且有独立的MCP封装。
 
 参考当前 ide4ai 的能力，来设计与实现 office4ai。当前项目使用 uv 管理虚拟环境，运行命令时使用 uv run
+
+测试用例目录在 tests/unit_tests tests/integration_tests 两个目录下，与代码目录结构做镜像处理。

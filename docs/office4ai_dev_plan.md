@@ -96,7 +96,7 @@
 
 ### Milestone 0：工程基线与可运行 MCP Server
 - **交付物**：
-  - `OfficeMCPServer` 可启动（stdio + sse 至少一种）
+  - `OfficeMCPServer` 可启动（stdio + sse + http三者均兼容）
   - `list_tools/list_resources` 可返回空列表但不报错
   - 统一日志、配置读取（`MCPServerConfig`）
 - **验收标准**：

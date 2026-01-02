@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # filename: server.py
 # @Time    : 2025/12/18 16:07
 # @Author  : JQQ
@@ -88,17 +87,20 @@ class BaseMCPServer(ABC):
             ]
 
         @self.server.read_resource()  # type: ignore[no-untyped-call]
-        async def read_resource(uri: str) -> str:
+        async def read_resource(uri) -> str:
             from urllib.parse import urlparse
 
-            parsed = urlparse(uri)
+            # Convert AnyUrl to string if needed
+            uri_str = str(uri)
+
+            parsed = urlparse(uri_str)
             base_uri = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
             resource = self.resources.get(base_uri)
             if not resource:
                 raise ValueError(f"未找到资源 | Resource not found: {base_uri}")
 
-            if uri != resource.uri:
-                resource.update_from_uri(uri)
+            if uri_str != resource.uri:
+                resource.update_from_uri(uri_str)
 
             return await resource.read()
 

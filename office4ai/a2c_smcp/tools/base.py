@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # filename: base.py
 # @Time    : 2025/12/18 16:07
 # @Author  : JQQ

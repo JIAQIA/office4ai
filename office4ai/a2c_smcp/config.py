@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # filename: config.py
 # @Time    : 2025/12/18 16:07
 # @Author  : JQQ
@@ -11,7 +10,7 @@ from typing import Literal
 
 from confz import BaseConfig, CLArgSource, EnvSource
 from confz.base_config import BaseConfigMetaclass
-from pydantic import Field
+from pydantic import Field, field_validator
 
 
 class MCPServerConfig(BaseConfig, metaclass=BaseConfigMetaclass):
@@ -38,3 +37,11 @@ class MCPServerConfig(BaseConfig, metaclass=BaseConfigMetaclass):
     transport: Literal["stdio", "sse", "streamable-http"] = Field(default="stdio")
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=8000)
+
+    @field_validator("port")
+    @classmethod
+    def validate_port(cls, v):
+        """验证端口范围 | Validate port range"""
+        if not 1 <= v <= 65535:
+            raise ValueError("Port must be between 1 and 65535")
+        return v
