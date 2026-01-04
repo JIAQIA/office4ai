@@ -17,6 +17,7 @@ from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.types import Resource, Tool
 from pydantic import AnyUrl
 from starlette.applications import Starlette
+from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Mount, Route
 
@@ -87,7 +88,7 @@ class BaseMCPServer(ABC):
             ]
 
         @self.server.read_resource()  # type: ignore[no-untyped-call]
-        async def read_resource(uri) -> str:
+        async def read_resource(uri: Any) -> str:
             from urllib.parse import urlparse
 
             # Convert AnyUrl to string if needed
@@ -134,7 +135,7 @@ class BaseMCPServer(ABC):
 
         sse = SseServerTransport("/messages/")
 
-        async def handle_sse(request: Any) -> Response:
+        async def handle_sse(request: Request) -> Response:
             async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
                 await self.server.run(
                     streams[0],
@@ -158,8 +159,11 @@ class BaseMCPServer(ABC):
 
         session_manager = StreamableHTTPSessionManager(self.server)
 
-        async def handle_streamable_http(request: Any) -> Response:
-            return await session_manager.handle_request(request)
+        async def handle_streamable_http(request: Request) -> Response:
+            # StreamableHTTPSessionManager.handle_request handles the request asynchronously
+            await session_manager.handle_request(request.scope, request.receive, request._send)
+            # Return a placeholder response (the actual response is sent by the session manager)
+            return Response(content=b"", status_code=200, headers={})
 
         routes = [
             Route("/mcp", endpoint=handle_streamable_http, methods=["POST"]),

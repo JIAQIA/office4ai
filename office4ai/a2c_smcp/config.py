@@ -40,7 +40,7 @@ class MCPServerConfig(BaseConfig, metaclass=BaseConfigMetaclass):
 
     @field_validator("port")
     @classmethod
-    def validate_port(cls, v):
+    def validate_port(cls, v: int) -> int:
         """验证端口范围 | Validate port range"""
         if not 1 <= v <= 65535:
             raise ValueError("Port must be between 1 and 65535")

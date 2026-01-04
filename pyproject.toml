@@ -31,6 +31,10 @@ dependencies = [
     "python-pptx>=0.6.23",
     # UNO (LibreOffice API) 支持 | UNO (LibreOffice API) support
     # 注意: uno 需要系统安装 LibreOffice | Note: uno requires LibreOffice installed on system
+    # Socket.IO 服务器支持 | Socket.IO server support
+    "python-socketio>=5.11.0",
+    "aiohttp>=3.9.0",
+    "websockets>=12.0",
 ]
 license = { text = "MIT" }
 keywords = ["ai", "office", "libreoffice", "document-management", "ai-agent", "docx", "xlsx", "pptx"]
