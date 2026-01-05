@@ -108,7 +108,6 @@ ignore = ["E501", "B008", "C901"]
 | [pyproject.toml](pyproject.toml) | 完整配置 |
 | [docs/office4ai_dev_plan.md](docs/office4ai_dev_plan.md) | 开发方案 |
 | [docs/ide4ai_alignment_plan.md](docs/ide4ai_alignment_plan.md) | A2C 协议对齐 |
-| [docs/milestone_0_guide.md](docs/milestone_0_guide.md) | Milestone 0 指南 |
 
 ---
 
