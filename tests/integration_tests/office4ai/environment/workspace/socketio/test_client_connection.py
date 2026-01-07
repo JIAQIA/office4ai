@@ -4,8 +4,6 @@ Test client connection flow
 测试客户端连接流程。
 """
 
-import asyncio
-
 import pytest
 from socketio import AsyncClient  # type: ignore[import-untyped]
 

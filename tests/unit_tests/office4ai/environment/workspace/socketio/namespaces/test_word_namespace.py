@@ -33,9 +33,7 @@ class TestWordNamespace:
         connection_manager.unregister_client(sid)
 
     @pytest.mark.asyncio
-    async def test_on_word_get_selected_content(
-        self, word_namespace: WordNamespace, connected_session: Any
-    ) -> None:
+    async def test_on_word_get_selected_content(self, word_namespace: WordNamespace, connected_session: Any) -> None:
         """Test get selected content event handler"""
         data = {
             "requestId": "req_123",
@@ -50,9 +48,7 @@ class TestWordNamespace:
         await word_namespace.on_word_get_selectedContent(connected_session, data)
 
     @pytest.mark.asyncio
-    async def test_on_word_insert_text(
-        self, word_namespace: WordNamespace, connected_session: Any
-    ) -> None:
+    async def test_on_word_insert_text(self, word_namespace: WordNamespace, connected_session: Any) -> None:
         """Test insert text event handler"""
         data = {
             "requestId": "req_123",
@@ -66,9 +62,7 @@ class TestWordNamespace:
         await word_namespace.on_word_insert_text(connected_session, data)
 
     @pytest.mark.asyncio
-    async def test_on_word_replace_selection(
-        self, word_namespace: WordNamespace, connected_session: Any
-    ) -> None:
+    async def test_on_word_replace_selection(self, word_namespace: WordNamespace, connected_session: Any) -> None:
         """Test replace selection event handler"""
         data = {
             "requestId": "req_123",
@@ -81,9 +75,7 @@ class TestWordNamespace:
         await word_namespace.on_word_replace_selection(connected_session, data)
 
     @pytest.mark.asyncio
-    async def test_on_word_event_selection_changed(
-        self, word_namespace: WordNamespace, connected_session: Any
-    ) -> None:
+    async def test_on_word_event_selection_changed(self, word_namespace: WordNamespace, connected_session: Any) -> None:
         """Test selection changed event"""
         data = {
             "eventType": "selectionChanged",
@@ -97,9 +89,7 @@ class TestWordNamespace:
         await word_namespace.on_word_event_selectionChanged(connected_session, data)
 
     @pytest.mark.asyncio
-    async def test_on_word_event_document_modified(
-        self, word_namespace: WordNamespace, connected_session: Any
-    ) -> None:
+    async def test_on_word_event_document_modified(self, word_namespace: WordNamespace, connected_session: Any) -> None:
         """Test document modified event"""
         data = {
             "eventType": "documentModified",

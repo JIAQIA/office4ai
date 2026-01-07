@@ -4,13 +4,9 @@ Test ConnectionManager functionality
 测试 ConnectionManager 的所有核心功能。
 """
 
-import time
-
-import pytest
-
 from office4ai.environment.workspace.socketio.services.connection_manager import (
-    ConnectionManager,
     ClientInfo,
+    ConnectionManager,
 )
 
 
@@ -24,9 +20,7 @@ class TestConnectionManager:
         assert len(connection_manager._clients) == 0
         assert len(connection_manager._document_to_sockets) == 0
 
-    def test_register_client(
-        self, connection_manager: ConnectionManager, mock_client_info: ClientInfo
-    ) -> None:
+    def test_register_client(self, connection_manager: ConnectionManager, mock_client_info: ClientInfo) -> None:
         """Test registering a new client"""
         client = connection_manager.register_client(
             socket_id=mock_client_info.socket_id,
@@ -40,9 +34,7 @@ class TestConnectionManager:
         assert connection_manager.get_connection_count() == 1
         assert connection_manager.get_document_count() == 1
 
-    def test_register_multiple_clients_same_document(
-        self, connection_manager: ConnectionManager
-    ) -> None:
+    def test_register_multiple_clients_same_document(self, connection_manager: ConnectionManager) -> None:
         """Test multiple clients working on same document"""
         connection_manager.register_client("socket1", "client1", "file:///test.docx", "/word")
         connection_manager.register_client("socket2", "client2", "file:///test.docx", "/word")
@@ -51,9 +43,7 @@ class TestConnectionManager:
         assert connection_manager.get_document_count() == 1
         assert len(connection_manager.get_clients_by_document("file:///test.docx")) == 2
 
-    def test_unregister_client(
-        self, connection_manager: ConnectionManager, mock_client_info: ClientInfo
-    ) -> None:
+    def test_unregister_client(self, connection_manager: ConnectionManager, mock_client_info: ClientInfo) -> None:
         """Test unregistering a client"""
         connection_manager.register_client(
             mock_client_info.socket_id,

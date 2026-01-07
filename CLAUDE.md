@@ -63,14 +63,36 @@ office4ai/
 ├── schema.py            # 数据模型 (OfficeAction, OfficeObservation)
 ├── exceptions.py        # 异常定义
 ├── utils.py             # 工具函数
-├── dtos/                # 数据传输对象
-├── environment/         # TerminalEnv, WorkspaceEnv
-├── office/              # Office 处理器 (docx/xlsx/pptx)
+├── dtos/                # A2C 协议数据传输对象
+├── environment/         # 环境组件
+│   ├── terminal/        # 终端环境
+│   └── workspace/       # ⭐ Workspace 环境 (核心)
+│       ├── base.py                  # BaseWorkspace 抽象基类 (待实现)
+│       ├── office_workspace.py      # OfficeWorkspace 实现 (待实现)
+│       ├── socketio/                # ⭐ Workspace Socket.IO Server
+│       │   ├── server.py            # Socket.IO 服务器入口
+│       │   ├── namespaces/          # 命名空间实现
+│       │   │   ├── base.py          # BaseNamespace
+│       │   │   └── word.py          # /word namespace (3 个事件已实现)
+│       │   ├── services/            # 控制服务
+│       │   │   └── connection_manager.py  # ✅ 连接管理器
+│       │   └── middleware/          # 中间件
+│       │       └── handshake.py     # 握手中间件
+│       └── dtos/                    # ✅ 数据传输对象 (与 TS 严格同步)
+│           ├── common.py            # 通用类型
+│           ├── word.py              # Word 类型 (13 个事件)
+│           ├── ppt.py               # PPT 类型 (10 个事件)
+│           └── excel.py             # Excel 类型 (4 个事件)
 ├── a2c_smcp/            # MCP Server 基础设施
-│   └── server.py        # BaseMCPServer
-└── uno_bridge/          # UNO Bridge 双层架构
-    ├── server.py        # XML-RPC Server (LibreOffice Python 3.8)
-    └── client.py        # XML-RPC Client (项目 Python 3.11+)
+│   ├── server.py        # BaseMCPServer
+│   ├── config.py        # MCPServerConfig
+│   ├── tools/           # MCP Tools (待实现)
+│   │   └── base.py      # BaseTool 基类
+│   └── resources/       # MCP Resources
+├── office/              # Office 处理器 (未来)
+│   └── mcp/
+│       └── server.py    # OfficeMCPServer (待实现)
+└── utils/               # 工具函数
 ```
 
 ---
@@ -106,8 +128,12 @@ ignore = ["E501", "B008", "C901"]
 |------|------|
 | [README.md](README.md) | 项目介绍、快速开始 |
 | [pyproject.toml](pyproject.toml) | 完整配置 |
+| [docs/workspace_implementation_plan.md](docs/workspace_implementation_plan.md) | ⭐ Workspace 实现计划 (精简版) |
+| [docs/mcp_tools_list.md](docs/mcp_tools_list.md) | ⭐ MCP 工具列表 (27 个) |
+| [docs/mvp_implementation_plan.md](docs/mvp_implementation_plan.md) | ⭐ MVP 实现计划 (当前) |
 | [docs/office4ai_dev_plan.md](docs/office4ai_dev_plan.md) | 开发方案 |
-| [docs/ide4ai_alignment_plan.md](docs/ide4ai_alignment_plan.md) | A2C 协议对齐 |
+| [docs/a2c/a2c_rfc.md](docs/a2c/a2c_rfc.md) | A2C 协议规范 (独立系统) |
+| [docs/a2c/computer.md](docs/a2c/computer.md) | A2C Computer 模块文档 |
 
 ---
 
@@ -122,5 +148,5 @@ ignore = ["E501", "B008", "C901"]
 
 ---
 
-**最后更新**: 2026-01-03
+**最后更新**: 2026-01-05
 **维护者**: JQQ <jqq1716@gmail.com>

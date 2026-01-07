@@ -6,16 +6,15 @@ Socket.IO integration test fixtures
 
 from __future__ import annotations
 
-import asyncio
 from typing import Any
 
 import pytest
 import pytest_asyncio
-from socketio import AsyncClient, AsyncServer  # type: ignore[import-untyped]
 from aiohttp import web
+from socketio import AsyncClient, AsyncServer  # type: ignore[import-untyped]
 
-from office4ai.environment.workspace.socketio.server import create_socketio_server
 from office4ai.environment.workspace.socketio.config import SocketIOConfig
+from office4ai.environment.workspace.socketio.server import create_socketio_server
 
 
 @pytest_asyncio.fixture

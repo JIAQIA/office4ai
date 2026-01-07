@@ -7,8 +7,7 @@ Test Socket.IO server lifecycle
 import pytest
 from aiohttp import web
 
-from office4ai.environment.workspace.socketio.server import create_app, create_socketio_server
-from office4ai.environment.workspace.socketio.config import SocketIOConfig
+from office4ai.environment.workspace.socketio.server import create_app
 
 
 @pytest.mark.asyncio

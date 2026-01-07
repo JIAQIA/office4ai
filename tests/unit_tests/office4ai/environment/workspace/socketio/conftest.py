@@ -10,7 +10,6 @@ import time
 from typing import Any
 
 import pytest
-from socketio import AsyncServer  # type: ignore[import-untyped]
 
 from office4ai.environment.workspace.socketio.config import SocketIOConfig
 from office4ai.environment.workspace.socketio.services.connection_manager import (

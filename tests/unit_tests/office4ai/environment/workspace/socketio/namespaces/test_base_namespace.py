@@ -5,7 +5,7 @@ Test BaseNamespace functionality
 """
 
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -79,9 +79,7 @@ class TestBaseNamespace:
         base_namespace.disconnect.assert_called_once_with(sid)
 
     @pytest.mark.asyncio
-    async def test_on_disconnect(
-        self, base_namespace: BaseNamespace, valid_handshake_data: dict[str, Any]
-    ) -> None:
+    async def test_on_disconnect(self, base_namespace: BaseNamespace, valid_handshake_data: dict[str, Any]) -> None:
         """Test client disconnection"""
         sid = "test_socket_123"
 
@@ -107,9 +105,7 @@ class TestBaseNamespace:
         # Should not raise any errors
         await base_namespace.on_connection_status(sid, status_data)
 
-    def test_get_client_info(
-        self, base_namespace: BaseNamespace, valid_handshake_data: dict[str, Any]
-    ) -> None:
+    def test_get_client_info(self, base_namespace: BaseNamespace, valid_handshake_data: dict[str, Any]) -> None:
         """Test getting client info from namespace"""
         sid = "test_socket_123"
 

@@ -5,16 +5,16 @@ Test error scenarios
 """
 
 import pytest
-from socketio import AsyncClient  # type: ignore[import-untyped]
 
 
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_invalid_handshake_missing_client_id() -> None:
     """Test connection fails with missing clientId"""
-    from office4ai.environment.workspace.socketio.server import create_socketio_server
-    from office4ai.environment.workspace.socketio.config import SocketIOConfig
     from aiohttp import web
+
+    from office4ai.environment.workspace.socketio.config import SocketIOConfig
+    from office4ai.environment.workspace.socketio.server import create_socketio_server
 
     config = SocketIOConfig(host="127.0.0.1", port=3002, logger=False, engineio_logger=False)
     server = create_socketio_server(config)

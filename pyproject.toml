@@ -169,6 +169,10 @@ clean = ["clean-pyc", "clean-cov"]
 install = "uv sync"
 install-dev = "uv sync --all-extras"
 
+# Server tasks
+serve = "uv run python -m office4ai.environment.workspace.socketio.server"
+serve-http = "uv run python -m office4ai.environment.workspace.socketio.server --use-https=false"
+
 [tool.poe.tasks.docs]
 help = "Build documentation (placeholder for future)"
 cmd = "echo 'Documentation build not yet configured'"

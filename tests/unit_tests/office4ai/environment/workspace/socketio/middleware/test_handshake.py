@@ -4,15 +4,14 @@ Test handshake middleware
 测试握手中间件验证功能。
 """
 
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 import pytest
 
 from office4ai.environment.workspace.socketio.middleware.handshake import (
-    validate_handshake_data,
-    log_handshake,
     handshake_middleware,
+    log_handshake,
+    validate_handshake_data,
 )
 
 
@@ -49,17 +48,13 @@ class TestHandshakeMiddleware:
 
     def test_validate_file_uri(self) -> None:
         """Test validation accepts file:// URI"""
-        is_valid, error = validate_handshake_data(
-            client_id="test_client", document_uri="file:///C:/Users/test.docx"
-        )
+        is_valid, error = validate_handshake_data(client_id="test_client", document_uri="file:///C:/Users/test.docx")
 
         assert is_valid is True
 
     def test_validate_http_uri(self) -> None:
         """Test validation accepts http/https URIs"""
-        is_valid, error = validate_handshake_data(
-            client_id="test_client", document_uri="https://example.com/test.docx"
-        )
+        is_valid, error = validate_handshake_data(client_id="test_client", document_uri="https://example.com/test.docx")
 
         assert is_valid is True
 

@@ -10,8 +10,8 @@ from pydantic import ValidationError
 from office4ai.environment.workspace.dtos.common import (
     BaseRequest,
     BaseResponse,
-    ErrorResponse,
     ErrorCode,
+    ErrorResponse,
 )
 
 
@@ -43,9 +43,7 @@ class TestBaseRequest:
     def test_custom_timestamp(self) -> None:
         """Test custom timestamp"""
         ts = 1234567890000
-        request = BaseRequest(
-            requestId="req_123", documentUri="file:///test.docx", timestamp=ts
-        )
+        request = BaseRequest(requestId="req_123", documentUri="file:///test.docx", timestamp=ts)
 
         assert request.timestamp == ts
 
@@ -55,9 +53,7 @@ class TestBaseResponse:
 
     def test_success_response(self) -> None:
         """Test creating success response"""
-        response = BaseResponse(
-            requestId="req_123", success=True, data={"text": "Hello"}, timestamp=1234567890000
-        )
+        response = BaseResponse(requestId="req_123", success=True, data={"text": "Hello"}, timestamp=1234567890000)
 
         assert response.requestId == "req_123"
         assert response.success is True
@@ -68,9 +64,7 @@ class TestBaseResponse:
         """Test creating error response"""
         error = ErrorResponse(code=ErrorCode.OFFICE_API_ERROR, message="Operation failed")
 
-        response = BaseResponse(
-            requestId="req_123", success=False, error=error, timestamp=1234567890000
-        )
+        response = BaseResponse(requestId="req_123", success=False, error=error, timestamp=1234567890000)
 
         assert response.success is False
         assert response.error.code == "3000"
@@ -78,9 +72,7 @@ class TestBaseResponse:
 
     def test_response_with_duration(self) -> None:
         """Test response with operation duration"""
-        response = BaseResponse(
-            requestId="req_123", success=True, timestamp=1234567890000, duration=150
-        )
+        response = BaseResponse(requestId="req_123", success=True, timestamp=1234567890000, duration=150)
 
         assert response.duration == 150
 
