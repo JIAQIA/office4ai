@@ -16,10 +16,20 @@ class SocketIOConfig(BaseModel):
 
     # CORS settings (only allow localhost)
     cors_allowed_origins: list[str] = [
+        # Python Socket.IO server (HTTP)
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://localhost:*",  # Allow any localhost port
-        "capacitor://localhost",  # For Electron/Capacitor
+        # Excel Add-In (HTTPS)
+        "https://localhost:3001",
+        "https://127.0.0.1:3001",
+        # Word Add-In (HTTPS)
+        "https://localhost:3002",
+        "https://127.0.0.1:3002",
+        # PowerPoint Add-In (HTTPS)
+        "https://localhost:3003",
+        "https://127.0.0.1:3003",
+        # Capacitor/Electron
+        "capacitor://localhost",
     ]
 
     # Engine.IO settings
