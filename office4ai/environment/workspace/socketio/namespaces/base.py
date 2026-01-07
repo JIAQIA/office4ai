@@ -33,16 +33,19 @@ class BaseNamespace(AsyncNamespace):
         self.namespace_name: str = namespace
         logger.info(f"BaseNamespace initialized: {self.namespace_name}")
 
-    async def on_connect(self, sid: str, data: Any) -> None:
+    async def on_connect(self, sid: str, environ: dict, auth: dict | None = None) -> None:
         """
         Handle client connection.
 
         Args:
             sid: Session ID
-            data: Handshake data (clientId, documentUri)
+            environ: Connection environment dict (contains HTTP headers, query params, etc.)
+            auth: Auth data from client (contains clientId, documentUri)
         """
-        client_id = data.get("clientId") if data else None
-        document_uri = data.get("documentUri") if data else None
+        # Get handshake data from auth parameter
+        data = auth if auth else {}
+        client_id = data.get("clientId")
+        document_uri = data.get("documentUri")
 
         if not client_id or not document_uri:
             logger.error(f"Connection failed: missing handshake data from {sid}")

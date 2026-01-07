@@ -46,6 +46,8 @@ async def test_word_e2e():
 
     # Step 1: 启动 Workspace
     print("\n[1/5] 启动 Office Workspace...")
+    # 使用默认配置（use_https=True）以匹配客户端的默认连接地址 https://127.0.0.1:4443
+    # Use default config (use_https=True) to match client's default connection URL https://127.0.0.1:4443
     workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
 
     try:

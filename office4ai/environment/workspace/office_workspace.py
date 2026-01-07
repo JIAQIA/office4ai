@@ -129,7 +129,7 @@ class OfficeWorkspace(BaseWorkspace):
                 from pathlib import Path
                 import ssl
 
-                project_root = Path(__file__).parent.parent.parent.parent.parent
+                project_root = Path(__file__).parent.parent.parent.parent
                 cert_path = project_root / "certs" / "cert.pem"
                 key_path = project_root / "certs" / "key.pem"
 

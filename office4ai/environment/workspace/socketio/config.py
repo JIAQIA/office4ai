@@ -22,9 +22,12 @@ class SocketIOConfig(BaseModel):
         # Excel Add-In (HTTPS)
         "https://localhost:3001",
         "https://127.0.0.1:3001",
-        # Word Add-In (HTTPS)
+        # Word Add-In (HTTPS) - 开发端口
         "https://localhost:3002",
         "https://127.0.0.1:3002",
+        # Word Add-In (HTTPS) - E2E 测试端口 (4443 = 3000 + 1443)
+        "https://localhost:4443",
+        "https://127.0.0.1:4443",
         # PowerPoint Add-In (HTTPS)
         "https://localhost:3003",
         "https://127.0.0.1:3003",
