@@ -17,7 +17,6 @@ from aiohttp import web
 
 from .config import SocketIOConfig, default_config
 from .namespaces.word import WordNamespace
-from .request_handler import set_server_instance
 from .services.connection_manager import connection_manager
 
 # Configure logging
@@ -58,9 +57,6 @@ def create_socketio_server(config: SocketIOConfig = default_config) -> socketio.
     # from .namespaces.excel import ExcelNamespace
     # sio.register_namespace(PptNamespace())
     # sio.register_namespace(ExcelNamespace())
-
-    # 保存全局引用（用于请求-响应机制）
-    set_server_instance(sio)
 
     # Log startup
     logger.info("Socket.IO server created")
@@ -120,7 +116,7 @@ async def start_server(
     await site_http.start()
 
     logger.info("=" * 60)
-    logger.info(f"✅ Office Workspace started")
+    logger.info("✅ Office Workspace started")
     logger.info(f"HTTP:  http://{host}:{port}")
 
     # Start HTTPS server if enabled
@@ -134,7 +130,9 @@ async def start_server(
             logger.warning("⚠️  SSL certificates not found, skipping HTTPS")
             logger.warning(f"   Expected: {cert_path}")
             logger.warning(f"   Expected: {key_path}")
-            logger.warning("   Run: openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes")
+            logger.warning(
+                "   Run: openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes"
+            )
         else:
             # Create SSL context
             ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -212,8 +210,8 @@ def create_app(config: SocketIOConfig = default_config) -> web.Application:
 
 if __name__ == "__main__":
     # Run server directly (for testing)
-    import asyncio
     import argparse
+    import asyncio
 
     parser = argparse.ArgumentParser(description="Office Workspace Socket.IO Server")
     parser.add_argument(

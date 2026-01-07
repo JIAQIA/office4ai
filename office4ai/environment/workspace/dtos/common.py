@@ -5,52 +5,121 @@ Defines base structures for Socket.IO communication between Workspace and Add-In
 """
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class BaseRequest(BaseModel):
+class SocketIOBaseModel(BaseModel):
+    """
+    Base model for all Socket.IO DTOs.
+
+    Provides automatic snake_case ↔ camelCase conversion for protocol compliance:
+    - Internal Python: snake_case (PEP 8 compliant)
+    - External JSON: camelCase (Socket.IO protocol)
+
+    Example:
+        >>> class MyRequest(SocketIOBaseModel):
+        ...     request_id: str = Field(alias="requestId")
+        ...
+        >>> # Internal: obj.request_id
+        >>> # External: {"requestId": "..."}
+    """
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        populate_by_name=True,  # Accept both alias and field name
+    )
+
+
+class BaseRequest(SocketIOBaseModel):
     """
     Base structure for Server → Client requests.
 
     When Workspace sends a command to an Add-In, all requests inherit from this.
+
+    Uses Pydantic aliases for protocol compliance:
+    - Internal: snake_case (PEP 8 compliant)
+    - External: camelCase (Socket.IO protocol)
     """
 
-    requestId: str = Field(..., description="Unique request identifier for matching responses")
-    documentUri: str = Field(..., description="Document URI (file:///path/to.docx)")
+    request_id: str = Field(
+        ...,
+        alias="requestId",
+        description="Unique request identifier for matching responses",
+    )
+    document_uri: str = Field(
+        ...,
+        alias="documentUri",
+        description="Document URI (file:///path/to.docx)",
+    )
     timestamp: int | None = Field(
         default_factory=lambda: int(datetime.now().timestamp() * 1000),
+        alias="timestamp",
         description="Client timestamp in milliseconds",
     )
 
 
-class BaseResponse(BaseModel):
+class BaseResponse(SocketIOBaseModel):
     """
     Base structure for Client → Server responses.
 
     When Add-In responds to a Workspace command, all responses inherit from this.
+
+    Uses Pydantic aliases for protocol compliance:
+    - Internal: snake_case (PEP 8 compliant)
+    - External: camelCase (Socket.IO protocol)
     """
 
-    requestId: str = Field(..., description="Request ID being responded to")
-    success: bool = Field(..., description="Whether the operation succeeded")
-    data: dict[str, Any] | None = Field(default=None, description="Response data")
-    error: Optional["ErrorResponse"] = Field(default=None, description="Error details if failed")
+    request_id: str = Field(
+        ...,
+        alias="requestId",
+        description="Request ID being responded to",
+    )
+    success: bool = Field(..., alias="success", description="Whether the operation succeeded")
+    data: dict[str, Any] | None = Field(
+        default=None,
+        alias="data",
+        description="Response data",
+    )
+    error: Optional["ErrorResponse"] = Field(
+        default=None,
+        alias="error",
+        description="Error details if failed",
+    )
     timestamp: int = Field(
         ...,
+        alias="timestamp",
         description="Server timestamp in milliseconds",
     )
-    duration: int | None = Field(default=None, description="Operation duration in milliseconds")
+    duration: int | None = Field(
+        default=None,
+        alias="duration",
+        description="Operation duration in milliseconds",
+    )
 
 
-class ErrorResponse(BaseModel):
+class ErrorResponse(SocketIOBaseModel):
     """
     Standardized error information.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    code: str = Field(..., description="Error code (e.g., '3000')")
-    message: str = Field(..., description="Human-readable error message")
-    details: dict[str, Any] | None = Field(default=None, description="Additional error details")
+    code: str = Field(
+        ...,
+        alias="code",
+        description="Error code (e.g., '3000')",
+    )
+    message: str = Field(
+        ...,
+        alias="message",
+        description="Human-readable error message",
+    )
+    details: dict[str, Any] | None = Field(
+        default=None,
+        alias="details",
+        description="Additional error details",
+    )
 
 
 class ErrorCode:

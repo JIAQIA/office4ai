@@ -7,8 +7,6 @@ Test client connection flow
 import pytest
 from socketio import AsyncClient  # type: ignore[import-untyped]
 
-from office4ai.environment.workspace.socketio.services.connection_manager import connection_manager
-
 
 @pytest.mark.asyncio
 @pytest.mark.integration
@@ -37,8 +35,6 @@ async def test_client_handshake(socketio_client: AsyncClient, valid_handshake_da
 @pytest.mark.integration
 async def test_client_disconnect_cleanup(socketio_client: AsyncClient) -> None:
     """Test client disconnect cleanup"""
-    initial_count = connection_manager.get_connection_count()
-
     # Disconnect
     await socketio_client.disconnect()
 
@@ -56,7 +52,7 @@ async def test_multiple_clients(socketio_server) -> None:
     clients = []
 
     try:
-        for i in range(3):
+        for _i in range(3):
             client = AsyncClient()
             await client.connect("http://127.0.0.1:3001", namespaces=["/word"], transports=["websocket"])
             clients.append(client)

@@ -6,9 +6,9 @@ Defines data structures for Word-specific Socket.IO events.
 
 from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from .common import BaseRequest
+from .common import BaseRequest, SocketIOBaseModel
 
 # ============================================================================
 # Content Retrieval DTOs
@@ -18,17 +18,29 @@ from .common import BaseRequest
 class WordGetSelectedContentRequest(BaseRequest):
     """
     Request to get selected content from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    options: Optional["GetContentOptions"] = Field(default=None, description="Content retrieval options")
+    options: Optional["GetContentOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Content retrieval options",
+    )
 
 
 class WordGetVisibleContentRequest(BaseRequest):
     """
     Request to get visible content from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    options: Optional["GetContentOptions"] = Field(default=None, description="Content retrieval options")
+    options: Optional["GetContentOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Content retrieval options",
+    )
 
 
 class WordGetDocumentStructureRequest(BaseRequest):
@@ -47,17 +59,43 @@ class WordGetDocumentStatsRequest(BaseRequest):
     pass
 
 
-class GetContentOptions(BaseModel):
+class GetContentOptions(SocketIOBaseModel):
     """
     Options for content retrieval operations.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    includeText: bool = Field(default=True, description="Include text content")
-    includeImages: bool = Field(default=True, description="Include images")
-    includeTables: bool = Field(default=True, description="Include tables")
-    includeContentControls: bool = Field(default=False, description="Include content controls")
-    detailedMetadata: bool = Field(default=False, description="Include detailed metadata")
-    maxTextLength: int | None = Field(default=None, description="Maximum text length")
+    include_text: bool = Field(
+        default=True,
+        alias="includeText",
+        description="Include text content",
+    )
+    include_images: bool = Field(
+        default=True,
+        alias="includeImages",
+        description="Include images",
+    )
+    include_tables: bool = Field(
+        default=True,
+        alias="includeTables",
+        description="Include tables",
+    )
+    include_content_controls: bool = Field(
+        default=False,
+        alias="includeContentControls",
+        description="Include content controls",
+    )
+    detailed_metadata: bool = Field(
+        default=False,
+        alias="detailedMetadata",
+        description="Include detailed metadata",
+    )
+    max_text_length: int | None = Field(
+        default=None,
+        alias="maxTextLength",
+        description="Maximum text length",
+    )
 
 
 # ============================================================================
@@ -68,72 +106,162 @@ class GetContentOptions(BaseModel):
 class WordInsertTextRequest(BaseRequest):
     """
     Request to insert text into Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    text: str = Field(..., description="Text to insert")
-    location: Literal["Cursor", "Start", "End"] = Field(default="Cursor", description="Insertion location")
-    format: Optional["TextFormat"] = Field(default=None, description="Text formatting")
+    text: str = Field(..., alias="text", description="Text to insert")
+    location: Literal["Cursor", "Start", "End"] = Field(
+        default="Cursor",
+        alias="location",
+        description="Insertion location",
+    )
+    format: Optional["TextFormat"] = Field(
+        default=None,
+        alias="format",
+        description="Text formatting",
+    )
 
 
 class WordReplaceSelectionRequest(BaseRequest):
     """
     Request to replace selected content in Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    content: "ReplaceContent" = Field(..., description="Replacement content")
+    content: "ReplaceContent" = Field(
+        ...,
+        alias="content",
+        description="Replacement content",
+    )
 
 
 class WordReplaceTextRequest(BaseRequest):
     """
     Request to find and replace text in Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    searchText: str = Field(..., description="Text to search for")
-    replaceText: str = Field(..., description="Replacement text")
-    options: Optional["ReplaceOptions"] = Field(default=None, description="Replace options")
+    search_text: str = Field(
+        ...,
+        alias="searchText",
+        description="Text to search for",
+    )
+    replace_text: str = Field(
+        ...,
+        alias="replaceText",
+        description="Replacement text",
+    )
+    options: Optional["ReplaceOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Replace options",
+    )
 
 
 class WordAppendTextRequest(BaseRequest):
     """
     Request to append text to Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    text: str = Field(..., description="Text to append")
-    location: Literal["Start", "End"] = Field(default="End", description="Append location")
-    format: Optional["TextFormat"] = Field(default=None, description="Text formatting")
+    text: str = Field(..., alias="text", description="Text to append")
+    location: Literal["Start", "End"] = Field(
+        default="End",
+        alias="location",
+        description="Append location",
+    )
+    format: Optional["TextFormat"] = Field(
+        default=None,
+        alias="format",
+        description="Text formatting",
+    )
 
 
-class TextFormat(BaseModel):
+class TextFormat(SocketIOBaseModel):
     """
     Text formatting options.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    bold: bool | None = Field(default=None, description="Bold text")
-    italic: bool | None = Field(default=None, description="Italic text")
-    fontSize: int | None = Field(default=None, description="Font size")
-    fontName: str | None = Field(default=None, description="Font name")
-    color: str | None = Field(default=None, description="Font color (hex)")
-    underline: bool | None = Field(default=None, description="Underline text")
+    bold: bool | None = Field(default=None, alias="bold", description="Bold text")
+    italic: bool | None = Field(
+        default=None,
+        alias="italic",
+        description="Italic text",
+    )
+    font_size: int | None = Field(
+        default=None,
+        alias="fontSize",
+        description="Font size",
+    )
+    font_name: str | None = Field(
+        default=None,
+        alias="fontName",
+        description="Font name",
+    )
+    color: str | None = Field(
+        default=None,
+        alias="color",
+        description="Font color (hex)",
+    )
+    underline: bool | None = Field(
+        default=None,
+        alias="underline",
+        description="Underline text",
+    )
 
 
-class ReplaceContent(BaseModel):
+class ReplaceContent(SocketIOBaseModel):
     """
     Content for replacement operation.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    text: str | None = Field(default=None, description="Replacement text")
-    images: list[dict[str, Any]] | None = Field(default=None, description="Replacement images")
-    format: Optional["TextFormat"] = Field(default=None, description="Text formatting")
+    text: str | None = Field(
+        default=None,
+        alias="text",
+        description="Replacement text",
+    )
+    images: list[dict[str, Any]] | None = Field(
+        default=None,
+        alias="images",
+        description="Replacement images",
+    )
+    format: Optional["TextFormat"] = Field(
+        default=None,
+        alias="format",
+        description="Text formatting",
+    )
 
 
-class ReplaceOptions(BaseModel):
+class ReplaceOptions(SocketIOBaseModel):
     """
     Options for find and replace operation.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    matchCase: bool = Field(default=False, description="Match case")
-    matchWholeWord: bool = Field(default=False, description="Match whole word")
-    replaceAll: bool = Field(default=False, description="Replace all occurrences")
+    match_case: bool = Field(
+        default=False,
+        alias="matchCase",
+        description="Match case",
+    )
+    match_whole_word: bool = Field(
+        default=False,
+        alias="matchWholeWord",
+        description="Match whole word",
+    )
+    replace_all: bool = Field(
+        default=False,
+        alias="replaceAll",
+        description="Replace all occurrences",
+    )
 
 
 # ============================================================================
@@ -144,72 +272,129 @@ class ReplaceOptions(BaseModel):
 class WordInsertImageRequest(BaseRequest):
     """
     Request to insert image into Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    image: "ImageData" = Field(..., description="Image data")
-    location: Optional["InsertLocation"] = Field(default=None, description="Insertion location")
-    wrapType: Literal["Inline", "Square", "Tight", "Behind", "InFront"] | None = Field(
-        default="Inline", description="Text wrapping type"
+    image: "ImageData" = Field(..., alias="image", description="Image data")
+    location: Optional["InsertLocation"] = Field(
+        default=None,
+        alias="location",
+        description="Insertion location",
+    )
+    wrap_type: Literal["Inline", "Square", "Tight", "Behind", "InFront"] | None = Field(
+        default="Inline",
+        alias="wrapType",
+        description="Text wrapping type",
     )
 
 
 class WordInsertTableRequest(BaseRequest):
     """
     Request to insert table into Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    options: "TableInsertOptions" = Field(..., description="Table insertion options")
+    options: "TableInsertOptions" = Field(
+        ...,
+        alias="options",
+        description="Table insertion options",
+    )
 
 
 class WordInsertEquationRequest(BaseRequest):
     """
     Request to insert equation into Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    latex: str = Field(..., description="LaTeX equation string")
-    options: Optional["EquationOptions"] = Field(default=None, description="Equation options")
+    latex: str = Field(..., alias="latex", description="LaTeX equation string")
+    options: Optional["EquationOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Equation options",
+    )
 
 
-class ImageData(BaseModel):
+class ImageData(SocketIOBaseModel):
     """
     Image data for insertion.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    base64: str = Field(..., description="Base64 encoded image")
-    width: int | None = Field(default=None, description="Image width")
-    height: int | None = Field(default=None, description="Image height")
-    altText: str | None = Field(default=None, description="Alternative text")
+    base64: str = Field(..., alias="base64", description="Base64 encoded image")
+    width: int | None = Field(
+        default=None,
+        alias="width",
+        description="Image width",
+    )
+    height: int | None = Field(
+        default=None,
+        alias="height",
+        description="Image height",
+    )
+    alt_text: str | None = Field(
+        default=None,
+        alias="altText",
+        description="Alternative text",
+    )
 
 
-class InsertLocation(BaseModel):
+class InsertLocation(SocketIOBaseModel):
     """
     Insertion location details.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
     type: Literal["Cursor", "Start", "End", "BeforeBookmark", "AfterBookmark"] = Field(
         ...,
+        alias="type",
         description="Location type",
     )
-    bookmarkName: str | None = Field(default=None, description="Bookmark name if applicable")
+    bookmark_name: str | None = Field(
+        default=None,
+        alias="bookmarkName",
+        description="Bookmark name if applicable",
+    )
 
 
-class TableInsertOptions(BaseModel):
+class TableInsertOptions(SocketIOBaseModel):
     """
     Table insertion options.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    rows: int = Field(..., description="Number of rows", ge=1)
-    columns: int = Field(..., description="Number of columns", ge=1)
-    data: list[list[str]] | None = Field(default=None, description="Table data")
-    style: str | None = Field(default=None, description="Table style name")
+    rows: int = Field(..., alias="rows", description="Number of rows", ge=1)
+    columns: int = Field(..., alias="columns", description="Number of columns", ge=1)
+    data: list[list[str]] | None = Field(
+        default=None,
+        alias="data",
+        description="Table data",
+    )
+    style: str | None = Field(
+        default=None,
+        alias="style",
+        description="Table style name",
+    )
 
 
-class EquationOptions(BaseModel):
+class EquationOptions(SocketIOBaseModel):
     """
     Equation insertion options.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    inline: bool = Field(default=True, description="Inline equation")
+    inline: bool = Field(
+        default=True,
+        alias="inline",
+        description="Inline equation",
+    )
 
 
 # ============================================================================
@@ -220,36 +405,74 @@ class EquationOptions(BaseModel):
 class WordInsertTOCRequest(BaseRequest):
     """
     Request to insert table of contents into Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    options: Optional["TOCOptions"] = Field(default=None, description="TOC options")
+    options: Optional["TOCOptions"] = Field(
+        default=None,
+        alias="options",
+        description="TOC options",
+    )
 
 
 class WordExportContentRequest(BaseRequest):
     """
     Request to export content from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    format: Literal["text", "html", "markdown"] = Field(..., description="Export format")
-    options: Optional["ExportOptions"] = Field(default=None, description="Export options")
+    format: Literal["text", "html", "markdown"] = Field(
+        ...,
+        alias="format",
+        description="Export format",
+    )
+    options: Optional["ExportOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Export options",
+    )
 
 
-class TOCOptions(BaseModel):
+class TOCOptions(SocketIOBaseModel):
     """
     Table of contents options.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    maxLevel: int = Field(default=3, description="Maximum heading level", ge=1, le=9)
-    styles: list[str] | None = Field(default=None, description="Heading styles to include")
+    max_level: int = Field(
+        default=3,
+        alias="maxLevel",
+        description="Maximum heading level",
+        ge=1,
+        le=9,
+    )
+    styles: list[str] | None = Field(
+        default=None,
+        alias="styles",
+        description="Heading styles to include",
+    )
 
 
-class ExportOptions(BaseModel):
+class ExportOptions(SocketIOBaseModel):
     """
     Content export options.
+
+    Uses Pydantic aliases for protocol compliance.
     """
 
-    includeImages: bool = Field(default=False, description="Include images in export")
-    includeTables: bool = Field(default=True, description="Include tables in export")
+    include_images: bool = Field(
+        default=False,
+        alias="includeImages",
+        description="Include images in export",
+    )
+    include_tables: bool = Field(
+        default=True,
+        alias="includeTables",
+        description="Include tables in export",
+    )
 
 
 # Resolve forward references

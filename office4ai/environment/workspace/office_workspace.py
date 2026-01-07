@@ -6,7 +6,6 @@ Office Workspace Implementation
 
 import asyncio
 import logging
-import uuid
 from typing import Any
 
 import socketio  # type: ignore[import-untyped]
@@ -15,7 +14,6 @@ from aiohttp import web
 from .base import BaseWorkspace, DocumentStatus, OfficeAction, OfficeObs
 from .socketio.config import SocketIOConfig, default_config
 from .socketio.namespaces.word import WordNamespace
-from .socketio.request_handler import emit_with_response
 from .socketio.services.connection_manager import connection_manager
 
 logger = logging.getLogger(__name__)
@@ -120,15 +118,15 @@ class OfficeWorkspace(BaseWorkspace):
             self._running = True
 
             logger.info("=" * 60)
-            logger.info(f"✅ Office Workspace started")
+            logger.info("✅ Office Workspace started")
             logger.info(f"HTTP:  http://{self.host}:{self.port}")
 
             # 启动 HTTPS 站点（如果启用）
             if self.use_https:
-                # 获取证书路径（相对于项目根目录）
-                from pathlib import Path
                 import ssl
+                from pathlib import Path
 
+                # 获取证书路径（相对于项目根目录）
                 project_root = Path(__file__).parent.parent.parent.parent
                 cert_path = project_root / "certs" / "cert.pem"
                 key_path = project_root / "certs" / "key.pem"
@@ -274,22 +272,25 @@ class OfficeWorkspace(BaseWorkspace):
         if not socket_id:
             raise ValueError(f"No socket found for document: {document_uri}")
 
+        # 获取客户端信息（包含命名空间）
+        client_info = connection_manager.get_client_info(socket_id)
+        if not client_info:
+            raise ValueError(f"Client not found: {socket_id}")
+
         if not self.sio_server:
             raise RuntimeError("Socket.IO server is not running")
 
-        # 生成 requestId 并添加到 data 中
-        request_id = str(uuid.uuid4())
-        data_with_id = {**data, "requestId": request_id}
+        logger.info(f"Calling {event} on {socket_id} for document {document_uri} (namespace={client_info.namespace})")
 
-        logger.info(f"Emitting event {event} to {socket_id} for document {document_uri}, requestId={request_id}")
-
-        # 使用请求-响应机制发送事件
+        # 使用 Socket.IO 的 .call() 方法（自动处理 callback）
         try:
-            response = await emit_with_response(sid=socket_id, event=event, data=data_with_id, timeout=10.0)
-            logger.info(f"Received response for requestId={request_id}")
+            response: dict[str, Any] = await self.sio_server.call(
+                event, data, to=socket_id, namespace=client_info.namespace, timeout=10.0
+            )
+            logger.info(f"Received response from {socket_id}")
             return response
         except TimeoutError:
-            logger.error(f"Timeout waiting for response to requestId={request_id}")
+            logger.error(f"Timeout waiting for response from {socket_id}")
             raise
         except Exception as e:
             logger.error(f"Error emitting event: {e}")

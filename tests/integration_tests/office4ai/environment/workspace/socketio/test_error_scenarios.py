@@ -24,7 +24,7 @@ async def test_invalid_handshake_missing_client_id() -> None:
     from aiohttp.test_utils import TestClient, TestServer
 
     async with TestServer(app) as test_server:
-        async with TestClient(test_server) as client:
+        async with TestClient(test_server) as _:
             # Try to connect without proper handshake
             # Note: This is a simplified test
             # In real scenario, handshake validation happens in on_connect

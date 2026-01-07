@@ -7,7 +7,6 @@ Handles Word-specific Socket.IO events.
 import logging
 from typing import Any
 
-from ..request_handler import emit_with_response, handle_response
 from .base import BaseNamespace
 
 logger = logging.getLogger(__name__)
@@ -17,104 +16,17 @@ class WordNamespace(BaseNamespace):
     """
     Word namespace (/word) for Word Add-In communication.
 
-    Handles events:
-    - word:get:selectedContent
-    - word:insert:text
-    - word:replace:selection
+    Handles client → server events:
+    - word:event:selectionChanged - Selection change notifications
+    - word:event:documentModified - Document modification notifications
 
-    MVP: Implements 3 core events
-    Future: Will implement all 13 Word events
+    Server → client commands should be sent via OfficeWorkspace.emit_to_document()
+    which uses sio_server.call() for direct RPC with automatic acknowledgement.
     """
 
     def __init__(self) -> None:
         super().__init__("/word")
         logger.info("WordNamespace initialized")
-
-    # ========================================================================
-    # Event Handlers (Server → Client commands)
-    # ========================================================================
-
-    async def on_word_get_selectedContent(self, sid: str, data: Any) -> None:
-        """
-        Handle request to get selected content from Word.
-
-        Event: word:get:selectedContent
-        Direction: Server → Client (command)
-        Response: word:get:selectedContent:response
-
-        Args:
-            sid: Session ID
-            data: {
-                requestId: str,
-                documentUri: str,
-                options?: GetContentOptions
-            }
-        """
-        logger.debug(f"word:get:selectedContent from {sid}: {data}")
-
-        # Forward request to Add-In using request-response mechanism
-        # The Add-In will execute the Word API call and send back response
-        try:
-            response = await emit_with_response(sid=sid, event="word:get:selectedContent", data=data, timeout=10.0)
-            logger.info(f"Got selected content response: {response}")
-        except Exception as e:
-            logger.error(f"Error getting selected content: {e}")
-
-    async def on_word_insert_text(self, sid: str, data: Any) -> None:
-        """
-        Handle request to insert text into Word.
-
-        Event: word:insert:text
-        Direction: Server → Client (command)
-        Response: word:insert:text:response
-
-        Args:
-            sid: Session ID
-            data: {
-                requestId: str,
-                documentUri: str,
-                text: str,
-                location?: "Cursor" | "Start" | "End",
-                format?: TextFormat
-            }
-        """
-        logger.debug(f"word:insert:text from {sid}: {data}")
-
-        # Forward request to Add-In using request-response mechanism
-        try:
-            response = await emit_with_response(sid=sid, event="word:insert:text", data=data, timeout=10.0)
-            logger.info(f"Insert text response: {response}")
-        except Exception as e:
-            logger.error(f"Error inserting text: {e}")
-
-    async def on_word_replace_selection(self, sid: str, data: Any) -> None:
-        """
-        Handle request to replace selected content in Word.
-
-        Event: word:replace:selection
-        Direction: Server → Client (command)
-        Response: word:replace:selection:response
-
-        Args:
-            sid: Session ID
-            data: {
-                requestId: str,
-                documentUri: str,
-                content: {
-                    text?: str,
-                    images?: ImageData[],
-                    format?: TextFormat
-                }
-            }
-        """
-        logger.debug(f"word:replace:selection from {sid}: {data}")
-
-        # Forward request to Add-In using request-response mechanism
-        try:
-            response = await emit_with_response(sid=sid, event="word:replace:selection", data=data, timeout=10.0)
-            logger.info(f"Replace selection response: {response}")
-        except Exception as e:
-            logger.error(f"Error replacing selection: {e}")
 
     # ========================================================================
     # Event Reporters (Client → Server events)
@@ -170,75 +82,6 @@ class WordNamespace(BaseNamespace):
             logger.info(
                 f"Word document modified: {client_info.client_id}, type: {data.get('data', {}).get('modificationType')}"
             )
-
-    # ========================================================================
-    # Response Handlers (Client → Server responses)
-    # ========================================================================
-
-    async def on_word_get_selectedContent_response(self, sid: str, data: Any) -> None:
-        """
-        Handle response from Add-In for get selected content request.
-
-        Event: word:get:selectedContent:response
-        Direction: Client → Server (response)
-
-        Args:
-            sid: Session ID
-            data: {
-                requestId: str,
-                success: boolean,
-                content?: {
-                    text: str,
-                    html?: string,
-                    images?: ImageData[]
-                },
-                error?: string
-            }
-        """
-        request_id = data.get("requestId")
-        if request_id:
-            logger.debug(f"Received response for requestId={request_id}")
-            handle_response(request_id, data)
-
-    async def on_word_insert_text_response(self, sid: str, data: Any) -> None:
-        """
-        Handle response from Add-In for insert text request.
-
-        Event: word:insert:text:response
-        Direction: Client → Server (response)
-
-        Args:
-            sid: Session ID
-            data: {
-                requestId: str,
-                success: boolean,
-                error?: string
-            }
-        """
-        request_id = data.get("requestId")
-        if request_id:
-            logger.debug(f"Received response for requestId={request_id}")
-            handle_response(request_id, data)
-
-    async def on_word_replace_selection_response(self, sid: str, data: Any) -> None:
-        """
-        Handle response from Add-In for replace selection request.
-
-        Event: word:replace:selection:response
-        Direction: Client → Server (response)
-
-        Args:
-            sid: Session ID
-            data: {
-                requestId: str,
-                success: boolean,
-                error?: string
-            }
-        """
-        request_id = data.get("requestId")
-        if request_id:
-            logger.debug(f"Received response for requestId={request_id}")
-            handle_response(request_id, data)
 
     # ========================================================================
     # Future Events (to be implemented)
