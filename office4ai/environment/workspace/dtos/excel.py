@@ -4,7 +4,7 @@ Excel Socket.IO DTOs
 Defines data structures for Excel-specific Socket.IO events.
 """
 
-from typing import Any, Literal, Optional
+from typing import Any, ClassVar, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,8 @@ class ExcelGetSelectedRangeRequest(BaseRequest):
     Request to get selected range from Excel worksheet.
     """
 
+    event_name: ClassVar[str] = "excel:get:selectedRange"
+
     pass
 
 
@@ -28,6 +30,8 @@ class ExcelGetUsedRangeRequest(BaseRequest):
     Request to get used range from Excel worksheet.
     """
 
+    event_name: ClassVar[str] = "excel:get:usedRange"
+
     worksheetName: str | None = Field(default=None, description="Worksheet name (default: active)")
 
 
@@ -35,6 +39,8 @@ class ExcelSetCellValueRequest(BaseRequest):
     """
     Request to set cell value in Excel worksheet.
     """
+
+    event_name: ClassVar[str] = "excel:set:cellValue"
 
     address: str = Field(..., description="Cell address (e.g., 'A1' or 'Sheet1!A1')")
     value: Any = Field(..., description="Cell value (string, number, boolean, etc.)")
@@ -45,6 +51,8 @@ class ExcelInsertTableRequest(BaseRequest):
     """
     Request to insert table into Excel worksheet.
     """
+
+    event_name: ClassVar[str] = "excel:insert:table"
 
     options: "ExcelTableInsertOptions" = Field(..., description="Table insertion options")
 
@@ -73,6 +81,8 @@ class ExcelGetRangeRequest(BaseRequest):
     Request to get a specific range from Excel worksheet.
     """
 
+    event_name: ClassVar[str] = "excel:get:range"
+
     address: str = Field(..., description="Range address (e.g., 'A1:C10')")
     worksheetName: str | None = Field(default=None, description="Worksheet name (default: active)")
 
@@ -81,6 +91,8 @@ class ExcelSetRangeRequest(BaseRequest):
     """
     Request to set values in a range.
     """
+
+    event_name: ClassVar[str] = "excel:set:range"
 
     address: str = Field(..., description="Range address (e.g., 'A1:C10')")
     values: list[list[Any]] = Field(..., description="2D array of values")
@@ -91,6 +103,8 @@ class ExcelInsertChartRequest(BaseRequest):
     """
     Request to insert chart into Excel worksheet.
     """
+
+    event_name: ClassVar[str] = "excel:insert:chart"
 
     chartType: Literal[
         "Column",

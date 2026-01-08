@@ -4,7 +4,7 @@ Word Socket.IO DTOs
 Defines data structures for Word-specific Socket.IO events.
 """
 
-from typing import Any, Literal, Optional
+from typing import Any, ClassVar, Literal, Optional
 
 from pydantic import Field
 
@@ -22,6 +22,8 @@ class WordGetSelectedContentRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:get:selectedContent"
+
     options: Optional["GetContentOptions"] = Field(
         default=None,
         alias="options",
@@ -36,6 +38,8 @@ class WordGetVisibleContentRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:get:visibleContent"
+
     options: Optional["GetContentOptions"] = Field(
         default=None,
         alias="options",
@@ -48,6 +52,8 @@ class WordGetDocumentStructureRequest(BaseRequest):
     Request to get Word document structure.
     """
 
+    event_name: ClassVar[str] = "word:get:documentStructure"
+
     pass
 
 
@@ -55,6 +61,8 @@ class WordGetDocumentStatsRequest(BaseRequest):
     """
     Request to get Word document statistics.
     """
+
+    event_name: ClassVar[str] = "word:get:documentStats"
 
     pass
 
@@ -110,6 +118,8 @@ class WordInsertTextRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:insert:text"
+
     text: str = Field(..., alias="text", description="Text to insert")
     location: Literal["Cursor", "Start", "End"] = Field(
         default="Cursor",
@@ -130,6 +140,8 @@ class WordReplaceSelectionRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:replace:selection"
+
     content: "ReplaceContent" = Field(
         ...,
         alias="content",
@@ -143,6 +155,8 @@ class WordReplaceTextRequest(BaseRequest):
 
     Uses Pydantic aliases for protocol compliance.
     """
+
+    event_name: ClassVar[str] = "word:replace:text"
 
     search_text: str = Field(
         ...,
@@ -167,6 +181,8 @@ class WordAppendTextRequest(BaseRequest):
 
     Uses Pydantic aliases for protocol compliance.
     """
+
+    event_name: ClassVar[str] = "word:append:text"
 
     text: str = Field(..., alias="text", description="Text to append")
     location: Literal["Start", "End"] = Field(
@@ -276,6 +292,8 @@ class WordInsertImageRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:insert:image"
+
     image: "ImageData" = Field(..., alias="image", description="Image data")
     location: Optional["InsertLocation"] = Field(
         default=None,
@@ -296,6 +314,8 @@ class WordInsertTableRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:insert:table"
+
     options: "TableInsertOptions" = Field(
         ...,
         alias="options",
@@ -309,6 +329,8 @@ class WordInsertEquationRequest(BaseRequest):
 
     Uses Pydantic aliases for protocol compliance.
     """
+
+    event_name: ClassVar[str] = "word:insert:equation"
 
     latex: str = Field(..., alias="latex", description="LaTeX equation string")
     options: Optional["EquationOptions"] = Field(
@@ -409,6 +431,8 @@ class WordInsertTOCRequest(BaseRequest):
     Uses Pydantic aliases for protocol compliance.
     """
 
+    event_name: ClassVar[str] = "word:insert:toc"
+
     options: Optional["TOCOptions"] = Field(
         default=None,
         alias="options",
@@ -422,6 +446,8 @@ class WordExportContentRequest(BaseRequest):
 
     Uses Pydantic aliases for protocol compliance.
     """
+
+    event_name: ClassVar[str] = "word:export:content"
 
     format: Literal["text", "html", "markdown"] = Field(
         ...,

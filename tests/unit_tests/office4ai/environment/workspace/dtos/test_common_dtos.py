@@ -22,8 +22,8 @@ class TestBaseRequest:
         """Test creating valid request"""
         request = BaseRequest(requestId="req_123", documentUri="file:///test.docx")
 
-        assert request.requestId == "req_123"
-        assert request.documentUri == "file:///test.docx"
+        assert request.request_id == "req_123"
+        assert request.document_uri == "file:///test.docx"
         assert isinstance(request.timestamp, int)
 
     def test_missing_request_id(self) -> None:
@@ -55,7 +55,7 @@ class TestBaseResponse:
         """Test creating success response"""
         response = BaseResponse(requestId="req_123", success=True, data={"text": "Hello"}, timestamp=1234567890000)
 
-        assert response.requestId == "req_123"
+        assert response.request_id == "req_123"
         assert response.success is True
         assert response.data == {"text": "Hello"}
         assert response.error is None

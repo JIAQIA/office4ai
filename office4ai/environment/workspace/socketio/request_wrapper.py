@@ -3,52 +3,16 @@ Socket.IO Request Wrapper
 
 Automatically wraps business parameters into BaseRequest-compatible DTOs
 with auto-generated request IDs and timestamps.
+
+This module now uses the auto-registration mechanism in BaseRequest:
+- DTOs are registered automatically via __init_subclass__
+- Global registry is managed by RequestRegistry singleton
+- No manual registry maintenance required
 """
 
-import uuid
 from typing import Any
 
-from pydantic import ValidationError
-
-from office4ai.environment.workspace.dtos import excel, ppt, word
-from office4ai.environment.workspace.dtos.common import BaseRequest
-
-# Event name → DTO class mapping
-REQUEST_DTO_REGISTRY: dict[str, type[BaseRequest]] = {
-    # Word events (13)
-    "word:get:selectedContent": word.WordGetSelectedContentRequest,
-    "word:get:visibleContent": word.WordGetVisibleContentRequest,
-    "word:get:documentStructure": word.WordGetDocumentStructureRequest,
-    "word:get:documentStats": word.WordGetDocumentStatsRequest,
-    "word:insert:text": word.WordInsertTextRequest,
-    "word:replace:selection": word.WordReplaceSelectionRequest,
-    "word:replace:text": word.WordReplaceTextRequest,
-    "word:append:text": word.WordAppendTextRequest,
-    "word:insert:image": word.WordInsertImageRequest,
-    "word:insert:table": word.WordInsertTableRequest,
-    "word:insert:equation": word.WordInsertEquationRequest,
-    "word:insert:toc": word.WordInsertTOCRequest,
-    "word:export:content": word.WordExportContentRequest,
-    # Excel events (10)
-    "excel:get:selectedRange": excel.ExcelGetSelectedRangeRequest,
-    "excel:get:usedRange": excel.ExcelGetUsedRangeRequest,
-    "excel:set:cellValue": excel.ExcelSetCellValueRequest,
-    "excel:insert:table": excel.ExcelInsertTableRequest,
-    "excel:get:range": excel.ExcelGetRangeRequest,
-    "excel:set:range": excel.ExcelSetRangeRequest,
-    "excel:insert:chart": excel.ExcelInsertChartRequest,
-    # PPT events (10)
-    "ppt:get:currentSlideElements": ppt.PptGetCurrentSlideElementsRequest,
-    "ppt:get:slideElements": ppt.PptGetSlideElementsRequest,
-    "ppt:get:slideScreenshot": ppt.PptGetSlideScreenshotRequest,
-    "ppt:insert:text": ppt.PptInsertTextRequest,
-    "ppt:insert:image": ppt.PptInsertImageRequest,
-    "ppt:insert:table": ppt.PptInsertTableRequest,
-    "ppt:insert:shape": ppt.PptInsertShapeRequest,
-    "ppt:delete:slide": ppt.PptDeleteSlideRequest,
-    "ppt:move:slide": ppt.PptMoveSlideRequest,
-    "ppt:update:textBox": ppt.PptUpdateTextBoxRequest,
-}
+from office4ai.environment.workspace.dtos.common import request_registry
 
 
 class RequestWrapperError(Exception):
@@ -66,12 +30,13 @@ def wrap_request(
     Wrap business parameters into a BaseRequest-compatible DTO.
 
     This function:
-    1. Looks up the appropriate DTO class for the event
+    1. Looks up the appropriate DTO class using the global request_registry
     2. Auto-generates a unique requestId (UUID4)
     3. Extracts document_uri from business_params if not provided
-    4. Merges business params with BaseRequest fields
-    5. Validates using Pydantic
-    6. Returns camelCase JSON for Socket.IO transmission
+    4. Validates using Pydantic
+    5. Returns camelCase JSON for Socket.IO transmission
+
+    Note: This is now a thin wrapper around BaseRequest.from_event().to_payload().
 
     Args:
         event: Event name (e.g., "word:get:selectedContent")
@@ -95,45 +60,48 @@ def wrap_request(
             "options": {"includeText": True}
         }
     """
-    # Step 1: Look up DTO class
-    dto_class = REQUEST_DTO_REGISTRY.get(event)
-    if not dto_class:
-        raise RequestWrapperError(f"Unknown event '{event}'. Not registered in REQUEST_DTO_REGISTRY.")
+    from office4ai.environment.workspace.dtos.common import BaseRequest
 
-    # Step 2: Extract document_uri
+    # Extract document_uri
     if not document_uri:
         document_uri = business_params.get("document_uri")
         if not document_uri:
             raise RequestWrapperError("document_uri must be provided either as argument or in business_params")
 
-    # Step 3: Generate unique request ID
-    request_id = str(uuid.uuid4())
+    # Remove document_uri from business_params to avoid duplicate argument
+    business_params_copy = {**business_params}
+    business_params_copy.pop("document_uri", None)
 
-    # Step 4: Prepare complete parameters
-    complete_params = {
-        "request_id": request_id,  # snake_case for internal Python
-        "document_uri": document_uri,
-        **business_params,  # Business parameters (may include document_uri again, that's fine)
-    }
-
-    # Step 5: Validate using Pydantic DTO
+    # Use BaseRequest.from_event() to create the request
     try:
-        # Create DTO instance (validates all fields)
-        dto_instance = dto_class(**complete_params)
-    except ValidationError as e:
-        raise RequestWrapperError(f"Failed to validate request for event '{event}': {e}") from e
+        request = BaseRequest.from_event(event, document_uri, **business_params_copy)
+        return request.to_payload()
+    except RequestWrapperError:
+        # Re-raise RequestWrapperError as-is
+        raise
     except Exception as e:
-        raise RequestWrapperError(f"Unexpected error creating DTO for event '{event}': {e}") from e
-
-    # Step 6: Convert to camelCase JSON (Pydantic handles alias conversion)
-    return dto_instance.model_dump(by_alias=True, exclude_none=True)
+        # Wrap other exceptions
+        raise RequestWrapperError(f"Failed to wrap request for event '{event}': {e}") from e
 
 
 def is_wrappable_event(event: str) -> bool:
-    """Check if an event has a registered DTO wrapper"""
-    return event in REQUEST_DTO_REGISTRY
+    """
+    Check if an event has a registered DTO wrapper.
+
+    Args:
+        event: Event name
+
+    Returns:
+        True if event is registered, False otherwise
+    """
+    return request_registry.contains(event)
 
 
 def get_registered_events() -> list[str]:
-    """Get list of all registered event names"""
-    return sorted(REQUEST_DTO_REGISTRY.keys())
+    """
+    Get list of all registered event names.
+
+    Returns:
+        Sorted list of event names
+    """
+    return request_registry.all_events()

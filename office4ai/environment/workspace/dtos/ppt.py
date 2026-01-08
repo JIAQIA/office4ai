@@ -4,7 +4,7 @@ PowerPoint Socket.IO DTOs
 Defines data structures for PowerPoint-specific Socket.IO events.
 """
 
-from typing import Literal, Optional
+from typing import ClassVar, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,8 @@ class PptGetCurrentSlideElementsRequest(BaseRequest):
     Request to get current slide elements.
     """
 
+    event_name: ClassVar[str] = "ppt:get:currentSlideElements"
+
     pass
 
 
@@ -27,6 +29,8 @@ class PptGetSlideElementsRequest(BaseRequest):
     """
     Request to get elements from a specific slide.
     """
+
+    event_name: ClassVar[str] = "ppt:get:slideElements"
 
     slideIndex: int = Field(..., description="Slide index (0-based)", ge=0)
     options: Optional["SlideElementsOptions"] = Field(default=None, description="Elements retrieval options")
@@ -36,6 +40,8 @@ class PptGetSlideScreenshotRequest(BaseRequest):
     """
     Request to get slide screenshot.
     """
+
+    event_name: ClassVar[str] = "ppt:get:slideScreenshot"
 
     slideIndex: int = Field(..., description="Slide index (0-based)", ge=0)
     options: Optional["ScreenshotOptions"] = Field(default=None, description="Screenshot options")
@@ -72,6 +78,8 @@ class PptInsertTextRequest(BaseRequest):
     Request to insert text into PowerPoint slide.
     """
 
+    event_name: ClassVar[str] = "ppt:insert:text"
+
     text: str = Field(..., description="Text to insert")
     options: Optional["TextInsertOptions"] = Field(default=None, description="Insertion options")
 
@@ -80,6 +88,8 @@ class PptInsertImageRequest(BaseRequest):
     """
     Request to insert image into PowerPoint slide.
     """
+
+    event_name: ClassVar[str] = "ppt:insert:image"
 
     image: "SlideImageData" = Field(..., description="Image data")
     options: Optional["ElementInsertOptions"] = Field(default=None, description="Insertion options")
@@ -90,6 +100,8 @@ class PptInsertTableRequest(BaseRequest):
     Request to insert table into PowerPoint slide.
     """
 
+    event_name: ClassVar[str] = "ppt:insert:table"
+
     options: "SlideTableInsertOptions" = Field(..., description="Table insertion options")
 
 
@@ -97,6 +109,8 @@ class PptInsertShapeRequest(BaseRequest):
     """
     Request to insert shape into PowerPoint slide.
     """
+
+    event_name: ClassVar[str] = "ppt:insert:shape"
 
     shapeType: Literal[
         "Rectangle",
@@ -187,6 +201,8 @@ class PptDeleteSlideRequest(BaseRequest):
     Request to delete a slide.
     """
 
+    event_name: ClassVar[str] = "ppt:delete:slide"
+
     slideIndex: int = Field(..., description="Slide index (0-based)", ge=0)
 
 
@@ -194,6 +210,8 @@ class PptMoveSlideRequest(BaseRequest):
     """
     Request to move a slide to a new position.
     """
+
+    event_name: ClassVar[str] = "ppt:move:slide"
 
     fromIndex: int = Field(..., description="Current slide index (0-based)", ge=0)
     toIndex: int = Field(..., description="Target slide index (0-based)", ge=0)
@@ -208,6 +226,8 @@ class PptUpdateTextBoxRequest(BaseRequest):
     """
     Request to update a text box in PowerPoint slide.
     """
+
+    event_name: ClassVar[str] = "ppt:update:textBox"
 
     elementId: str = Field(..., description="Element ID to update")
     updates: "TextBoxUpdates" = Field(..., description="Updates to apply")
