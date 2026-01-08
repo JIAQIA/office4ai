@@ -17,9 +17,85 @@ from office4ai.environment.workspace.dtos.common import (
     ErrorResponse,
 )
 
+# Word DTOs
+from office4ai.environment.workspace.dtos.word import (
+    WordGetSelectedContentRequest,
+    WordGetVisibleContentRequest,
+    WordGetDocumentStructureRequest,
+    WordGetDocumentStatsRequest,
+    WordInsertTextRequest,
+    WordReplaceSelectionRequest,
+    WordReplaceTextRequest,
+    WordAppendTextRequest,
+    WordInsertImageRequest,
+    WordInsertTableRequest,
+    WordInsertEquationRequest,
+    WordInsertTOCRequest,
+    WordExportContentRequest,
+)
+
+# Excel DTOs
+from office4ai.environment.workspace.dtos.excel import (
+    ExcelGetSelectedRangeRequest,
+    ExcelGetUsedRangeRequest,
+    ExcelSetCellValueRequest,
+    ExcelInsertTableRequest,
+    ExcelGetRangeRequest,
+    ExcelSetRangeRequest,
+    ExcelInsertChartRequest,
+)
+
+# PPT DTOs
+from office4ai.environment.workspace.dtos.ppt import (
+    PptGetCurrentSlideElementsRequest,
+    PptGetSlideElementsRequest,
+    PptGetSlideScreenshotRequest,
+    PptInsertTextRequest,
+    PptInsertImageRequest,
+    PptInsertTableRequest,
+    PptInsertShapeRequest,
+    PptDeleteSlideRequest,
+    PptMoveSlideRequest,
+    PptUpdateTextBoxRequest,
+)
+
 __all__ = [
+    # Common
     "BaseRequest",
     "BaseResponse",
     "ErrorResponse",
     "ErrorCode",
+    # Word
+    "WordGetSelectedContentRequest",
+    "WordGetVisibleContentRequest",
+    "WordGetDocumentStructureRequest",
+    "WordGetDocumentStatsRequest",
+    "WordInsertTextRequest",
+    "WordReplaceSelectionRequest",
+    "WordReplaceTextRequest",
+    "WordAppendTextRequest",
+    "WordInsertImageRequest",
+    "WordInsertTableRequest",
+    "WordInsertEquationRequest",
+    "WordInsertTOCRequest",
+    "WordExportContentRequest",
+    # Excel
+    "ExcelGetSelectedRangeRequest",
+    "ExcelGetUsedRangeRequest",
+    "ExcelSetCellValueRequest",
+    "ExcelInsertTableRequest",
+    "ExcelGetRangeRequest",
+    "ExcelSetRangeRequest",
+    "ExcelInsertChartRequest",
+    # PPT
+    "PptGetCurrentSlideElementsRequest",
+    "PptGetSlideElementsRequest",
+    "PptGetSlideScreenshotRequest",
+    "PptInsertTextRequest",
+    "PptInsertImageRequest",
+    "PptInsertTableRequest",
+    "PptInsertShapeRequest",
+    "PptDeleteSlideRequest",
+    "PptMoveSlideRequest",
+    "PptUpdateTextBoxRequest",
 ]

@@ -154,8 +154,6 @@ async def start_server(
     try:
         # In production, this would be part of the Workspace lifecycle
         # For now, just keep the task alive
-        import asyncio
-
         while True:
             await asyncio.sleep(3600)  # Sleep 1 hour
 
@@ -211,7 +209,6 @@ def create_app(config: SocketIOConfig = default_config) -> web.Application:
 if __name__ == "__main__":
     # Run server directly (for testing)
     import argparse
-    import asyncio
 
     parser = argparse.ArgumentParser(description="Office Workspace Socket.IO Server")
     parser.add_argument(

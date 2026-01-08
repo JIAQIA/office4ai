@@ -121,21 +121,31 @@ async def test_word_e2e():
         print(f"   返回数据: {result.data}")
 
         # 检查返回的内容
-        if "content" in result.data:
-            content = result.data["content"]
-            if isinstance(content, dict):
-                text = content.get("text", "")
-                print("\n   📝 选中文本内容:")
-                print(f"   '{text}'")
+        # result.data 直接包含 ContentInfo 对象: {text, elements, metadata}
+        if isinstance(result.data, dict):
+            text = result.data.get("text", "")
+            elements = result.data.get("elements", [])
+            metadata = result.data.get("metadata", {})
 
-                if text:
-                    print(f"\n   ✅ 成功获取选中文本 (长度: {len(text)})")
-                else:
-                    print("\n   ⚠️  选中文本为空 (可能未选中内容)")
+            print("\n   📝 选中文本内容:")
+            print(f"   '{text}'")
+
+            print(f"\n   📊 元素数量: {len(elements)}")
+            if elements:
+                print(f"   第一个元素类型: {elements[0].get('type')}")
+
+            print(f"\n   📈 统计信息:")
+            print(f"   - 字符数: {metadata.get('characterCount', 0)}")
+            print(f"   - 段落数: {metadata.get('paragraphCount', 0)}")
+            print(f"   - 表格数: {metadata.get('tableCount', 0)}")
+            print(f"   - 图片数: {metadata.get('imageCount', 0)}")
+
+            if text:
+                print(f"\n   ✅ 成功获取选中文本 (长度: {len(text)})")
             else:
-                print(f"\n   ⚠️  内容格式异常: {type(content)}")
+                print("\n   ⚠️  选中文本为空 (可能未选中内容)")
         else:
-            print("\n   ⚠️  返回数据中未找到 'content' 字段")
+            print(f"\n   ⚠️  返回数据格式异常: {type(result.data)}")
 
         print("\n" + "=" * 70)
         print("✅ 端到端测试完成")

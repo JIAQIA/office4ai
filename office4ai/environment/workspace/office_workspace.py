@@ -282,10 +282,31 @@ class OfficeWorkspace(BaseWorkspace):
 
         logger.info(f"Calling {event} on {socket_id} for document {document_uri} (namespace={client_info.namespace})")
 
+        # Auto-wrap business parameters into BaseRequest format
+        from office4ai.environment.workspace.socketio.request_wrapper import (
+            wrap_request,
+            RequestWrapperError,
+        )
+
+        try:
+            wrapped_data = wrap_request(
+                event=event,
+                business_params=data,
+                document_uri=document_uri,
+            )
+            logger.debug(
+                f"Wrapped request for {event}: "
+                f"requestId={wrapped_data.get('requestId')}, "
+                f"documentUri={wrapped_data.get('documentUri')}"
+            )
+        except RequestWrapperError as e:
+            logger.error(f"Failed to wrap request for {event}: {e}")
+            raise ValueError(f"Request wrapping failed: {e}") from e
+
         # 使用 Socket.IO 的 .call() 方法（自动处理 callback）
         try:
             response: dict[str, Any] = await self.sio_server.call(
-                event, data, to=socket_id, namespace=client_info.namespace, timeout=10.0
+                event, wrapped_data, to=socket_id, namespace=client_info.namespace, timeout=10.0
             )
             logger.info(f"Received response from {socket_id}")
             return response
