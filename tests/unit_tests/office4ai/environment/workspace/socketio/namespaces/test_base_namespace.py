@@ -34,7 +34,8 @@ class TestBaseNamespace:
         base_namespace.emit = AsyncMock()  # type: ignore[method-assign]
         base_namespace.disconnect = AsyncMock()  # type: ignore[method-assign]
 
-        await base_namespace.on_connect(sid, valid_handshake_data)
+        # on_connect signature: (sid, environ, auth)
+        await base_namespace.on_connect(sid, {}, valid_handshake_data)
 
         # Verify client registered
         assert connection_manager.get_client_info(sid) is not None
@@ -85,7 +86,8 @@ class TestBaseNamespace:
 
         # First connect
         base_namespace.emit = AsyncMock()  # type: ignore[method-assign]
-        await base_namespace.on_connect(sid, valid_handshake_data)
+        # on_connect signature: (sid, environ, auth)
+        await base_namespace.on_connect(sid, {}, valid_handshake_data)
 
         # Verify connected
         assert connection_manager.get_client_info(sid) is not None
