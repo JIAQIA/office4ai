@@ -4,6 +4,7 @@ Test WordNamespace functionality
 测试 WordNamespace 的所有核心功能。
 """
 
+import logging
 from typing import Any
 from unittest.mock import AsyncMock
 
@@ -33,23 +34,25 @@ class TestWordNamespace:
         connection_manager.unregister_client(sid)
 
     @pytest.mark.asyncio
-    async def test_on_word_get_selected_content(self, word_namespace: WordNamespace, connected_session: Any) -> None:
-        """Test get selected content event handler"""
+    async def test_on_word_get_selected_content(self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture) -> None:
+        """Test get selected content event handler (logging only)"""
         data = {
             "requestId": "req_123",
             "documentUri": "file:///test.docx",
             "options": {"includeText": True},
         }
 
-        # Mock emit to avoid actual socket emission
-        word_namespace.emit = AsyncMock()  # type: ignore[method-assign]
+        # Should log the request but not raise errors
+        with caplog.at_level(logging.INFO):
+            await word_namespace.on_word_get_selectedContent(connected_session, data)
 
-        # Should not raise errors (just logs for now)
-        await word_namespace.on_word_get_selectedContent(connected_session, data)
+        # Verify logging occurred
+        assert any("Received word:get:selectedContent from client1" in record.message for record in caplog.records)
+        assert any("requestId: req_123" in record.message for record in caplog.records)
 
     @pytest.mark.asyncio
-    async def test_on_word_insert_text(self, word_namespace: WordNamespace, connected_session: Any) -> None:
-        """Test insert text event handler"""
+    async def test_on_word_insert_text(self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture) -> None:
+        """Test insert text event handler (logging only)"""
         data = {
             "requestId": "req_123",
             "documentUri": "file:///test.docx",
@@ -57,22 +60,31 @@ class TestWordNamespace:
             "location": "Cursor",
         }
 
-        word_namespace.emit = AsyncMock()  # type: ignore[method-assign]
+        # Should log the request but not raise errors
+        with caplog.at_level(logging.INFO):
+            await word_namespace.on_word_insert_text(connected_session, data)
 
-        await word_namespace.on_word_insert_text(connected_session, data)
+        # Verify logging occurred
+        assert any("Received word:insert:text from client1" in record.message for record in caplog.records)
+        assert any("requestId: req_123" in record.message for record in caplog.records)
+        assert any("text length: 11" in record.message for record in caplog.records)
 
     @pytest.mark.asyncio
-    async def test_on_word_replace_selection(self, word_namespace: WordNamespace, connected_session: Any) -> None:
-        """Test replace selection event handler"""
+    async def test_on_word_replace_selection(self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture) -> None:
+        """Test replace selection event handler (logging only)"""
         data = {
             "requestId": "req_123",
             "documentUri": "file:///test.docx",
             "content": {"text": "New content"},
         }
 
-        word_namespace.emit = AsyncMock()  # type: ignore[method-assign]
+        # Should log the request but not raise errors
+        with caplog.at_level(logging.INFO):
+            await word_namespace.on_word_replace_selection(connected_session, data)
 
-        await word_namespace.on_word_replace_selection(connected_session, data)
+        # Verify logging occurred
+        assert any("Received word:replace:selection from client1" in record.message for record in caplog.records)
+        assert any("requestId: req_123" in record.message for record in caplog.records)
 
     @pytest.mark.asyncio
     async def test_on_word_event_selection_changed(self, word_namespace: WordNamespace, connected_session: Any) -> None:

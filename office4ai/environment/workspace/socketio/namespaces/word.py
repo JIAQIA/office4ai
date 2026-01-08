@@ -84,6 +84,65 @@ class WordNamespace(BaseNamespace):
             )
 
     # ========================================================================
+    # Request Handlers (Log Only - commands sent via OfficeWorkspace.emit_to_document())
+    # ========================================================================
+
+    async def on_word_get_selectedContent(self, sid: str, data: Any) -> None:
+        """
+        Handle word:get:selectedContent event from Add-In.
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri, options
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            logger.info(
+                f"Received word:get:selectedContent from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}"
+            )
+
+    async def on_word_insert_text(self, sid: str, data: Any) -> None:
+        """
+        Handle word:insert:text event from Add-In.
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri, text, location
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            logger.info(
+                f"Received word:insert:text from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}, "
+                f"text length: {len(data.get('text', ''))}"
+            )
+
+    async def on_word_replace_selection(self, sid: str, data: Any) -> None:
+        """
+        Handle word:replace:selection event from Add-In.
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri, content
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            logger.info(
+                f"Received word:replace:selection from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}"
+            )
+
+    # ========================================================================
     # Future Events (to be implemented)
     # ========================================================================
 
