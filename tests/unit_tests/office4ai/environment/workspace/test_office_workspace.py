@@ -4,11 +4,11 @@ Test OfficeWorkspace functionality
 测试 OfficeWorkspace 的核心功能。
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from office4ai.environment.workspace.base import DocumentStatus, OfficeAction, OfficeObs
+from office4ai.environment.workspace.base import DocumentStatus, OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 from office4ai.environment.workspace.socketio.services.connection_manager import (
     connection_manager,
@@ -74,9 +74,16 @@ class TestOfficeWorkspace:
     @pytest.mark.asyncio
     async def test_execute_success(self, office_workspace: OfficeWorkspace, connected_session: None) -> None:
         """Test successful execute() call"""
-        # Mock sio_server.call()
+        # Mock sio_server.call() to return proper response format
         office_workspace.sio_server = MagicMock()
-        office_workspace.sio_server.call = AsyncMock(return_value={"text": "Selected content"})
+        office_workspace.sio_server.call = AsyncMock(
+            return_value={
+                "requestId": "test_req_001",
+                "success": True,
+                "data": {"text": "Selected content"},  # Business data wrapped in "data" field
+                "timestamp": 1234567890000,
+            }
+        )
 
         action = OfficeAction(
             category="word",
@@ -90,7 +97,7 @@ class TestOfficeWorkspace:
         result = await office_workspace.execute(action)
 
         assert result.success is True
-        assert result.data == {"text": "Selected content"}
+        assert result.data == {"text": "Selected content"}  # Extracted business data
         assert result.error is None
 
         # Verify sio_server.call was invoked with wrapped request
@@ -159,7 +166,9 @@ class TestOfficeWorkspace:
     # ========================================================================
 
     @pytest.mark.asyncio
-    async def test_request_wrapping_in_execute(self, office_workspace: OfficeWorkspace, connected_session: None) -> None:
+    async def test_request_wrapping_in_execute(
+        self, office_workspace: OfficeWorkspace, connected_session: None
+    ) -> None:
         """Test that business params are wrapped into BaseRequest format"""
         office_workspace.sio_server = MagicMock()
         office_workspace.sio_server.call = AsyncMock(return_value={})
@@ -227,7 +236,9 @@ class TestOfficeWorkspace:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_wait_for_addin_connection_success(self, office_workspace: OfficeWorkspace, connected_session: None) -> None:
+    async def test_wait_for_addin_connection_success(
+        self, office_workspace: OfficeWorkspace, connected_session: None
+    ) -> None:
         """Test wait_for_addin_connection() returns True when already connected"""
         result = await office_workspace.wait_for_addin_connection(timeout=0.5)
         assert result is True

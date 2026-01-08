@@ -7,10 +7,10 @@ Test Request Wrapper
 import pytest
 
 from office4ai.environment.workspace.socketio.request_wrapper import (
-    wrap_request,
-    is_wrappable_event,
-    get_registered_events,
     RequestWrapperError,
+    get_registered_events,
+    is_wrappable_event,
+    wrap_request,
 )
 
 

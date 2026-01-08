@@ -1,0 +1,225 @@
+"""
+Word Data Factory
+
+生成 Word 事件测试数据的工厂类。
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+class WordDataFactory:
+    """
+    Word 事件测试数据工厂。
+
+    生成符合 Word Socket.IO 协议的测试数据。
+
+    Examples:
+        ```python
+        factory = WordDataFactory()
+
+        # 生成选中内容响应
+        response = factory.selected_content_response(text="Hello World")
+
+        # 生成插入文本响应
+        response = factory.insert_text_response(success=True)
+        ```
+    """
+
+    def selected_content_response(
+        self,
+        text: str | None = None,
+        include_elements: bool = True,
+        include_images: bool = False,
+        include_tables: bool = False,
+        character_count: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        生成 word:get:selectedContent 响应数据。
+
+        Args:
+            text: 选中的文本内容（默认使用测试文本）
+            include_elements: 是否包含元素列表
+            include_images: 是否包含图片
+            include_tables: 是否包含表格
+            character_count: 字符数（默认使用 text 的长度）
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 简单响应
+            response = factory.selected_content_response(text="Hello World")
+
+            # 完整响应（包含元素、图片、表格）
+            response = factory.selected_content_response(
+                text="Complete content",
+                include_elements=True,
+                include_images=True,
+                include_tables=True
+            )
+            ```
+        """
+        if text is None:
+            text = "Test selected content"
+
+        if character_count is None:
+            character_count = len(text)
+
+        response: dict[str, Any] = {
+            "text": text,
+            "metadata": {
+                "characterCount": character_count,
+                "paragraphCount": 1,
+                "tableCount": 1 if include_tables else 0,
+                "imageCount": 1 if include_images else 0,
+            },
+        }
+
+        # 添加元素列表
+        if include_elements:
+            elements: list[dict[str, Any]] = [
+                {
+                    "type": "paragraph",
+                    "content": text,
+                    "alignment": "left",
+                    "style": "Normal",
+                }
+            ]
+
+            # 添加图片元素
+            if include_images:
+                elements.append(
+                    {
+                        "type": "image",
+                        "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                        "width": 100,
+                        "height": 100,
+                    }
+                )
+
+            # 添加表格元素
+            if include_tables:
+                elements.append(
+                    {
+                        "type": "table",
+                        "rows": 2,
+                        "columns": 2,
+                        "data": [["Cell 1", "Cell 2"], ["Cell 3", "Cell 4"]],
+                    }
+                )
+
+            response["elements"] = elements
+        else:
+            response["elements"] = []
+
+        return response
+
+    def selected_content_request(
+        self,
+        request_id: str = "test_req_001",
+        document_uri: str = "file:///tmp/test.docx",
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        生成 word:get:selectedContent 请求数据。
+
+        Args:
+            request_id: 请求 ID
+            document_uri: 文档 URI
+            options: 内容获取选项
+
+        Returns:
+            符合协议的请求数据
+        """
+        if options is None:
+            options = {"includeText": True, "includeImages": False, "includeTables": False}
+
+        return {
+            "requestId": request_id,
+            "documentUri": document_uri,
+            "options": options,
+        }
+
+    def insert_text_response(
+        self,
+        success: bool = True,
+        inserted_length: int | None = None,
+        position: dict[str, int] | None = None,
+    ) -> dict[str, Any]:
+        """
+        生成 word:insert:text 响应数据。
+
+        Args:
+            success: 是否成功
+            inserted_length: 插入的文本长度
+            position: 插入位置 {start, end}
+
+        Returns:
+            符合协议的响应数据
+        """
+        if not success:
+            return {}
+
+        if inserted_length is None:
+            inserted_length = 11
+
+        if position is None:
+            position = {"start": 0, "end": 11}
+
+        return {
+            "insertedLength": inserted_length,
+            "position": position,
+        }
+
+    def replace_selection_response(
+        self,
+        success: bool = True,
+        replaced_length: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        生成 word:replace:selection 响应数据。
+
+        Args:
+            success: 是否成功
+            replaced_length: 替换的文本长度
+
+        Returns:
+            符合协议的响应数据
+        """
+        if not success:
+            return {}
+
+        if replaced_length is None:
+            replaced_length = 11
+
+        return {
+            "replacedLength": replaced_length,
+        }
+
+    def error_response(
+        self,
+        code: str = "3002",
+        message: str = "Selection is empty",
+    ) -> dict[str, Any]:
+        """
+        生成错误响应数据。
+
+        Args:
+            code: 错误代码
+            message: 错误消息
+
+        Returns:
+            符合协议的错误响应数据
+        """
+        return {
+            "success": False,
+            "error": {
+                "code": code,
+                "message": message,
+            },
+        }

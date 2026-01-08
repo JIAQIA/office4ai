@@ -100,6 +100,7 @@ addopts = [
 markers = [
     "flaky: mark test as flaky (may need multiple retries)",
     "integration: mark test as integration test",
+    "contract: mark test as contract test",
 ]
 # Coverage options removed from default to allow debugging
 # Use: pytest --cov=office4ai --cov-report=term-missing --cov-report=html
@@ -149,11 +150,13 @@ format-check = "ruff format --check office4ai tests"
 typecheck = "mypy office4ai"
 
 # Testing tasks
-test = "pytest tests/unit_tests tests/integration_tests"
+test = "pytest tests/unit_tests tests/integration_tests tests/contract_tests"
 test-unit = "pytest tests/unit_tests"
 test-integration = "pytest tests/integration_tests -m integration"
-test-cov = "pytest tests/unit_tests tests/integration_tests --cov=office4ai --cov-report=html --cov-report=term-missing"
-test-verbose = "pytest tests/unit_tests tests/integration_tests -vv"
+test-contract = "pytest tests/contract_tests -m contract"
+test-cov = "pytest tests/unit_tests tests/integration_tests tests/contract_tests --cov=office4ai --cov-report=html --cov-report=term-missing"
+test-verbose = "pytest tests/unit_tests tests/integration_tests tests/contract_tests -vv"
+test-ci = "pytest tests/unit_tests tests/integration_tests tests/contract_tests --tb=short"
 test-format = ["test", "format"]
 
 # Combined quality checks
@@ -203,4 +206,7 @@ dev = [
     "types-regex>=2025.10.23.20251023",
     "pyfakefs>=5.10.0",
     "types-pexpect>=4.9.0.20250916",
+    # 测试数据生成 / Test data generation
+    "mimesis>=18.0.0",
+    "polyfactory>=2.0.0",
 ]

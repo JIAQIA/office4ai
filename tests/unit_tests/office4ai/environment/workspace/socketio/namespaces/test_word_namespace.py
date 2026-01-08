@@ -6,7 +6,6 @@ Test WordNamespace functionality
 
 import logging
 from typing import Any
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -34,7 +33,9 @@ class TestWordNamespace:
         connection_manager.unregister_client(sid)
 
     @pytest.mark.asyncio
-    async def test_on_word_get_selected_content(self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture) -> None:
+    async def test_on_word_get_selected_content(
+        self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Test get selected content event handler (logging only)"""
         data = {
             "requestId": "req_123",
@@ -51,7 +52,9 @@ class TestWordNamespace:
         assert any("requestId: req_123" in record.message for record in caplog.records)
 
     @pytest.mark.asyncio
-    async def test_on_word_insert_text(self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture) -> None:
+    async def test_on_word_insert_text(
+        self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Test insert text event handler (logging only)"""
         data = {
             "requestId": "req_123",
@@ -70,7 +73,9 @@ class TestWordNamespace:
         assert any("text length: 11" in record.message for record in caplog.records)
 
     @pytest.mark.asyncio
-    async def test_on_word_replace_selection(self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture) -> None:
+    async def test_on_word_replace_selection(
+        self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Test replace selection event handler (logging only)"""
         data = {
             "requestId": "req_123",

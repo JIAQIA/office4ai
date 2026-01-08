@@ -58,7 +58,7 @@ class RequestRegistry(metaclass=Singleton):
 
     def __init__(self) -> None:
         """Initialize the registry (called once by singleton metaclass)"""
-        self._registry: dict[str, type["BaseRequest"]] = {}
+        self._registry: dict[str, type[BaseRequest]] = {}
 
     def register(self, event: str, cls: type["BaseRequest"]) -> None:
         """
@@ -244,6 +244,7 @@ class BaseRequest(SocketIOBaseModel):
         if not dto_class:
             # Import here to avoid circular dependency
             from office4ai.environment.workspace.socketio.request_wrapper import RequestWrapperError
+
             raise RequestWrapperError(f"Unknown event '{event}'. Not registered in request_registry.")
         return dto_class.build(document_uri=document_uri, **business_params)
 

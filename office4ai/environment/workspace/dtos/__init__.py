@@ -17,46 +17,46 @@ from office4ai.environment.workspace.dtos.common import (
     ErrorResponse,
 )
 
-# Word DTOs
-from office4ai.environment.workspace.dtos.word import (
-    WordGetSelectedContentRequest,
-    WordGetVisibleContentRequest,
-    WordGetDocumentStructureRequest,
-    WordGetDocumentStatsRequest,
-    WordInsertTextRequest,
-    WordReplaceSelectionRequest,
-    WordReplaceTextRequest,
-    WordAppendTextRequest,
-    WordInsertImageRequest,
-    WordInsertTableRequest,
-    WordInsertEquationRequest,
-    WordInsertTOCRequest,
-    WordExportContentRequest,
-)
-
 # Excel DTOs
 from office4ai.environment.workspace.dtos.excel import (
+    ExcelGetRangeRequest,
     ExcelGetSelectedRangeRequest,
     ExcelGetUsedRangeRequest,
-    ExcelSetCellValueRequest,
-    ExcelInsertTableRequest,
-    ExcelGetRangeRequest,
-    ExcelSetRangeRequest,
     ExcelInsertChartRequest,
+    ExcelInsertTableRequest,
+    ExcelSetCellValueRequest,
+    ExcelSetRangeRequest,
 )
 
 # PPT DTOs
 from office4ai.environment.workspace.dtos.ppt import (
+    PptDeleteSlideRequest,
     PptGetCurrentSlideElementsRequest,
     PptGetSlideElementsRequest,
     PptGetSlideScreenshotRequest,
-    PptInsertTextRequest,
     PptInsertImageRequest,
-    PptInsertTableRequest,
     PptInsertShapeRequest,
-    PptDeleteSlideRequest,
+    PptInsertTableRequest,
+    PptInsertTextRequest,
     PptMoveSlideRequest,
     PptUpdateTextBoxRequest,
+)
+
+# Word DTOs
+from office4ai.environment.workspace.dtos.word import (
+    WordAppendTextRequest,
+    WordExportContentRequest,
+    WordGetDocumentStatsRequest,
+    WordGetDocumentStructureRequest,
+    WordGetSelectedContentRequest,
+    WordGetVisibleContentRequest,
+    WordInsertEquationRequest,
+    WordInsertImageRequest,
+    WordInsertTableRequest,
+    WordInsertTextRequest,
+    WordInsertTOCRequest,
+    WordReplaceSelectionRequest,
+    WordReplaceTextRequest,
 )
 
 __all__ = [

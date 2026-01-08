@@ -231,8 +231,19 @@ class OfficeWorkspace(BaseWorkspace):
 
         # 发送 Socket.IO 事件
         try:
-            result = await self.emit_to_document(document_uri, event, action.params)
-            return OfficeObs(success=True, data=result)
+            response = await self.emit_to_document(document_uri, event, action.params)
+
+            # 从响应中提取业务数据（response["data"]）
+            # 响应格式: {requestId, success, data, timestamp, duration}
+            if response.get("success") and "data" in response:
+                # 成功：提取业务数据
+                business_data = response["data"]
+                return OfficeObs(success=True, data=business_data)
+            else:
+                # 失败：返回错误信息
+                error_msg = response.get("error", "Unknown error")
+                logger.error(f"Action failed: {error_msg}")
+                return OfficeObs(success=False, data={}, error=error_msg)
         except Exception as e:
             logger.error(f"Error executing action: {e}")
             return OfficeObs(success=False, data={}, error=str(e))
@@ -284,8 +295,8 @@ class OfficeWorkspace(BaseWorkspace):
 
         # Auto-wrap business parameters into BaseRequest format
         from office4ai.environment.workspace.socketio.request_wrapper import (
-            wrap_request,
             RequestWrapperError,
+            wrap_request,
         )
 
         try:
