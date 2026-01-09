@@ -159,6 +159,36 @@ class WordNamespace(BaseNamespace):
         """TODO: Get document statistics"""
         logger.warning("word:get:documentStats not yet implemented")
 
+    async def on_word_get_styles(self, sid: str, data: Any) -> None:
+        """
+        Handle word:get:styles event from Add-In.
+
+        Gets all available styles from the Word document, including built-in
+        and custom styles, with filtering options.
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri, options
+                  options: {
+                    includeBuiltIn: boolean,
+                    includeCustom: boolean,
+                    includeUnused: boolean,
+                    detailedInfo: boolean
+                  }
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            options = data.get("options", {})
+            logger.info(
+                f"Received word:get:styles from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}, "
+                f"includeBuiltIn: {options.get('includeBuiltIn', True)}, "
+                f"includeCustom: {options.get('includeCustom', True)}"
+            )
+
     # Text operations
     async def on_word_replace_text(self, sid: str, data: Any) -> None:
         """TODO: Find and replace text"""

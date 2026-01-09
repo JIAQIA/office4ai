@@ -11,8 +11,12 @@ from pydantic import ValidationError
 
 from office4ai.environment.workspace.dtos.word import (
     GetContentOptions,
+    GetStylesOptions,
+    StyleInfo,
+    StylesResult,
     TextFormat,
     WordGetSelectedContentRequest,
+    WordGetStylesRequest,
     WordInsertTextRequest,
 )
 
@@ -395,4 +399,301 @@ class TestTextFormat:
         assert format_options.italic is True
         assert format_options.font_size == 14
         assert format_options.color == "#FF0000"
+
+
+class TestWordGetStylesRequest:
+    """Test WordGetStylesRequest DTO"""
+
+    def test_valid_request_with_defaults(self) -> None:
+        """Test creating valid request with default values"""
+        request = WordGetStylesRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert request.options is None
+        assert isinstance(request.timestamp, int)
+
+    def test_valid_request_with_options(self) -> None:
+        """Test creating valid request with options"""
+        options = GetStylesOptions(
+            includeBuiltIn=True,
+            includeCustom=True,
+            includeUnused=False,
+            detailedInfo=True,
+        )
+
+        request = WordGetStylesRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            options=options,
+        )
+
+        assert request.options is not None
+        assert request.options.include_built_in is True
+        assert request.options.include_custom is True
+        assert request.options.include_unused is False
+        assert request.options.detailed_info is True
+
+    def test_request_with_dict_options(self) -> None:
+        """Test creating request with options as dict"""
+        request = WordGetStylesRequest(
+            requestId="req_003",
+            documentUri="file:///test.docx",
+            options={"includeBuiltIn": False, "includeCustom": True, "detailedInfo": False},
+        )
+
+        assert request.options is not None
+        assert request.options.include_built_in is False
+        assert request.options.include_custom is True
+        assert request.options.detailed_info is False
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetStylesRequest(documentUri="file:///test.docx")
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing documentUri
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetStylesRequest(requestId="req_001")
+
+        assert "documentUri" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordGetStylesRequest.event_name == "word:get:styles"
+
+
+class TestGetStylesOptions:
+    """Test GetStylesOptions DTO"""
+
+    def test_default_options(self) -> None:
+        """Test creating options with default values"""
+        options = GetStylesOptions()
+
+        assert options.include_built_in is True
+        assert options.include_custom is True
+        assert options.include_unused is False
+        assert options.detailed_info is False
+
+    def test_custom_options(self) -> None:
+        """Test creating options with custom values"""
+        options = GetStylesOptions(
+            includeBuiltIn=False,
+            includeCustom=True,
+            includeUnused=True,
+            detailedInfo=True,
+        )
+
+        assert options.include_built_in is False
+        assert options.include_custom is True
+        assert options.include_unused is True
+        assert options.detailed_info is True
+
+    def test_options_from_dict(self) -> None:
+        """Test creating options from dict with aliases"""
+        options = GetStylesOptions(
+            **{
+                "includeBuiltIn": False,
+                "includeCustom": True,
+                "detailedInfo": True,
+            }
+        )
+
+        assert options.include_built_in is False
+        assert options.include_custom is True
+        assert options.detailed_info is True
+        # include_unused should use default value
+        assert options.include_unused is False
+
+    def test_options_serialization(self) -> None:
+        """Test options can be serialized to dict with correct aliases"""
+        options = GetStylesOptions(
+            includeBuiltIn=True,
+            includeCustom=True,
+            detailedInfo=True,
+        )
+
+        # Convert to dict (as it would be sent over Socket.IO)
+        data = options.model_dump(by_alias=True)
+
+        assert data["includeBuiltIn"] is True
+        assert data["includeCustom"] is True
+        assert data["detailedInfo"] is True
+        # Default values should be included
+        assert "includeUnused" in data
+
+
+class TestStyleInfo:
+    """Test StyleInfo DTO"""
+
+    def test_valid_style_info(self) -> None:
+        """Test creating valid style info"""
+        style = StyleInfo(
+            name="标题一",
+            type="Paragraph",
+            builtIn=True,
+            inUse=True,
+        )
+
+        assert style.name == "标题一"
+        assert style.type == "Paragraph"
+        assert style.built_in is True
+        assert style.in_use is True
+        assert style.description is None
+
+    def test_style_info_with_description(self) -> None:
+        """Test creating style info with description"""
+        style = StyleInfo(
+            name="Normal",
+            type="Paragraph",
+            builtIn=True,
+            inUse=True,
+            description="Normal paragraph style",
+        )
+
+        assert style.name == "Normal"
+        assert style.description == "Normal paragraph style"
+
+    def test_invalid_style_type(self) -> None:
+        """Test validation fails with invalid style type"""
+        with pytest.raises(ValidationError) as exc_info:
+            StyleInfo(
+                name="Test Style",
+                type="InvalidType",  # type: ignore
+                builtIn=True,
+                inUse=True,
+            )
+
+        assert "type" in str(exc_info.value).lower()
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing name
+        with pytest.raises(ValidationError) as exc_info:
+            StyleInfo(
+                type="Paragraph",  # type: ignore
+                builtIn=True,
+                inUse=True,
+            )
+
+        assert "name" in str(exc_info.value)
+
+        # Missing type
+        with pytest.raises(ValidationError) as exc_info:
+            StyleInfo(
+                name="Test",
+                builtIn=True,
+                inUse=True,
+            )
+
+        assert "type" in str(exc_info.value)
+
+    def test_all_style_types(self) -> None:
+        """Test all valid style types"""
+        types = ["Paragraph", "Character", "Table", "List"]
+
+        for style_type in types:
+            style = StyleInfo(
+                name=f"Test {style_type}",
+                type=style_type,  # type: ignore
+                builtIn=True,
+                inUse=True,
+            )
+            assert style.type == style_type
+
+    def test_style_serialization(self) -> None:
+        """Test style can be serialized to dict with correct aliases"""
+        style = StyleInfo(
+            name="标题一",
+            type="Paragraph",
+            builtIn=True,
+            inUse=True,
+            description="Heading style",
+        )
+
+        # Convert to dict (as it would be sent over Socket.IO)
+        data = style.model_dump(by_alias=True)
+
+        assert data["name"] == "标题一"
+        assert data["type"] == "Paragraph"
+        assert data["builtIn"] is True
+        assert data["inUse"] is True
+        assert data["description"] == "Heading style"
+
+
+class TestStylesResult:
+    """Test StylesResult DTO"""
+
+    def test_valid_styles_result(self) -> None:
+        """Test creating valid styles result"""
+        styles = [
+            StyleInfo(name="标题一", type="Paragraph", builtIn=True, inUse=True),
+            StyleInfo(name="正文", type="Paragraph", builtIn=True, inUse=True),
+            StyleInfo(name="强调", type="Character", builtIn=True, inUse=False),
+        ]
+
+        result = StylesResult(styles=styles)
+
+        assert len(result.styles) == 3
+        assert result.styles[0].name == "标题一"
+        assert result.styles[1].name == "正文"
+        assert result.styles[2].name == "强调"
+
+    def test_empty_styles_result(self) -> None:
+        """Test creating empty styles result"""
+        result = StylesResult(styles=[])
+
+        assert len(result.styles) == 0
+
+    def test_styles_result_serialization(self) -> None:
+        """Test styles result can be serialized to dict with correct aliases"""
+        styles = [
+            StyleInfo(
+                name="Normal",
+                type="Paragraph",
+                builtIn=True,
+                inUse=True,
+                description="Normal style",
+            ),
+        ]
+
+        result = StylesResult(styles=styles)
+        data = result.model_dump(by_alias=True)
+
+        assert "styles" in data
+        assert len(data["styles"]) == 1
+        assert data["styles"][0]["name"] == "Normal"
+        assert data["styles"][0]["type"] == "Paragraph"
+        assert data["styles"][0]["description"] == "Normal style"
+
+    def test_styles_result_from_dict(self) -> None:
+        """Test creating styles result from dict"""
+        styles_data = [
+            {
+                "name": "标题一",
+                "type": "Paragraph",
+                "builtIn": True,
+                "inUse": True,
+            },
+            {
+                "name": "Custom Style",
+                "type": "Character",
+                "builtIn": False,
+                "inUse": True,
+            },
+        ]
+
+        result = StylesResult(**{"styles": styles_data})
+
+        assert len(result.styles) == 2
+        assert result.styles[0].name == "标题一"
+        assert result.styles[1].name == "Custom Style"
+        assert result.styles[1].built_in is False
+
 

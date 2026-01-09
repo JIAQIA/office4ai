@@ -83,3 +83,58 @@ poe test-ci          # CI全量测试
 - Service层: ≥80%
 - Namespace层: ≥70%
 - 整体: ≥75%
+
+---
+
+## Manual Tests (手动测试)
+
+手动测试用于验证真实 Office 环境下的端到端功能，覆盖各种参数排列组合。
+
+### 测试目录结构
+
+```
+manual_tests/
+├── MANUAL_TEST.md                    # 总体指南
+├── test_word_e2e.py                  # 快速验证
+├── test_workspace_startup.py         # 启动测试
+│
+├── insert_text_e2e/                  # word:insert:text 参数组合
+│   ├── test_basic_insert.py          # 基础插入 (4 tests)
+│   ├── test_location_insert.py       # 位置参数 (4 tests)
+│   └── test_format_insert.py         # 格式参数 (6 tests)
+│
+├── get_selected_content_e2e/         # word:get:selectedContent 参数组合
+│   ├── test_basic_get.py             # 基础获取 (4 tests)
+│   ├── test_options_get.py           # 选项参数 (5 tests)
+│   └── test_edge_cases.py            # 边界情况 (4 tests)
+│
+├── replace_selection_e2e/            # word:replace:selection 参数组合
+│   ├── test_text_replace.py          # 文本替换 (4 tests)
+│   ├── test_format_replace.py        # 格式替换 (4 tests)
+│   └── test_edge_cases.py            # 边界情况 (3 tests)
+│
+├── get_styles_e2e/                   # word:get:styles 参数组合
+│   └── test_styles.py                # 样式获取 (5 tests)
+│
+└── connection_e2e/                   # 连接稳定性测试
+    ├── test_reconnection.py          # 重连测试
+    └── test_multi_document.py        # 多文档测试
+```
+
+### 运行方式
+
+```bash
+# 从项目根目录运行单个测试
+uv run python manual_tests/<test_dir>/test_xxx.py --test 1
+
+# 运行某目录全部测试
+uv run python manual_tests/<test_dir>/test_xxx.py --test all
+
+# 示例：运行 insert_text 基础测试
+uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
+```
+
+### 参数组合矩阵
+
+详细的测试用例设计、参数组合说明和代码模板见：
+- **[reference.md](./reference.md)** - 手动测试参考文档

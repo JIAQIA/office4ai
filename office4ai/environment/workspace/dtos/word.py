@@ -15,6 +15,22 @@ from .common import BaseRequest, SocketIOBaseModel
 # ============================================================================
 
 
+class WordGetStylesRequest(BaseRequest):
+    """
+    Request to get all available styles from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    event_name: ClassVar[str] = "word:get:styles"
+
+    options: Optional["GetStylesOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Style retrieval options",
+    )
+
+
 class WordGetSelectedContentRequest(BaseRequest):
     """
     Request to get selected content from Word document.
@@ -501,6 +517,76 @@ class ExportOptions(SocketIOBaseModel):
     )
 
 
+# ============================================================================
+# Style DTOs
+# ============================================================================
+
+
+class GetStylesOptions(SocketIOBaseModel):
+    """
+    Options for retrieving styles from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    include_built_in: bool = Field(
+        default=True,
+        alias="includeBuiltIn",
+        description="Include built-in styles",
+    )
+    include_custom: bool = Field(
+        default=True,
+        alias="includeCustom",
+        description="Include custom styles",
+    )
+    include_unused: bool = Field(
+        default=False,
+        alias="includeUnused",
+        description="Include unused styles",
+    )
+    detailed_info: bool = Field(
+        default=False,
+        alias="detailedInfo",
+        description="Include detailed information like description",
+    )
+
+
+class StyleInfo(SocketIOBaseModel):
+    """
+    Information about a Word style.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    name: str = Field(..., alias="name", description="Style name (localized)")
+    type: Literal["Paragraph", "Character", "Table", "List"] = Field(
+        ...,
+        alias="type",
+        description="Style type",
+    )
+    built_in: bool = Field(..., alias="builtIn", description="Whether it's a built-in style")
+    in_use: bool = Field(..., alias="inUse", description="Whether the style is used in document")
+    description: str | None = Field(
+        default=None,
+        alias="description",
+        description="Style description (only when detailedInfo=true)",
+    )
+
+
+class StylesResult(SocketIOBaseModel):
+    """
+    Result containing styles from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    styles: list[StyleInfo] = Field(
+        ...,
+        alias="styles",
+        description="List of styles",
+    )
+
+
 # Resolve forward references
 GetContentOptions.model_rebuild()
 TextFormat.model_rebuild()
@@ -512,3 +598,6 @@ TableInsertOptions.model_rebuild()
 EquationOptions.model_rebuild()
 TOCOptions.model_rebuild()
 ExportOptions.model_rebuild()
+GetStylesOptions.model_rebuild()
+StyleInfo.model_rebuild()
+StylesResult.model_rebuild()
