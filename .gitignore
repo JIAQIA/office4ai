@@ -148,8 +148,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Manual tests directory (local debugging, not tracked in version control)
-manual_tests/
 
 # Spyder project settings
 .spyderproject
