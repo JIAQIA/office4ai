@@ -1,3 +1,10 @@
+---
+name: testing-checklist
+description: 开发新功能时的测试清单，确保不遗漏任何测试层级
+usage: |-
+  开发新功能时参考此清单，确保完成所有必要测试。
+  如需详细代码示例，请参阅 TESTING_STANDARD.md
+---
 # Test Architecture Skill
 
 ## 测试分层架构

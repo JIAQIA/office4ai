@@ -5,7 +5,22 @@ argument-hint: <event_name> 例如 word:get:documentContent
 
 # Socket.IO 事件开发 Skill
 
-根据事件名 `$1` 实现完整的 Socket.IO 事件。
+根据事件名 `$1` 实现完整的 Socket.IO 事件。一般而言用户会提供一个Confluence文档，你借助MCP工具来阅读文档并获取以下信息：
+
+1. **事件名称**（格式：`<platform>:<action>:<target>`）
+   - 平台：`word`, `ppt`, `excel`, `common`
+   - 操作：`get`, `insert`, `replace`, `update`, `delete`, `event`
+   - 目标：如 `selectedContent`, `text`, `table`
+
+2. **功能描述**：一句话说明这个事件的作用
+
+3. **请求参数**：需要哪些额外参数（除 `requestId` 和 `documentUri` 外）
+
+4. **响应数据**：返回什么数据
+
+5. **可能的错误**：会抛出哪些特定错误
+
+如果用户未提供有效文档或者发生异常，你可以借助 AskUserQuestionTool 来获取相应内容
 
 ## 架构分层
 
