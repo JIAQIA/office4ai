@@ -362,8 +362,9 @@ class ErrorCode:
     OFFICE_API_ERROR = "3000"
     DOCUMENT_NOT_FOUND = "3001"
     SELECTION_EMPTY = "3002"
-    OPERATION_FAILED = "3003"
-    FILE_NOT_ACCESSIBLE = "3004"
+    DOCUMENT_READ_ONLY = "3003"  # Word document is read-only
+    OPERATION_FAILED = "3004"
+    FILE_NOT_ACCESSIBLE = "3005"
 
     # Validation errors (4xxx)
     VALIDATION_ERROR = "4000"

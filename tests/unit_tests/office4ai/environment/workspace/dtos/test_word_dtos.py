@@ -12,12 +12,15 @@ from pydantic import ValidationError
 from office4ai.environment.workspace.dtos.word import (
     GetContentOptions,
     GetStylesOptions,
+    ReplaceContent,
     StyleInfo,
     StylesResult,
     TextFormat,
     WordGetSelectedContentRequest,
     WordGetStylesRequest,
     WordInsertTextRequest,
+    WordReplaceSelectionRequest,
+    WordReplaceSelectionResponse,
 )
 
 
@@ -695,5 +698,215 @@ class TestStylesResult:
         assert result.styles[0].name == "标题一"
         assert result.styles[1].name == "Custom Style"
         assert result.styles[1].built_in is False
+
+
+class TestWordReplaceSelectionRequest:
+    """Test WordReplaceSelectionRequest DTO"""
+
+    def test_valid_request_with_text_content(self) -> None:
+        """Test creating valid request with text content"""
+        content = ReplaceContent(text="Replaced text")
+
+        request = WordReplaceSelectionRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            content=content,
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert request.content.text == "Replaced text"
+        assert request.content.images is None
+        assert request.content.format is None
+
+    def test_valid_request_with_images_content(self) -> None:
+        """Test creating valid request with images content"""
+        images = [{"base64": "iVBORw0KGgo...", "width": 100, "height": 100}]
+        content = ReplaceContent(images=images)
+
+        request = WordReplaceSelectionRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            content=content,
+        )
+
+        assert request.content.images == images
+        assert request.content.text is None
+
+    def test_valid_request_with_text_and_format(self) -> None:
+        """Test creating valid request with text and format"""
+        text_format = TextFormat(bold=True, italic=True, fontSize=14)
+        content = ReplaceContent(text="Formatted text", format=text_format)
+
+        request = WordReplaceSelectionRequest(
+            requestId="req_003",
+            documentUri="file:///test.docx",
+            content=content,
+        )
+
+        assert request.content.text == "Formatted text"
+        assert request.content.format is not None
+        assert request.content.format.bold is True
+        assert request.content.format.italic is True
+        assert request.content.format.font_size == 14
+
+    def test_request_with_dict_content(self) -> None:
+        """Test creating request with content as dict"""
+        request = WordReplaceSelectionRequest(
+            requestId="req_004",
+            documentUri="file:///test.docx",
+            content={"text": "Test", "format": {"bold": True}},
+        )
+
+        assert request.content.text == "Test"
+        assert request.content.format is not None
+        assert request.content.format.bold is True
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordReplaceSelectionRequest(
+                documentUri="file:///test.docx",
+                content={"text": "Test"},
+            )
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing documentUri
+        with pytest.raises(ValidationError) as exc_info:
+            WordReplaceSelectionRequest(
+                requestId="req_001",
+                content={"text": "Test"},
+            )
+
+        assert "documentUri" in str(exc_info.value)
+
+        # Missing content
+        with pytest.raises(ValidationError) as exc_info:
+            WordReplaceSelectionRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+            )
+
+        assert "content" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordReplaceSelectionRequest.event_name == "word:replace:selection"
+
+    def test_request_serialization(self) -> None:
+        """Test request can be serialized to dict with correct aliases"""
+        content = ReplaceContent(text="Test content")
+        request = WordReplaceSelectionRequest(
+            requestId="req_005",
+            documentUri="file:///test.docx",
+            content=content,
+        )
+
+        data = request.model_dump(by_alias=True)
+
+        assert data["requestId"] == "req_005"
+        assert data["documentUri"] == "file:///test.docx"
+        assert data["content"]["text"] == "Test content"
+
+
+class TestWordReplaceSelectionResponse:
+    """Test WordReplaceSelectionResponse DTO"""
+
+    def test_valid_response_success(self) -> None:
+        """Test creating valid success response"""
+        response = WordReplaceSelectionResponse(
+            replaced=True,
+            characterCount=100,
+        )
+
+        assert response.replaced is True
+        assert response.character_count == 100
+
+    def test_valid_response_failure(self) -> None:
+        """Test creating valid failure response"""
+        response = WordReplaceSelectionResponse(
+            replaced=False,
+            characterCount=0,
+        )
+
+        assert response.replaced is False
+        assert response.character_count == 0
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        response = WordReplaceSelectionResponse(
+            replaced=True,
+            characterCount=50,
+        )
+
+        data = response.model_dump(by_alias=True)
+
+        assert data["replaced"] is True
+        assert data["characterCount"] == 50
+
+    def test_response_from_dict(self) -> None:
+        """Test creating response from dict"""
+        data = {"replaced": True, "characterCount": 200}
+
+        response = WordReplaceSelectionResponse(**data)
+
+        assert response.replaced is True
+        assert response.character_count == 200
+
+
+class TestReplaceContent:
+    """Test ReplaceContent DTO"""
+
+    def test_content_with_text_only(self) -> None:
+        """Test creating content with text only"""
+        content = ReplaceContent(text="Some text")
+
+        assert content.text == "Some text"
+        assert content.images is None
+        assert content.format is None
+
+    def test_content_with_images_only(self) -> None:
+        """Test creating content with images only"""
+        images = [
+            {"base64": "abc123", "width": 200, "height": 150, "altText": "Image 1"},
+            {"base64": "def456", "width": 300, "height": 200},
+        ]
+        content = ReplaceContent(images=images)
+
+        assert content.images == images
+        assert content.text is None
+        assert content.format is None
+
+    def test_content_with_text_and_format(self) -> None:
+        """Test creating content with text and format"""
+        format_obj = TextFormat(
+            bold=True,
+            italic=False,
+            fontSize=16,
+            fontName="Arial",
+            color="#FF0000",
+        )
+        content = ReplaceContent(text="Bold red text", format=format_obj)
+
+        assert content.text == "Bold red text"
+        assert content.format is not None
+        assert content.format.bold is True
+        assert content.format.italic is False
+        assert content.format.font_size == 16
+        assert content.format.font_name == "Arial"
+        assert content.format.color == "#FF0000"
+
+    def test_content_serialization(self) -> None:
+        """Test content can be serialized to dict with correct aliases"""
+        format_obj = TextFormat(bold=True, fontSize=14)
+        content = ReplaceContent(text="Test", format=format_obj)
+
+        data = content.model_dump(by_alias=True)
+
+        assert data["text"] == "Test"
+        assert data["format"]["bold"] is True
+        assert data["format"]["fontSize"] == 14
 
 

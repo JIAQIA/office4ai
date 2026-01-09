@@ -128,19 +128,59 @@ class WordNamespace(BaseNamespace):
         """
         Handle word:replace:selection event from Add-In.
 
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30605313
+
         Note: This handler receives events from Add-In for logging/debugging.
         Server → Add-In commands should use OfficeWorkspace.emit_to_document().
 
         Args:
             sid: Session ID
-            data: Request data with requestId, documentUri, content
+            data: {
+                requestId: str,
+                documentUri: str,
+                content: {
+                    text?: string,
+                    images?: ImageData[],
+                    format?: TextFormat
+                },
+                timestamp: number
+            }
+
+        Validation:
+            - content.text or content.images must be provided
+            - format only applies to text content
+            - Replaces entire selection, original formatting not preserved
+
+        Error Codes:
+            - 3001: DOCUMENT_NOT_FOUND - Document not found
+            - 3002: SELECTION_EMPTY - Current selection is empty
+            - 3003: DOCUMENT_READ_ONLY - Document is read-only
         """
         client_info = self.get_client_info(sid)
         if client_info:
+            content = data.get("content", {})
+            text = content.get("text")
+            images = content.get("images")
+
+            # Validate that at least text or images is provided
+            if not text and not images:
+                logger.warning(
+                    f"Invalid word:replace:selection from {client_info.client_id}: "
+                    f"content.text or content.images required, requestId: {data.get('requestId', 'unknown')}"
+                )
+                return
+
+            character_count = len(text) if text else 0
+
             logger.info(
                 f"Received word:replace:selection from {client_info.client_id}, "
-                f"requestId: {data.get('requestId', 'unknown')}"
+                f"requestId: {data.get('requestId', 'unknown')}, "
+                f"text length: {character_count}, "
+                f"images: {len(images) if images else 0}"
             )
+
+            # TODO: Implement actual replacement logic when OfficeWorkspace is ready
+            # This handler currently only logs the event for debugging
 
     # ========================================================================
     # Future Events (to be implemented)

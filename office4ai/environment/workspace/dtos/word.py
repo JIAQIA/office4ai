@@ -154,6 +154,8 @@ class WordReplaceSelectionRequest(BaseRequest):
     Request to replace selected content in Word document.
 
     Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30605313
     """
 
     event_name: ClassVar[str] = "word:replace:selection"
@@ -161,8 +163,21 @@ class WordReplaceSelectionRequest(BaseRequest):
     content: "ReplaceContent" = Field(
         ...,
         alias="content",
-        description="Replacement content",
+        description="Replacement content (text or images must be provided)",
     )
+
+
+class WordReplaceSelectionResponse(SocketIOBaseModel):
+    """
+    Response for word:replace:selection operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30605313
+    """
+
+    replaced: bool = Field(..., alias="replaced", description="Whether content was replaced")
+    character_count: int = Field(..., alias="characterCount", description="Number of characters replaced")
 
 
 class WordReplaceTextRequest(BaseRequest):
@@ -601,3 +616,4 @@ ExportOptions.model_rebuild()
 GetStylesOptions.model_rebuild()
 StyleInfo.model_rebuild()
 StylesResult.model_rebuild()
+WordReplaceSelectionResponse.model_rebuild()
