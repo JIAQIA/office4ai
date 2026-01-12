@@ -179,17 +179,46 @@ class WordNamespace(BaseNamespace):
                 f"images: {len(images) if images else 0}"
             )
 
-            # TODO: Implement actual replacement logic when OfficeWorkspace is ready
-            # This handler currently only logs the event for debugging
-
     # ========================================================================
     # Future Events (to be implemented)
     # ========================================================================
 
     # Content retrieval
     async def on_word_get_visibleContent(self, sid: str, data: Any) -> None:
-        """TODO: Get visible content"""
-        logger.warning("word:get:visibleContent not yet implemented")
+        """
+        Handle word:get:visibleContent event from Add-In.
+
+        Gets the visible content from the current view, including text,
+        images, tables, and other elements.
+
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30736386
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri, options
+                  options: {
+                    includeText?: boolean,
+                    includeImages?: boolean,
+                    includeTables?: boolean,
+                    maxTextLength?: number
+                  }
+
+        Error Codes:
+            - 3001: DOCUMENT_NOT_FOUND - Document not found
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            options = data.get("options", {})
+            logger.info(
+                f"Received word:get:visibleContent from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}, "
+                f"includeText: {options.get('includeText', True)}, "
+                f"includeImages: {options.get('includeImages', True)}, "
+                f"includeTables: {options.get('includeTables', True)}"
+            )
 
     async def on_word_get_documentStructure(self, sid: str, data: Any) -> None:
         """TODO: Get document structure"""

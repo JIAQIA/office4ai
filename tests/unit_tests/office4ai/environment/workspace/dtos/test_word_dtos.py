@@ -10,6 +10,8 @@ import pytest
 from pydantic import ValidationError
 
 from office4ai.environment.workspace.dtos.word import (
+    AnyContentElement,
+    ContentMetadata,
     GetContentOptions,
     GetStylesOptions,
     ReplaceContent,
@@ -17,7 +19,10 @@ from office4ai.environment.workspace.dtos.word import (
     StylesResult,
     TextFormat,
     WordGetSelectedContentRequest,
+    WordGetSelectedContentResponse,
     WordGetStylesRequest,
+    WordGetVisibleContentRequest,
+    WordGetVisibleContentResponse,
     WordInsertTextRequest,
     WordReplaceSelectionRequest,
     WordReplaceSelectionResponse,
@@ -908,5 +913,320 @@ class TestReplaceContent:
         assert data["text"] == "Test"
         assert data["format"]["bold"] is True
         assert data["format"]["fontSize"] == 14
+
+
+class TestWordGetSelectedContentResponse:
+    """Test WordGetSelectedContentResponse DTO"""
+
+    def test_valid_response(self) -> None:
+        """Test creating valid response"""
+        metadata = ContentMetadata(isEmpty=False, characterCount=100)
+        response = WordGetSelectedContentResponse(
+            text="Selected text content",
+            elements=[],
+            metadata=metadata,
+        )
+
+        assert response.text == "Selected text content"
+        assert response.elements == []
+        assert response.metadata is not None
+        assert response.metadata.is_empty is False
+        assert response.metadata.character_count == 100
+
+    def test_response_without_metadata(self) -> None:
+        """Test creating response without metadata"""
+        response = WordGetSelectedContentResponse(
+            text="Text without metadata",
+            elements=[],
+        )
+
+        assert response.text == "Text without metadata"
+        assert response.metadata is None
+
+    def test_response_with_elements(self) -> None:
+        """Test creating response with elements"""
+        elements = [
+            AnyContentElement(type="text", content={"text": "Paragraph 1"}),
+            AnyContentElement(type="image", content={"base64": "abc123", "width": 100}),
+        ]
+        response = WordGetSelectedContentResponse(
+            text="Content with elements",
+            elements=elements,
+        )
+
+        assert len(response.elements) == 2
+        assert response.elements[0].type == "text"
+        assert response.elements[1].type == "image"
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        metadata = ContentMetadata(isEmpty=False, characterCount=50)
+        response = WordGetSelectedContentResponse(
+            text="Test content",
+            elements=[],
+            metadata=metadata,
+        )
+
+        data = response.model_dump(by_alias=True)
+
+        assert data["text"] == "Test content"
+        assert data["metadata"]["isEmpty"] is False
+        assert data["metadata"]["characterCount"] == 50
+
+
+class TestWordGetVisibleContentRequest:
+    """Test WordGetVisibleContentRequest DTO"""
+
+    def test_valid_request_with_defaults(self) -> None:
+        """Test creating valid request with default values"""
+        request = WordGetVisibleContentRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert request.options is None
+        assert isinstance(request.timestamp, int)
+
+    def test_valid_request_with_options(self) -> None:
+        """Test creating valid request with options"""
+        options = GetContentOptions(
+            includeText=True,
+            includeImages=False,
+            includeTables=True,
+        )
+
+        request = WordGetVisibleContentRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            options=options,
+        )
+
+        assert request.options is not None
+        assert request.options.include_text is True
+        assert request.options.include_images is False
+        assert request.options.include_tables is True
+
+    def test_request_with_dict_options(self) -> None:
+        """Test creating request with options as dict"""
+        request = WordGetVisibleContentRequest(
+            requestId="req_003",
+            documentUri="file:///test.docx",
+            options={"includeText": True, "maxTextLength": 1000},
+        )
+
+        assert request.options is not None
+        assert request.options.include_text is True
+        assert request.options.max_text_length == 1000
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetVisibleContentRequest(documentUri="file:///test.docx")
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing documentUri
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetVisibleContentRequest(requestId="req_001")
+
+        assert "documentUri" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordGetVisibleContentRequest.event_name == "word:get:visibleContent"
+
+
+class TestWordGetVisibleContentResponse:
+    """Test WordGetVisibleContentResponse DTO"""
+
+    def test_valid_response(self) -> None:
+        """Test creating valid response"""
+        metadata = ContentMetadata(isEmpty=False, characterCount=200)
+        response = WordGetVisibleContentResponse(
+            text="Visible content text",
+            elements=[],
+            metadata=metadata,
+        )
+
+        assert response.text == "Visible content text"
+        assert response.elements == []
+        assert response.metadata is not None
+        assert response.metadata.is_empty is False
+        assert response.metadata.character_count == 200
+
+    def test_empty_content_response(self) -> None:
+        """Test creating empty content response"""
+        metadata = ContentMetadata(isEmpty=True, characterCount=0)
+        response = WordGetVisibleContentResponse(
+            text="",
+            elements=[],
+            metadata=metadata,
+        )
+
+        assert response.text == ""
+        assert response.metadata.is_empty is True
+        assert response.metadata.character_count == 0
+
+    def test_response_with_complex_elements(self) -> None:
+        """Test creating response with various element types"""
+        elements = [
+            AnyContentElement(type="text", content={"text": "Heading"}),
+            AnyContentElement(type="image", content={"base64": "iVBORw0KGgo...", "width": 200}),
+            AnyContentElement(type="table", content={"rows": 3, "columns": 2}),
+            AnyContentElement(type="other", content={"type": "equation"}),
+        ]
+        response = WordGetVisibleContentResponse(
+            text="Complex content",
+            elements=elements,
+        )
+
+        assert len(response.elements) == 4
+        element_types = [elem.type for elem in response.elements]
+        assert "text" in element_types
+        assert "image" in element_types
+        assert "table" in element_types
+        assert "other" in element_types
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        metadata = ContentMetadata(isEmpty=False, characterCount=150)
+        response = WordGetVisibleContentResponse(
+            text="Serialized content",
+            elements=[AnyContentElement(type="text", content={"text": "Test"})],
+            metadata=metadata,
+        )
+
+        data = response.model_dump(by_alias=True)
+
+        assert data["text"] == "Serialized content"
+        assert len(data["elements"]) == 1
+        assert data["elements"][0]["type"] == "text"
+        assert data["metadata"]["isEmpty"] is False
+        assert data["metadata"]["characterCount"] == 150
+
+
+class TestContentMetadata:
+    """Test ContentMetadata DTO"""
+
+    def test_valid_metadata(self) -> None:
+        """Test creating valid metadata"""
+        metadata = ContentMetadata(isEmpty=False, characterCount=100)
+
+        assert metadata.is_empty is False
+        assert metadata.character_count == 100
+
+    def test_empty_metadata(self) -> None:
+        """Test creating empty content metadata"""
+        metadata = ContentMetadata(isEmpty=True, characterCount=0)
+
+        assert metadata.is_empty is True
+        assert metadata.character_count == 0
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing isEmpty
+        with pytest.raises(ValidationError) as exc_info:
+            ContentMetadata(characterCount=100)
+
+        assert "isEmpty" in str(exc_info.value)
+
+        # Missing characterCount
+        with pytest.raises(ValidationError) as exc_info:
+            ContentMetadata(isEmpty=False)
+
+        assert "characterCount" in str(exc_info.value)
+
+    def test_metadata_serialization(self) -> None:
+        """Test metadata can be serialized to dict with correct aliases"""
+        metadata = ContentMetadata(isEmpty=False, characterCount=500)
+
+        data = metadata.model_dump(by_alias=True)
+
+        assert data["isEmpty"] is False
+        assert data["characterCount"] == 500
+
+
+class TestAnyContentElement:
+    """Test AnyContentElement DTO"""
+
+    def test_text_element(self) -> None:
+        """Test creating text element"""
+        element = AnyContentElement(type="text", content={"text": "Paragraph text"})
+
+        assert element.type == "text"
+        assert element.content["text"] == "Paragraph text"
+
+    def test_image_element(self) -> None:
+        """Test creating image element"""
+        element = AnyContentElement(
+            type="image",
+            content={"base64": "iVBORw0KGgo...", "width": 300, "height": 200},
+        )
+
+        assert element.type == "image"
+        assert element.content["width"] == 300
+        assert element.content["height"] == 200
+
+    def test_table_element(self) -> None:
+        """Test creating table element"""
+        element = AnyContentElement(
+            type="table",
+            content={"rows": 3, "columns": 4, "data": [["A", "B"], ["C", "D"]]},
+        )
+
+        assert element.type == "table"
+        assert element.content["rows"] == 3
+        assert element.content["columns"] == 4
+
+    def test_other_element(self) -> None:
+        """Test creating other type element"""
+        element = AnyContentElement(type="other", content={"type": "equation", "latex": "x^2"})
+
+        assert element.type == "other"
+        assert element.content["latex"] == "x^2"
+
+    def test_invalid_element_type(self) -> None:
+        """Test validation fails with invalid element type"""
+        with pytest.raises(ValidationError) as exc_info:
+            AnyContentElement(
+                type="invalid_type",  # type: ignore
+                content={},
+            )
+
+        assert "type" in str(exc_info.value).lower()
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing type
+        with pytest.raises(ValidationError) as exc_info:
+            AnyContentElement(content={})  # type: ignore
+
+        assert "type" in str(exc_info.value)
+
+        # Missing content
+        with pytest.raises(ValidationError) as exc_info:
+            AnyContentElement(type="text", content=None)  # type: ignore
+
+        assert "content" in str(exc_info.value)
+
+    def test_element_serialization(self) -> None:
+        """Test element can be serialized to dict with correct aliases"""
+        element = AnyContentElement(type="text", content={"text": "Test text"})
+
+        data = element.model_dump(by_alias=True)
+
+        assert data["type"] == "text"
+        assert data["content"]["text"] == "Test text"
+
+    def test_all_valid_element_types(self) -> None:
+        """Test all valid element types"""
+        types = ["text", "image", "table", "other"]
+
+        for element_type in types:
+            element = AnyContentElement(type=element_type, content={"data": "test"})
+            assert element.type == element_type
 
 

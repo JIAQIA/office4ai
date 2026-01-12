@@ -47,11 +47,33 @@ class WordGetSelectedContentRequest(BaseRequest):
     )
 
 
+class WordGetSelectedContentResponse(SocketIOBaseModel):
+    """
+    Response for word:get:selectedContent operation.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    text: str = Field(..., alias="text", description="Selected text content")
+    elements: list["AnyContentElement"] = Field(
+        default_factory=list,
+        alias="elements",
+        description="Content elements (text, images, tables)",
+    )
+    metadata: Optional["ContentMetadata"] = Field(
+        default=None,
+        alias="metadata",
+        description="Content metadata",
+    )
+
+
 class WordGetVisibleContentRequest(BaseRequest):
     """
     Request to get visible content from Word document.
 
     Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30736386
     """
 
     event_name: ClassVar[str] = "word:get:visibleContent"
@@ -60,6 +82,28 @@ class WordGetVisibleContentRequest(BaseRequest):
         default=None,
         alias="options",
         description="Content retrieval options",
+    )
+
+
+class WordGetVisibleContentResponse(SocketIOBaseModel):
+    """
+    Response for word:get:visibleContent operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30736386
+    """
+
+    text: str = Field(..., alias="text", description="Visible text content")
+    elements: list["AnyContentElement"] = Field(
+        default_factory=list,
+        alias="elements",
+        description="Content elements (text, images, tables)",
+    )
+    metadata: Optional["ContentMetadata"] = Field(
+        default=None,
+        alias="metadata",
+        description="Content metadata",
     )
 
 
@@ -119,6 +163,44 @@ class GetContentOptions(SocketIOBaseModel):
         default=None,
         alias="maxTextLength",
         description="Maximum text length",
+    )
+
+
+class ContentMetadata(SocketIOBaseModel):
+    """
+    Metadata for content retrieval results.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    is_empty: bool = Field(
+        ...,
+        alias="isEmpty",
+        description="Whether the content is empty",
+    )
+    character_count: int = Field(
+        ...,
+        alias="characterCount",
+        description="Number of characters in the content",
+    )
+
+
+class AnyContentElement(SocketIOBaseModel):
+    """
+    Generic content element for different content types.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    type: Literal["text", "image", "table", "other"] = Field(
+        ...,
+        alias="type",
+        description="Element type",
+    )
+    content: dict[str, Any] = Field(
+        ...,
+        alias="content",
+        description="Element content (varies by type)",
     )
 
 
@@ -617,3 +699,7 @@ GetStylesOptions.model_rebuild()
 StyleInfo.model_rebuild()
 StylesResult.model_rebuild()
 WordReplaceSelectionResponse.model_rebuild()
+ContentMetadata.model_rebuild()
+AnyContentElement.model_rebuild()
+WordGetSelectedContentResponse.model_rebuild()
+WordGetVisibleContentResponse.model_rebuild()

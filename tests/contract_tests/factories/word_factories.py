@@ -119,6 +119,106 @@ class WordDataFactory:
 
         return response
 
+    def visible_content_response(
+        self,
+        text: str | None = None,
+        include_elements: bool = True,
+        include_images: bool = False,
+        include_tables: bool = False,
+        character_count: int | None = None,
+        is_empty: bool = False,
+    ) -> dict[str, Any]:
+        """
+        生成 word:get:visibleContent 响应数据。
+
+        Args:
+            text: 可见区域的文本内容（默认使用测试文本）
+            include_elements: 是否包含元素列表
+            include_images: 是否包含图片
+            include_tables: 是否包含表格
+            character_count: 字符数（默认使用 text 的长度）
+            is_empty: 内容是否为空
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 简单响应
+            response = factory.visible_content_response(text="Hello World")
+
+            # 完整响应（包含元素、图片、表格）
+            response = factory.visible_content_response(
+                text="Complete visible content",
+                include_elements=True,
+                include_images=True,
+                include_tables=True
+            )
+
+            # 空内容响应
+            response = factory.visible_content_response(text="", is_empty=True)
+            ```
+        """
+        if text is None:
+            text = "Test visible content"
+
+        if character_count is None:
+            character_count = len(text)
+
+        response: dict[str, Any] = {
+            "text": text,
+            "elements": [],
+            "metadata": {
+                "isEmpty": is_empty,
+                "characterCount": character_count,
+            },
+        }
+
+        # 添加元素列表
+        if include_elements:
+            elements: list[dict[str, Any]] = []
+
+            # 添加文本元素
+            if text:
+                elements.append(
+                    {
+                        "type": "text",
+                        "content": {"text": text},
+                    }
+                )
+
+            # 添加图片元素
+            if include_images:
+                elements.append(
+                    {
+                        "type": "image",
+                        "content": {
+                            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                            "width": 100,
+                            "height": 100,
+                        },
+                    }
+                )
+
+            # 添加表格元素
+            if include_tables:
+                elements.append(
+                    {
+                        "type": "table",
+                        "content": {
+                            "rows": 2,
+                            "columns": 2,
+                            "data": [["Cell 1", "Cell 2"], ["Cell 3", "Cell 4"]],
+                        },
+                    }
+                )
+
+            response["elements"] = elements
+
+        return response
+
     def selected_content_request(
         self,
         request_id: str = "test_req_001",

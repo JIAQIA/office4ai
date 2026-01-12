@@ -99,27 +99,99 @@ manual_tests/
 ├── test_workspace_startup.py         # 启动测试
 │
 ├── insert_text_e2e/                  # word:insert:text 参数组合
+│   ├── README.md                     # ⭐ 测试说明文档（必需）
 │   ├── test_basic_insert.py          # 基础插入 (4 tests)
 │   ├── test_location_insert.py       # 位置参数 (4 tests)
 │   └── test_format_insert.py         # 格式参数 (6 tests)
 │
 ├── get_selected_content_e2e/         # word:get:selectedContent 参数组合
+│   ├── README.md                     # ⭐ 测试说明文档（必需）
 │   ├── test_basic_get.py             # 基础获取 (4 tests)
 │   ├── test_options_get.py           # 选项参数 (5 tests)
 │   └── test_edge_cases.py            # 边界情况 (4 tests)
 │
 ├── replace_selection_e2e/            # word:replace:selection 参数组合
+│   ├── README.md                     # ⭐ 测试说明文档（必需）
 │   ├── test_text_replace.py          # 文本替换 (4 tests)
 │   ├── test_format_replace.py        # 格式替换 (4 tests)
 │   └── test_edge_cases.py            # 边界情况 (3 tests)
 │
 ├── get_styles_e2e/                   # word:get:styles 参数组合
+│   ├── README.md                     # ⭐ 测试说明文档（必需）
 │   └── test_styles.py                # 样式获取 (5 tests)
 │
 └── connection_e2e/                   # 连接稳定性测试
+    ├── README.md                     # ⭐ 测试说明文档（必需）
     ├── test_reconnection.py          # 重连测试
     └── test_multi_document.py        # 多文档测试
 ```
+
+### README.md 文档（必需）
+
+**作用：**
+每个手动测试目录必须包含 `README.md` 文档，用于说明测试目的、运行方法和验证要点。
+
+**必要性：**
+- **开发协作**：帮助团队成员快速理解测试内容
+- **使用指南**：提供清晰的运行命令和前置条件
+- **验证标准**：明确预期结果和验证要点
+- **维护文档**：记录测试变更历史和最后更新时间
+
+**内容模板（参考兄弟目录）：**
+
+```markdown
+# <Event Name> E2E Tests
+
+`word:<event_name>` 事件的手动端到端测试。
+
+## 测试场景
+
+| 测试编号 | 测试名称 | options/参数 | 描述 |
+|---------|---------|-------------|------|
+| 1 | 测试名称1 | `{param: value}` | 测试描述 |
+| 2 | 测试名称2 | `{param: value}` | 测试描述 |
+
+## 运行方式
+
+### 前置条件
+1. 启动 Workspace 服务器（测试会自动启动）
+2. 在 Word 中加载 office-editor4ai Add-In
+3. 确保文档已打开并连接
+
+### 运行单个测试
+```bash
+uv run python manual_tests/<test_dir>/test_xxx.py --test 1
+```
+
+### 运行所有测试
+```bash
+uv run python manual_tests/<test_dir>/test_xxx.py --test all
+```
+
+## 验证要点
+
+### 功能验证
+- [ ] 验证点1
+- [ ] 验证点2
+
+### 数据验证
+- [ ] 数据验证点1
+- [ ] 数据验证点2
+
+## 相关文档
+
+- [Confluence 文档](链接) - 事件规范
+- [Socket.IO API 标准](链接) - 完整协议规范
+
+## 最后更新
+
+YYYY-MM-DD
+```
+
+**参考示例：**
+- `manual_tests/insert_text_e2e/README.md` - 详细格式（推荐）
+- `manual_tests/get_styles_e2e/README.md` - 简洁格式
+
 
 ### 运行方式
 
