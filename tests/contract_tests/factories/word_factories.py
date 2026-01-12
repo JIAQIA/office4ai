@@ -301,6 +301,48 @@ class WordDataFactory:
             "replacedLength": replaced_length,
         }
 
+    def document_structure_response(
+        self,
+        paragraph_count: int = 10,
+        table_count: int = 2,
+        image_count: int = 1,
+        section_count: int = 1,
+    ) -> dict[str, Any]:
+        """
+        生成 word:get:documentStructure 响应数据。
+
+        Args:
+            paragraph_count: 段落数量
+            table_count: 表格数量
+            image_count: 图片数量
+            section_count: 节数量
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 默认响应
+            response = factory.document_structure_response()
+
+            # 自定义响应
+            response = factory.document_structure_response(
+                paragraph_count=50,
+                table_count=5,
+                image_count=3,
+                section_count=2
+            )
+            ```
+        """
+        return {
+            "paragraphCount": paragraph_count,
+            "tableCount": table_count,
+            "imageCount": image_count,
+            "sectionCount": section_count,
+        }
+
     def error_response(
         self,
         code: str = "3002",

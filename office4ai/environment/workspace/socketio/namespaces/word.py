@@ -221,8 +221,49 @@ class WordNamespace(BaseNamespace):
             )
 
     async def on_word_get_documentStructure(self, sid: str, data: Any) -> None:
-        """TODO: Get document structure"""
-        logger.warning("word:get:documentStructure not yet implemented")
+        """
+        Handle word:get:documentStructure event from Add-In.
+
+        Gets the document structure information, including paragraph count,
+        table count, image count, and section count.
+
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30769153
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri
+
+        Response:
+            {
+                requestId: str,
+                success: boolean,
+                data: {
+                    paragraphCount: number,
+                    tableCount: number,
+                    imageCount: number,
+                    sectionCount: number
+                },
+                timestamp: number
+            }
+
+        Error Codes:
+            - 3001: DOCUMENT_NOT_FOUND - Document not found
+
+        Notes:
+            - Returns document structure statistics, not actual content
+            - All count values are integers representing total elements
+            - Paragraph count includes empty paragraphs
+            - Image count includes both inline and floating images
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            logger.info(
+                f"Received word:get:documentStructure from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}"
+            )
 
     async def on_word_get_documentStats(self, sid: str, data: Any) -> None:
         """TODO: Get document statistics"""

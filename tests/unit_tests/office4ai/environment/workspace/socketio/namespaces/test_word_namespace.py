@@ -119,12 +119,30 @@ class TestWordNamespace:
         await word_namespace.on_word_event_documentModified(connected_session, data)
 
     @pytest.mark.asyncio
+    async def test_on_word_get_document_structure(
+        self, word_namespace: WordNamespace, connected_session: Any, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test get document structure event handler (logging only)"""
+        data = {
+            "requestId": "req_123",
+            "documentUri": "file:///test.docx",
+        }
+
+        # Should log the request but not raise errors
+        with caplog.at_level(logging.INFO):
+            await word_namespace.on_word_get_documentStructure(connected_session, data)
+
+        # Verify logging occurred
+        assert any("Received word:get:documentStructure from client1" in record.message for record in caplog.records)
+        assert any("requestId: req_123" in record.message for record in caplog.records)
+
+    @pytest.mark.asyncio
     async def test_unimplemented_events(self, word_namespace: WordNamespace, connected_session: Any) -> None:
         """Test unimplemented event handlers log warnings"""
         unimplemented_events = [
             "word:get:visibleContent",
-            "word:get:documentStructure",
             "word:get:documentStats",
+            "word:get:styles",
             "word:replace:text",
             "word:append:text",
             "word:insert:image",

@@ -110,11 +110,58 @@ class WordGetVisibleContentResponse(SocketIOBaseModel):
 class WordGetDocumentStructureRequest(BaseRequest):
     """
     Request to get Word document structure.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30769153
     """
 
     event_name: ClassVar[str] = "word:get:documentStructure"
 
-    pass
+
+class DocumentStructure(SocketIOBaseModel):
+    """
+    Document structure information.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30769153
+    """
+
+    paragraph_count: int = Field(
+        ...,
+        alias="paragraphCount",
+        description="Number of paragraphs in the document",
+    )
+    table_count: int = Field(
+        ...,
+        alias="tableCount",
+        description="Number of tables in the document",
+    )
+    image_count: int = Field(
+        ...,
+        alias="imageCount",
+        description="Number of images in the document",
+    )
+    section_count: int = Field(
+        ...,
+        alias="sectionCount",
+        description="Number of sections in the document",
+    )
+
+
+class WordGetDocumentStructureResponse(SocketIOBaseModel):
+    """
+    Response for word:get:documentStructure operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30769153
+    """
+
+    data: DocumentStructure = Field(
+        ...,
+        alias="data",
+        description="Document structure information",
+    )
 
 
 class WordGetDocumentStatsRequest(BaseRequest):
@@ -703,3 +750,5 @@ ContentMetadata.model_rebuild()
 AnyContentElement.model_rebuild()
 WordGetSelectedContentResponse.model_rebuild()
 WordGetVisibleContentResponse.model_rebuild()
+DocumentStructure.model_rebuild()
+WordGetDocumentStructureResponse.model_rebuild()
