@@ -266,8 +266,48 @@ class WordNamespace(BaseNamespace):
             )
 
     async def on_word_get_documentStats(self, sid: str, data: Any) -> None:
-        """TODO: Get document statistics"""
-        logger.warning("word:get:documentStats not yet implemented")
+        """
+        Handle word:get:documentStats event from Add-In.
+
+        Gets document statistics including word count, character count,
+        and paragraph count.
+
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30375938
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: Request data with requestId, documentUri
+
+        Response:
+            {
+                requestId: str,
+                success: boolean,
+                data: {
+                    wordCount: number,
+                    characterCount: number,
+                    paragraphCount: number
+                },
+                timestamp: number
+            }
+
+        Error Codes:
+            - 3001: DOCUMENT_NOT_FOUND - Document not found
+
+        Notes:
+            - Word count uses Word's standard counting rules
+            - Character count includes spaces and punctuation
+            - Paragraph count includes empty paragraphs
+            - Statistics cover entire document, not selection
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            logger.info(
+                f"Received word:get:documentStats from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}"
+            )
 
     async def on_word_get_styles(self, sid: str, data: Any) -> None:
         """

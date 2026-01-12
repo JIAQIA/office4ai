@@ -343,6 +343,44 @@ class WordDataFactory:
             "sectionCount": section_count,
         }
 
+    def document_stats_response(
+        self,
+        word_count: int = 1000,
+        character_count: int = 5000,
+        paragraph_count: int = 20,
+    ) -> dict[str, Any]:
+        """
+        生成 word:get:documentStats 响应数据。
+
+        Args:
+            word_count: 字数
+            character_count: 字符数
+            paragraph_count: 段落数
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 默认响应
+            response = factory.document_stats_response()
+
+            # 自定义响应
+            response = factory.document_stats_response(
+                word_count=50000,
+                character_count=250000,
+                paragraph_count=1000
+            )
+            ```
+        """
+        return {
+            "wordCount": word_count,
+            "characterCount": character_count,
+            "paragraphCount": paragraph_count,
+        }
+
     def error_response(
         self,
         code: str = "3002",

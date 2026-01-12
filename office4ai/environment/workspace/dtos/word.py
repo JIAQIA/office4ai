@@ -167,11 +167,53 @@ class WordGetDocumentStructureResponse(SocketIOBaseModel):
 class WordGetDocumentStatsRequest(BaseRequest):
     """
     Request to get Word document statistics.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30375938
     """
 
     event_name: ClassVar[str] = "word:get:documentStats"
 
-    pass
+
+class DocumentStats(SocketIOBaseModel):
+    """
+    Document statistics information.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30375938
+    """
+
+    word_count: int = Field(
+        ...,
+        alias="wordCount",
+        description="Number of words in the document",
+    )
+    character_count: int = Field(
+        ...,
+        alias="characterCount",
+        description="Number of characters in the document (including spaces and punctuation)",
+    )
+    paragraph_count: int = Field(
+        ...,
+        alias="paragraphCount",
+        description="Number of paragraphs in the document (including empty paragraphs)",
+    )
+
+
+class WordGetDocumentStatsResponse(SocketIOBaseModel):
+    """
+    Response for word:get:documentStats operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30375938
+    """
+
+    data: DocumentStats = Field(
+        ...,
+        alias="data",
+        description="Document statistics information",
+    )
 
 
 class GetContentOptions(SocketIOBaseModel):
@@ -752,3 +794,5 @@ WordGetSelectedContentResponse.model_rebuild()
 WordGetVisibleContentResponse.model_rebuild()
 DocumentStructure.model_rebuild()
 WordGetDocumentStructureResponse.model_rebuild()
+DocumentStats.model_rebuild()
+WordGetDocumentStatsResponse.model_rebuild()

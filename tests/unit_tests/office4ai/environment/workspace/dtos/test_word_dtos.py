@@ -12,12 +12,15 @@ from pydantic import ValidationError
 from office4ai.environment.workspace.dtos.word import (
     AnyContentElement,
     ContentMetadata,
+    DocumentStats,
     GetContentOptions,
     GetStylesOptions,
     ReplaceContent,
     StyleInfo,
     StylesResult,
     TextFormat,
+    WordGetDocumentStatsRequest,
+    WordGetDocumentStatsResponse,
     WordGetSelectedContentRequest,
     WordGetSelectedContentResponse,
     WordGetStylesRequest,
@@ -1228,5 +1231,226 @@ class TestAnyContentElement:
         for element_type in types:
             element = AnyContentElement(type=element_type, content={"data": "test"})
             assert element.type == element_type
+
+
+class TestWordGetDocumentStatsRequest:
+    """Test WordGetDocumentStatsRequest DTO"""
+
+    def test_valid_request(self) -> None:
+        """Test creating valid request"""
+        request = WordGetDocumentStatsRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert isinstance(request.timestamp, int)
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetDocumentStatsRequest(documentUri="file:///test.docx")
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing documentUri
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetDocumentStatsRequest(requestId="req_001")
+
+        assert "documentUri" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordGetDocumentStatsRequest.event_name == "word:get:documentStats"
+
+    def test_to_payload_camel_case(self) -> None:
+        """Test serialization to camelCase payload"""
+        request = WordGetDocumentStatsRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+        )
+
+        payload = request.to_payload()
+
+        assert payload["requestId"] == "req_002"
+        assert payload["documentUri"] == "file:///test.docx"
+        assert isinstance(payload["timestamp"], int)
+
+    def test_build_class_method(self) -> None:
+        """Test build class method for creating requests"""
+        request = WordGetDocumentStatsRequest.build(document_uri="file:///test.docx")
+
+        assert request.request_id is not None
+        assert isinstance(request.request_id, str)
+        assert request.document_uri == "file:///test.docx"
+
+
+class TestDocumentStats:
+    """Test DocumentStats DTO"""
+
+    def test_valid_stats(self) -> None:
+        """Test creating valid document stats"""
+        stats = DocumentStats(
+            wordCount=1000,
+            characterCount=5000,
+            paragraphCount=20,
+        )
+
+        assert stats.word_count == 1000
+        assert stats.character_count == 5000
+        assert stats.paragraph_count == 20
+
+    def test_zero_stats(self) -> None:
+        """Test creating stats with zero values"""
+        stats = DocumentStats(
+            wordCount=0,
+            characterCount=0,
+            paragraphCount=0,
+        )
+
+        assert stats.word_count == 0
+        assert stats.character_count == 0
+        assert stats.paragraph_count == 0
+
+    def test_large_values(self) -> None:
+        """Test creating stats with large values"""
+        stats = DocumentStats(
+            wordCount=1000000,
+            characterCount=5000000,
+            paragraphCount=10000,
+        )
+
+        assert stats.word_count == 1000000
+        assert stats.character_count == 5000000
+        assert stats.paragraph_count == 10000
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing wordCount
+        with pytest.raises(ValidationError) as exc_info:
+            DocumentStats(
+                characterCount=5000,
+                paragraphCount=20,
+            )
+
+        assert "wordCount" in str(exc_info.value)
+
+        # Missing characterCount
+        with pytest.raises(ValidationError) as exc_info:
+            DocumentStats(
+                wordCount=1000,
+                paragraphCount=20,
+            )
+
+        assert "characterCount" in str(exc_info.value)
+
+        # Missing paragraphCount
+        with pytest.raises(ValidationError) as exc_info:
+            DocumentStats(
+                wordCount=1000,
+                characterCount=5000,
+            )
+
+        assert "paragraphCount" in str(exc_info.value)
+
+    def test_stats_serialization(self) -> None:
+        """Test stats can be serialized to dict with correct aliases"""
+        stats = DocumentStats(
+            wordCount=1500,
+            characterCount=7500,
+            paragraphCount=30,
+        )
+
+        data = stats.model_dump(by_alias=True)
+
+        assert data["wordCount"] == 1500
+        assert data["characterCount"] == 7500
+        assert data["paragraphCount"] == 30
+
+    def test_stats_from_dict(self) -> None:
+        """Test creating stats from dict"""
+        data = {
+            "wordCount": 2000,
+            "characterCount": 10000,
+            "paragraphCount": 40,
+        }
+
+        stats = DocumentStats(**data)
+
+        assert stats.word_count == 2000
+        assert stats.character_count == 10000
+        assert stats.paragraph_count == 40
+
+
+class TestWordGetDocumentStatsResponse:
+    """Test WordGetDocumentStatsResponse DTO"""
+
+    def test_valid_response(self) -> None:
+        """Test creating valid response"""
+        stats = DocumentStats(
+            wordCount=1000,
+            characterCount=5000,
+            paragraphCount=20,
+        )
+        response = WordGetDocumentStatsResponse(data=stats)
+
+        assert response.data.word_count == 1000
+        assert response.data.character_count == 5000
+        assert response.data.paragraph_count == 20
+
+    def test_response_with_zero_stats(self) -> None:
+        """Test creating response with zero stats"""
+        stats = DocumentStats(
+            wordCount=0,
+            characterCount=0,
+            paragraphCount=0,
+        )
+        response = WordGetDocumentStatsResponse(data=stats)
+
+        assert response.data.word_count == 0
+        assert response.data.character_count == 0
+        assert response.data.paragraph_count == 0
+
+    def test_response_from_dict(self) -> None:
+        """Test creating response from dict"""
+        data = {
+            "data": {
+                "wordCount": 3000,
+                "characterCount": 15000,
+                "paragraphCount": 50,
+            }
+        }
+
+        response = WordGetDocumentStatsResponse(**data)
+
+        assert response.data.word_count == 3000
+        assert response.data.character_count == 15000
+        assert response.data.paragraph_count == 50
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing data
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetDocumentStatsResponse()  # type: ignore
+
+        assert "data" in str(exc_info.value)
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        stats = DocumentStats(
+            wordCount=2500,
+            characterCount=12500,
+            paragraphCount=35,
+        )
+        response = WordGetDocumentStatsResponse(data=stats)
+
+        data = response.model_dump(by_alias=True)
+
+        assert "data" in data
+        assert data["data"]["wordCount"] == 2500
+        assert data["data"]["characterCount"] == 12500
+        assert data["data"]["paragraphCount"] == 35
 
 
