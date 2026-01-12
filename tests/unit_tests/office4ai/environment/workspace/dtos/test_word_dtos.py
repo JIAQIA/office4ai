@@ -1452,5 +1452,3 @@ class TestWordGetDocumentStatsResponse:
         assert data["data"]["wordCount"] == 2500
         assert data["data"]["characterCount"] == 12500
         assert data["data"]["paragraphCount"] == 35
-
-

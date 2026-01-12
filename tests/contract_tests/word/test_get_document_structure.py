@@ -234,6 +234,7 @@ async def test_get_document_structure_document_not_found(
     4. Workspace 发送命令
     5. 验证错误信息正确返回
     """
+
     # Arrange: 创建并配置 Mock 客户端
     def error_response(request: dict) -> dict:
         """错误响应工厂"""
