@@ -302,6 +302,114 @@ poe test-cov
 poe pre-commit
 ```
 
+### 🔐 HTTPS 证书配置
+
+Office Workspace 使用 HTTPS 协议与 Office Add-In 通信。在本地开发时，需要配置 SSL 证书以确保浏览器信任连接。
+
+#### 使用 mkcert 生成可信任证书（推荐）
+
+**mkcert** 是由 Let's Encrypt 和 Mozilla 开发的本地开发证书工具，可以一键生成本地可信任的证书。
+
+<details>
+<summary><b>📋 详细配置步骤（点击展开）</b></summary>
+
+##### 1️⃣ 安装 mkcert
+
+```bash
+# macOS
+brew install mkcert
+brew install nss  # Firefox需要（可选）
+
+# 验证安装
+mkcert --version
+```
+
+##### 2️⃣ 安装本地 CA 到系统信任存储
+
+```bash
+# 一键安装本地 CA（需要管理员权限）
+mkcert -install
+
+# 这一步会：
+# - 生成本地 CA 证书
+# - 自动添加到系统钥匙串并设为信任
+# - 添加到 Firefox 的信任存储（如果安装了 nss）
+```
+
+##### 3️⃣ 生成服务器证书
+
+```bash
+# 进入项目目录
+cd /Users/JQQ/PycharmProjects/office4ai
+
+# 创建证书目录
+mkdir -p certs
+cd certs
+
+# 生成 localhost 和 127.0.0.1 的证书
+mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1 ::1
+
+# 证书已自动被系统信任，无需额外操作！
+```
+
+##### 4️⃣ 验证证书
+
+```bash
+# 查看证书信息
+openssl x509 -in cert.pem -text -noout | head -20
+
+# 验证证书链
+openssl verify -CAfile "$(mkcert -CAROOT)/rootCA.pem" cert.pem
+```
+
+##### 📁 最终文件清单
+
+```
+certs/
+├── key.pem   # 服务器私钥
+└── cert.pem  # 服务器证书（已自动被系统信任）
+```
+
+##### 🔍 查看 mkcert 的 CA 证书位置
+
+```bash
+# 查看 CA 证书存储位置
+mkcert -CAROOT
+
+# 输出类似: /Users/JQQ/Library/Application Support/mkcert
+
+# 查看 CA 证书内容
+cat "$(mkcert -CAROOT)/rootCA.pem"
+```
+
+##### ⚠️ 卸载（如果需要）
+
+```bash
+# 卸载系统信任
+mkcert -uninstall
+
+# 删除 CA 文件
+rm -rf "$(mkcert -CAROOT)"
+```
+
+</details>
+
+#### 测试 HTTPS 连接
+
+证书配置完成后，启动 Workspace 服务器并访问：
+
+```bash
+# 启动服务器后，在浏览器访问
+open https://localhost:3000/health
+
+# 或使用 curl 测试
+curl -v https://127.0.0.1:3000/health
+```
+
+浏览器应该显示绿色锁头图标，表示证书已受信任。
+
+---
+
 ## 🏗️ 架构设计
 
 ```

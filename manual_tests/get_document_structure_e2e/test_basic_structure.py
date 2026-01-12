@@ -164,7 +164,7 @@ async def run_test_template(
             structure = await get_document_structure(
                 workspace,
                 document_uri,
-                f"获取文档结构...",
+                "获取文档结构...",
             )
 
             if structure is None:
