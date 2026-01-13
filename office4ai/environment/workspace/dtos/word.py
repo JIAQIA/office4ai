@@ -8,7 +8,7 @@ from typing import Any, ClassVar, Literal, Optional
 
 from pydantic import Field
 
-from .common import BaseRequest, SocketIOBaseModel
+from .common import BaseRequest, ErrorResponse, SocketIOBaseModel
 
 # ============================================================================
 # Content Retrieval DTOs
@@ -404,6 +404,24 @@ class TextFormat(SocketIOBaseModel):
     Text formatting options.
 
     Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/29753356/word+insert+text
+
+    Priority Rule (Important):
+        - Direct formatting (bold/italic/fontSize/etc) takes precedence over styleName
+        - If any direct format fields are provided, styleName is ignored
+        - If only styleName is provided, Word style is applied
+        - If neither is provided, default formatting is used
+
+    Examples:
+        # ❌ Not recommended: styleName will be ignored when direct format is present
+        format = {"bold": True, "style_name": "Heading 1"}  # Only bold takes effect
+
+        # ✅ Recommended: Use Word style only
+        format = {"style_name": "Heading 1"}  # Apply Heading 1 style
+
+        # ✅ Recommended: Use direct format only
+        format = {"bold": True, "color": "#FF0000"}  # Precise format control
     """
 
     bold: bool | None = Field(default=None, alias="bold", description="Bold text")
@@ -427,10 +445,15 @@ class TextFormat(SocketIOBaseModel):
         alias="color",
         description="Font color (hex)",
     )
-    underline: bool | None = Field(
+    underline: str | None = Field(
         default=None,
         alias="underline",
-        description="Underline text",
+        description="Underline type (e.g., 'single', 'double', 'dotted')",
+    )
+    style_name: str | None = Field(
+        default=None,
+        alias="styleName",
+        description="Word style name (e.g., 'Heading 1', 'Normal', 'Title')",
     )
 
 
@@ -463,6 +486,8 @@ class ReplaceOptions(SocketIOBaseModel):
     Options for find and replace operation.
 
     Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30801921
     """
 
     match_case: bool = Field(
@@ -480,6 +505,46 @@ class ReplaceOptions(SocketIOBaseModel):
         alias="replaceAll",
         description="Replace all occurrences",
     )
+
+
+class ReplaceTextResult(SocketIOBaseModel):
+    """
+    Result for find and replace operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30801921
+    """
+
+    replace_count: int = Field(
+        ...,
+        alias="replaceCount",
+        description="Number of replacements made",
+    )
+
+
+class WordReplaceTextResponse(SocketIOBaseModel):
+    """
+    Response for word:replace:text operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30801921
+    """
+
+    request_id: str = Field(..., alias="requestId", description="Request ID being responded to")
+    success: bool = Field(..., alias="success", description="Whether the operation succeeded")
+    data: ReplaceTextResult | None = Field(
+        default=None,
+        alias="data",
+        description="Replace result with replaceCount",
+    )
+    error: Optional["ErrorResponse"] = Field(
+        default=None,
+        alias="error",
+        description="Error details if failed",
+    )
+    timestamp: int = Field(..., alias="timestamp", description="Server timestamp in milliseconds")
 
 
 # ============================================================================
@@ -778,6 +843,8 @@ GetContentOptions.model_rebuild()
 TextFormat.model_rebuild()
 ReplaceContent.model_rebuild()
 ReplaceOptions.model_rebuild()
+ReplaceTextResult.model_rebuild()
+WordReplaceTextResponse.model_rebuild()
 ImageData.model_rebuild()
 InsertLocation.model_rebuild()
 TableInsertOptions.model_rebuild()

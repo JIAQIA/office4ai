@@ -109,19 +109,93 @@ class WordNamespace(BaseNamespace):
         """
         Handle word:insert:text event from Add-In.
 
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/29753356/word+insert+text
+
         Note: This handler receives events from Add-In for logging/debugging.
         Server → Add-In commands should use OfficeWorkspace.emit_to_document().
 
         Args:
             sid: Session ID
-            data: Request data with requestId, documentUri, text, location
+            data: Request data with requestId, documentUri, text, location, format
+                  format: {
+                    bold?: boolean,
+                    italic?: boolean,
+                    fontSize?: number,
+                    fontName?: string,
+                    color?: string,
+                    underline?: string,      // 🆕 Underline type
+                    styleName?: string       // 🆕 Word style name
+                  }
+
+        Priority Rule (Important):
+            - Direct formatting takes precedence over styleName
+            - If any direct format fields (bold/italic/fontSize/etc) are provided,
+              styleName is ignored
+            - If only styleName is provided, Word style is applied
+            - If neither is provided, default formatting is used
+
+        Examples:
+            # ❌ Not recommended: styleName will be ignored
+            format = {"bold": True, "styleName": "Heading 1"}
+
+            # ✅ Recommended: Use Word style only
+            format = {"styleName": "Heading 1"}
+
+            # ✅ Recommended: Use direct format only
+            format = {"bold": True, "color": "#FF0000"}
+
+        Error Codes:
+            - 3001: DOCUMENT_NOT_FOUND - Document not found
+            - 3004: INVALID_PARAM - Invalid parameter value
         """
         client_info = self.get_client_info(sid)
         if client_info:
+            text = data.get("text", "")
+            format_data = data.get("format", {})
+
+            # Log format details including new fields
+            log_parts = [
+                f"text length: {len(text)}",
+                f"location: {data.get('location', 'Cursor')}",
+            ]
+
+            if format_data:
+                # Check if direct formatting is present
+                has_direct_format = any(
+                    format_data.get(key) is not None
+                    for key in ["bold", "italic", "fontSize", "fontName", "color", "underline"]
+                )
+                has_style_name = format_data.get("styleName") is not None
+
+                if has_direct_format:
+                    direct_formats = []
+                    if format_data.get("bold") is not None:
+                        direct_formats.append(f"bold={format_data['bold']}")
+                    if format_data.get("italic") is not None:
+                        direct_formats.append(f"italic={format_data['italic']}")
+                    if format_data.get("fontSize") is not None:
+                        direct_formats.append(f"fontSize={format_data['fontSize']}")
+                    if format_data.get("fontName") is not None:
+                        direct_formats.append(f"fontName={format_data['fontName']}")
+                    if format_data.get("color") is not None:
+                        direct_formats.append(f"color={format_data['color']}")
+                    if format_data.get("underline") is not None:
+                        direct_formats.append(f"underline={format_data['underline']}")
+
+                    log_parts.append(f"direct format: {', '.join(direct_formats)}")
+
+                    # Log if styleName is present but will be ignored
+                    if has_style_name:
+                        log_parts.append(
+                            f"⚠️  styleName '{format_data['styleName']}' will be ignored (direct format takes precedence)"
+                        )
+                elif has_style_name:
+                    log_parts.append(f"styleName: {format_data['styleName']}")
+
             logger.info(
                 f"Received word:insert:text from {client_info.client_id}, "
                 f"requestId: {data.get('requestId', 'unknown')}, "
-                f"text length: {len(data.get('text', ''))}"
+                f"{', '.join(log_parts)}"
             )
 
     async def on_word_replace_selection(self, sid: str, data: Any) -> None:
@@ -341,8 +415,84 @@ class WordNamespace(BaseNamespace):
 
     # Text operations
     async def on_word_replace_text(self, sid: str, data: Any) -> None:
-        """TODO: Find and replace text"""
-        logger.warning("word:replace:text not yet implemented")
+        """
+        Handle word:replace:text event from Add-In.
+
+        Find and replace text in Word document, with options for case sensitivity,
+        whole word matching, and replacing all occurrences.
+
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/30801921
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: {
+                requestId: str,
+                documentUri: str,
+                searchText: string,
+                replaceText: string,
+                options?: {
+                    matchCase?: boolean,
+                    matchWholeWord?: boolean,
+                    replaceAll?: boolean
+                },
+                timestamp: number
+            }
+
+        Validation:
+            - searchText must not be empty (MISSING_PARAM error 4001)
+            - replaceText must not be empty (MISSING_PARAM error 4001)
+            - matchCase: true = case sensitive, false = case insensitive
+            - matchWholeWord: true = match whole words only
+            - replaceAll: true = replace all, false = replace first only
+
+        Response:
+            {
+                requestId: str,
+                success: boolean,
+                data?: {
+                    replaceCount: number
+                },
+                error?: {
+                    code: string,
+                    message: string
+                },
+                timestamp: number
+            }
+
+        Error Codes:
+            - 3001: DOCUMENT_NOT_FOUND - Document not found
+            - 4001: MISSING_PARAM - searchText or replaceText is empty
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            search_text = data.get("searchText", "")
+            replace_text = data.get("replaceText", "")
+            options = data.get("options", {})
+
+            # Validate required parameters
+            if not search_text or not replace_text:
+                logger.warning(
+                    f"Invalid word:replace:text from {client_info.client_id}: "
+                    f"searchText and replaceText required, requestId: {data.get('requestId', 'unknown')}"
+                )
+                return
+
+            match_case = options.get("matchCase", False)
+            match_whole_word = options.get("matchWholeWord", False)
+            replace_all = options.get("replaceAll", False)
+
+            logger.info(
+                f"Received word:replace:text from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}, "
+                f"searchText: '{search_text[:50]}...', "
+                f"replaceText: '{replace_text[:50]}...', "
+                f"matchCase: {match_case}, "
+                f"matchWholeWord: {match_whole_word}, "
+                f"replaceAll: {replace_all}"
+            )
 
     async def on_word_append_text(self, sid: str, data: Any) -> None:
         """TODO: Append text"""

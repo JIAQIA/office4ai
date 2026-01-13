@@ -6,7 +6,8 @@
       "Bash(poe typecheck:*)",
       "Bash(poe test-unit:*)",
       "Skill(test-checklist)",
-      "Bash(poe test-contract:*)"
+      "Bash(poe test-contract:*)",
+      "Skill(update-socketio-event)"
     ]
   }
 }

@@ -301,6 +301,37 @@ class WordDataFactory:
             "replacedLength": replaced_length,
         }
 
+    def replace_text_response(
+        self,
+        replace_count: int = 5,
+    ) -> dict[str, Any]:
+        """
+        生成 word:replace:text 响应数据。
+
+        Args:
+            replace_count: 替换的次数
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 默认响应（替换 5 次）
+            response = factory.replace_text_response()
+
+            # 自定义响应（替换 10 次）
+            response = factory.replace_text_response(replace_count=10)
+
+            # 无替换
+            response = factory.replace_text_response(replace_count=0)
+            ```
+        """
+        return {
+            "replaceCount": replace_count,
+        }
+
     def document_structure_response(
         self,
         paragraph_count: int = 10,

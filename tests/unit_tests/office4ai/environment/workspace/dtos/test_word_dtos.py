@@ -347,6 +347,7 @@ class TestTextFormat:
         assert format_options.font_name is None
         assert format_options.color is None
         assert format_options.underline is None
+        assert format_options.style_name is None
 
     def test_custom_format(self) -> None:
         """Test creating format with custom values"""
@@ -356,7 +357,8 @@ class TestTextFormat:
             fontSize=16,
             fontName="Times New Roman",
             color="#0000FF",
-            underline=True,
+            underline="single",
+            styleName="Heading 1",
         )
 
         assert format_options.bold is True
@@ -364,7 +366,8 @@ class TestTextFormat:
         assert format_options.font_size == 16
         assert format_options.font_name == "Times New Roman"
         assert format_options.color == "#0000FF"
-        assert format_options.underline is True
+        assert format_options.underline == "single"
+        assert format_options.style_name == "Heading 1"
 
     def test_partial_format(self) -> None:
         """Test creating format with partial fields"""
@@ -375,6 +378,47 @@ class TestTextFormat:
         assert format_options.font_size == 14
         assert format_options.font_name is None
 
+    def test_format_with_underline_types(self) -> None:
+        """Test different underline types"""
+        # Single underline
+        format_single = TextFormat(underline="single")
+        assert format_single.underline == "single"
+
+        # Double underline
+        format_double = TextFormat(underline="double")
+        assert format_double.underline == "double"
+
+        # Dotted underline
+        format_dotted = TextFormat(underline="dotted")
+        assert format_dotted.underline == "dotted"
+
+    def test_format_with_style_name_only(self) -> None:
+        """Test format with only style name (recommended approach)"""
+        format_options = TextFormat(styleName="Title")
+
+        assert format_options.style_name == "Title"
+        # All direct format fields should be None
+        assert format_options.bold is None
+        assert format_options.italic is None
+        assert format_options.font_size is None
+
+    def test_format_priority_rule_direct_format(self) -> None:
+        """
+        Test that direct format takes precedence over styleName.
+
+        Note: This is a documentation test - actual priority enforcement
+        happens in the Add-In implementation, not in the DTO.
+        """
+        # Not recommended: styleName will be ignored when direct format is present
+        format_options = TextFormat(
+            bold=True,
+            styleName="Heading 1",
+        )
+
+        assert format_options.bold is True
+        assert format_options.style_name == "Heading 1"
+        # The Add-In should ignore styleName when bold is present
+
     def test_format_serialization(self) -> None:
         """Test format can be serialized to dict with correct aliases"""
         format_options = TextFormat(
@@ -382,6 +426,7 @@ class TestTextFormat:
             italic=False,
             fontSize=12,
             fontName="Arial",
+            underline="single",
         )
 
         # Convert to dict (as it would be sent over Socket.IO)
@@ -391,9 +436,10 @@ class TestTextFormat:
         assert data["italic"] is False
         assert data["fontSize"] == 12
         assert data["fontName"] == "Arial"
+        assert data["underline"] == "single"
         # None values should be excluded with exclude_none=True
         assert "color" not in data
-        assert "underline" not in data
+        assert "styleName" not in data
 
     def test_format_from_dict(self) -> None:
         """Test creating format from dict with aliases"""
@@ -403,6 +449,8 @@ class TestTextFormat:
                 "italic": True,
                 "fontSize": 14,
                 "color": "#FF0000",
+                "underline": "double",
+                "styleName": "Normal",
             }
         )
 
@@ -410,6 +458,8 @@ class TestTextFormat:
         assert format_options.italic is True
         assert format_options.font_size == 14
         assert format_options.color == "#FF0000"
+        assert format_options.underline == "double"
+        assert format_options.style_name == "Normal"
 
 
 class TestWordGetStylesRequest:
