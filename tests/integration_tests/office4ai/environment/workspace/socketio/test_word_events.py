@@ -20,8 +20,8 @@ async def test_get_selected_content_request(socketio_client: AsyncClient) -> Non
         "options": {"includeText": True},
     }
 
-    # Emit request (call is synchronous in python-socketio client)
-    socketio_client.emit("word:get:selectedContent", request_data, namespace="/word")
+    # Emit request
+    await socketio_client.emit("word:get:selectedContent", request_data, namespace="/word")
 
     # Note: Current implementation just logs, doesn't send response
     # When implementation is complete, we should receive response like:
@@ -46,7 +46,7 @@ async def test_insert_text_request(socketio_client: AsyncClient) -> None:
         "location": "Cursor",
     }
 
-    socketio_client.emit("word:insert:text", request_data, namespace="/word")
+    await socketio_client.emit("word:insert:text", request_data, namespace="/word")
 
     # Note: Current implementation just logs
     await asyncio.sleep(0.1)
@@ -65,7 +65,7 @@ async def test_event_report_selection_changed(socketio_client: AsyncClient) -> N
     }
 
     # Emit event (fire-and-forget, no response expected)
-    socketio_client.emit("word:event:selectionChanged", event_data, namespace="/word")
+    await socketio_client.emit("word:event:selectionChanged", event_data, namespace="/word")
 
     # Give server time to process
     await asyncio.sleep(0.1)
@@ -89,7 +89,7 @@ async def test_replace_text_request(socketio_client: AsyncClient) -> None:
         },
     }
 
-    socketio_client.emit("word:replace:text", request_data, namespace="/word")
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
 
     # Note: Current implementation just logs
     await asyncio.sleep(0.1)
@@ -109,7 +109,7 @@ async def test_replace_text_with_match_case(socketio_client: AsyncClient) -> Non
         },
     }
 
-    socketio_client.emit("word:replace:text", request_data, namespace="/word")
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
 
     await asyncio.sleep(0.1)
 
@@ -129,7 +129,7 @@ async def test_replace_text_with_whole_word(socketio_client: AsyncClient) -> Non
         },
     }
 
-    socketio_client.emit("word:replace:text", request_data, namespace="/word")
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
 
     await asyncio.sleep(0.1)
 
@@ -146,6 +146,6 @@ async def test_replace_text_empty_validation(socketio_client: AsyncClient) -> No
         "options": {},
     }
 
-    socketio_client.emit("word:replace:text", request_data, namespace="/word")
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
 
     await asyncio.sleep(0.1)

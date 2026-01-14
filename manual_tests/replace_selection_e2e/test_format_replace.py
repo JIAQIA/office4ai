@@ -293,7 +293,7 @@ async def test_4_replace_with_color_and_underline() -> None:
 
         content = {
             "text": "Colorful Underlined Text",
-            "format": {"color": "#FF0000", "underline": True, "bold": True},
+            "format": {"color": "#FF0000", "underline": "single", "bold": True},
         }
         success = await replace_selection(workspace, document_uri, content)
 

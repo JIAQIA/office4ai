@@ -221,14 +221,30 @@ class WordNamespace(BaseNamespace):
             }
 
         Validation:
+            - Document MUST have an active selection (getSelection() != null)
+            - Selection MUST be non-empty (selection.isEmpty === false)
+            - Selection MUST have highlighted text (length > 0)
             - content.text or content.images must be provided
             - format only applies to text content
             - Replaces entire selection, original formatting not preserved
 
+        Behavioral Notes:
+            - ⚠️ This event ONLY replaces selected content, does NOT support insert mode
+            - ⚠️ Cursor position (0-character selection) is NOT valid
+            - ⚠️ For cursor insertion, use word:insert:text instead
+            - Client MUST check selection.isEmpty before performing replacement
+            - If selection is empty, MUST return error code 3002
+
         Error Codes:
             - 3001: DOCUMENT_NOT_FOUND - Document not found
-            - 3002: SELECTION_EMPTY - Current selection is empty
+            - 3002: SELECTION_EMPTY - No highlighted content (cursor position only)
             - 3003: DOCUMENT_READ_ONLY - Document is read-only
+
+        Technical Implementation (Client Side):
+            const selection = context.document.getSelection();
+            if (!selection || selection.isEmpty) {
+              throw { code: 3002, message: "SELECTION_EMPTY" };
+            }
         """
         client_info = self.get_client_info(sid)
         if client_info:
