@@ -14,9 +14,9 @@ import asyncio
 import sys
 from dataclasses import dataclass
 
+from manual_tests.test_helpers import ready_workspace
 from office4ai.environment.workspace.base import OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-from manual_tests.test_helpers import ready_workspace
 
 
 @dataclass
@@ -176,63 +176,67 @@ async def test_multiple_insertions() -> bool:
     """
     print_test_header(4, "连续多次插入测试")
 
-    async with workspace_test_context() as (workspace, document_uri):
-        if not workspace or not document_uri:
-            print_test_footer(4, False)
-            return False
+    try:
+        async with ready_workspace() as (workspace, document_uri):
+            # 连续插入三次，每次使用不同的位置
+            inserts = [
+                ("Start", "=== 第一次插入（开头） ===\n"),
+                ("End", "=== 第二次插入（末尾） ===\n"),
+                ("Cursor", "=== 第三次插入（光标） ==="),
+            ]
 
-        # 连续插入三次，每次使用不同的位置
-        inserts = [
-            ("Start", "=== 第一次插入（开头） ===\n"),
-            ("End", "=== 第二次插入（末尾） ===\n"),
-            ("Cursor", "=== 第三次插入（光标） ==="),
-        ]
+            print("\n📝 将执行 3 次连续插入:")
+            for i, (location, text) in enumerate(inserts, 1):
+                print(f"   {i}. location={location}: {text.strip()}")
 
-        print("\n📝 将执行 3 次连续插入:")
-        for i, (location, text) in enumerate(inserts, 1):
-            print(f"   {i}. location={location}: {text.strip()}")
+            print("\n   提示: 请将光标放在文档中间位置")
+            await asyncio.sleep(5)
 
-        print("\n   提示: 请将光标放在文档中间位置")
-        await asyncio.sleep(5)
+            results = []
+            for i, (location, text) in enumerate(inserts, 1):
+                print(f"\n--- 执行第 {i} 次插入 ---")
 
-        results = []
-        for i, (location, text) in enumerate(inserts, 1):
-            print(f"\n--- 执行第 {i} 次插入 ---")
+                action = OfficeAction(
+                    category="word",
+                    action_name="insert:text",
+                    params={
+                        "document_uri": document_uri,
+                        "text": text,
+                        "location": location,
+                    },
+                )
 
-            action = OfficeAction(
-                category="word",
-                action_name="insert:text",
-                params={
-                    "document_uri": document_uri,
-                    "text": text,
-                    "location": location,
-                },
-            )
+                result = await workspace.execute(action)
+                results.append(result.success)
 
-            result = await workspace.execute(action)
-            results.append(result.success)
+                if result.success:
+                    print(f"✅ 第 {i} 次插入成功")
+                else:
+                    print(f"❌ 第 {i} 次插入失败: {result.error}")
 
-            if result.success:
-                print(f"✅ 第 {i} 次插入成功")
+                if i < len(inserts):
+                    await asyncio.sleep(1)
+
+            print("\n📊 验证结果:")
+            success_count = sum(results)
+            print(f"   成功: {success_count}/{len(results)}")
+
+            if all(results):
+                print("\n   ✅ 所有插入都成功！")
+                print("   请检查 Word 文档，确认三次插入的位置正确")
             else:
-                print(f"❌ 第 {i} 次插入失败: {result.error}")
+                print("\n   ⚠️  部分插入失败")
 
-            if i < len(inserts):
-                await asyncio.sleep(1)
+            success = all(results)
+            print_test_footer(4, success)
+            return success
+    except Exception as e:
+        print(f"\n❌ 测试失败: {e}")
+        import traceback
 
-        print("\n📊 验证结果:")
-        success_count = sum(results)
-        print(f"   成功: {success_count}/{len(results)}")
-
-        if all(results):
-            print("\n   ✅ 所有插入都成功！")
-            print("   请检查 Word 文档，确认三次插入的位置正确")
-        else:
-            print("\n   ⚠️  部分插入失败")
-
-        success = all(results)
-        print_test_footer(4, success)
-        return success
+        traceback.print_exc()
+        print_test_footer(4, False)
+        return False
 
 
 async def run_all_tests() -> bool:

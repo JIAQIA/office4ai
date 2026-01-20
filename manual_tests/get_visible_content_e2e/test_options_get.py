@@ -89,8 +89,8 @@ def display_content_with_options(data: dict[str, Any], options: dict[str, Any]) 
 
             if exceeded_elements:
                 error_msg = (
-                    f"❌ 以下元素超过 maxTextLength 限制:\n"
-                    f"   " + "\n   ".join(exceeded_elements)
+                    "❌ 以下元素超过 maxTextLength 限制:\n"
+                    "   " + "\n   ".join(exceeded_elements)
                 )
                 print(error_msg)
                 assert False, error_msg

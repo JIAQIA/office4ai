@@ -80,7 +80,7 @@ def display_content_summary(data: dict[str, Any]) -> None:
         elem_types[elem_type] = elem_types.get(elem_type, 0) + 1
 
     if elem_types:
-        print(f"   元素类型分布:")
+        print("   元素类型分布:")
         for elem_type, count in elem_types.items():
             print(f"      - {elem_type}: {count}")
 
@@ -160,7 +160,7 @@ async def test_embedded_objects() -> bool:
 async def test_consecutive_requests() -> bool:
     """测试 4: 多次连续获取可见内容"""
     print("\n" + "=" * 70)
-    print(f"🧪 测试 4: 多次连续获取可见内容")
+    print("🧪 测试 4: 多次连续获取可见内容")
     print("=" * 70)
 
     async with workspace_context() as workspace:
@@ -184,7 +184,7 @@ async def test_consecutive_requests() -> bool:
                 await asyncio.sleep(1)
 
             print("\n" + "=" * 70)
-            print(f"✅ 测试 4 完成 (连续3次)")
+            print("✅ 测试 4 完成 (连续3次)")
             print("=" * 70)
             return True
 

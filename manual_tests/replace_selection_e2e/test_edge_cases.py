@@ -26,7 +26,6 @@ from manual_tests.test_helpers import (
     workspace_context,
 )
 
-
 # ==============================================================================
 # 测试用例
 # ==============================================================================
@@ -82,7 +81,7 @@ async def test_1_replace_with_empty_selection() -> None:
             if error and "3002" in error:
                 print("   ✅ 测试通过: 正确返回错误码 3002 (SELECTION_EMPTY)")
             else:
-                print(f"   ⚠️  测试警告: 错误码不匹配，预期 3002")
+                print("   ⚠️  测试警告: 错误码不匹配，预期 3002")
                 print(f"   实际错误: {error}")
         else:
             print("   ⚠️  测试警告: 预期返回错误，但请求成功")

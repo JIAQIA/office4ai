@@ -75,7 +75,7 @@ def display_selection(selection: dict[str, Any]) -> None:
     end = selection.get("end")
     text = selection.get("text")
 
-    print(f"\n   📌 选区状态:")
+    print("\n   📌 选区状态:")
     print(f"      是否为空: {is_empty}")
     print(f"      选区类型: {selection_type}")
 
@@ -117,7 +117,7 @@ async def run_test_template(
     print(f"🧪 测试 {test_number}: {test_name}")
     print("=" * 70)
 
-    print(f"\n📋 前置操作:")
+    print("\n📋 前置操作:")
     print(f"   {preparation}")
 
     input("\n⏸️  完成前置操作后按 Enter 继续...")
@@ -259,7 +259,7 @@ async def test_verify_lightweight() -> bool:
                 speedup = content_time / selection_time
                 print(f"   ✅ word:get:selection 快 {speedup:.1f}x")
             else:
-                print(f"   ⚠️  word:get:selection 未能显示出性能优势")
+                print("   ⚠️  word:get:selection 未能显示出性能优势")
 
             print("\n💡 结论: word:get:selection 是轻量级查询，适合快速获取位置信息")
 

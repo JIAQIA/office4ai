@@ -15,9 +15,8 @@ Formatted Text Insert Tests
 import asyncio
 import sys
 
-from office4ai.environment.workspace.base import OfficeAction
-from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 from manual_tests.test_helpers import ready_workspace
+from office4ai.environment.workspace.base import OfficeAction
 
 
 async def test_bold_text_insert():

@@ -24,7 +24,6 @@ from typing import Any, Literal, overload
 from office4ai.environment.workspace.base import OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 
-
 # ==============================================================================
 # 日志工具
 # ==============================================================================
@@ -183,7 +182,7 @@ async def select_text(
     result = await workspace.execute(action)
 
     if result.success:
-        print(f"✅ 选择成功")
+        print("✅ 选择成功")
         print(f"   返回数据: {result.data}")
         if result.data:
             if "matchCount" in result.data:
