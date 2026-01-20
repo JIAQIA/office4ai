@@ -149,3 +149,202 @@ async def test_replace_text_empty_validation(socketio_client: AsyncClient) -> No
     await socketio_client.emit("word:replace:text", request_data, namespace="/word")
 
     await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_get_selection_request(socketio_client: AsyncClient) -> None:
+    """Test get selection request"""
+    request_data = {
+        "requestId": "req_test_selection_001",
+        "documentUri": "file:///tmp/test.docx",
+    }
+
+    await socketio_client.emit("word:get:selection", request_data, namespace="/word")
+
+    # Note: Current implementation just logs, doesn't send response
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_get_selection_with_text(socketio_client: AsyncClient) -> None:
+    """Test get selection with highlighted text"""
+    request_data = {
+        "requestId": "req_test_selection_002",
+        "documentUri": "file:///tmp/test.docx",
+    }
+
+    await socketio_client.emit("word:get:selection", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_get_selection_empty(socketio_client: AsyncClient) -> None:
+    """Test get selection with cursor position (empty selection)"""
+    request_data = {
+        "requestId": "req_test_selection_003",
+        "documentUri": "file:///tmp/test.docx",
+    }
+
+    await socketio_client.emit("word:get:selection", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_request(socketio_client: AsyncClient) -> None:
+    """Test select text request - basic selection"""
+    request_data = {
+        "requestId": "req_test_select_001",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "Hello World",
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    # Note: Current implementation just logs
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_with_options(socketio_client: AsyncClient) -> None:
+    """Test select text with search options"""
+    request_data = {
+        "requestId": "req_test_select_002",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "test",
+        "searchOptions": {
+            "matchCase": True,
+            "matchWholeWord": True,
+            "matchWildcards": False,
+        },
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_with_select_mode(socketio_client: AsyncClient) -> None:
+    """Test select text with different selection modes"""
+    # Test "select" mode
+    request_data = {
+        "requestId": "req_test_select_003",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "example",
+        "selectionMode": "select",
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_with_start_mode(socketio_client: AsyncClient) -> None:
+    """Test select text with start mode (cursor at beginning)"""
+    request_data = {
+        "requestId": "req_test_select_004",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "pattern",
+        "selectionMode": "start",
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_with_end_mode(socketio_client: AsyncClient) -> None:
+    """Test select text with end mode (cursor at end)"""
+    request_data = {
+        "requestId": "req_test_select_005",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "keyword",
+        "selectionMode": "end",
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_with_select_index(socketio_client: AsyncClient) -> None:
+    """Test select text with custom selectIndex"""
+    request_data = {
+        "requestId": "req_test_select_006",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "find me",
+        "selectIndex": 3,  # Select the 3rd match
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_with_wildcards(socketio_client: AsyncClient) -> None:
+    """Test select text with wildcard search"""
+    request_data = {
+        "requestId": "req_test_select_007",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "test*",
+        "searchOptions": {
+            "matchWildcards": True,
+        },
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_empty_search_text_validation(socketio_client: AsyncClient) -> None:
+    """Test select text with empty searchText (should log warning)"""
+    request_data = {
+        "requestId": "req_test_select_008",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "",  # Empty - should trigger warning
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_select_text_complex_options(socketio_client: AsyncClient) -> None:
+    """Test select text with all options combined"""
+    request_data = {
+        "requestId": "req_test_select_009",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "ComplexPattern",
+        "searchOptions": {
+            "matchCase": True,
+            "matchWholeWord": True,
+            "matchWildcards": False,
+        },
+        "selectionMode": "select",
+        "selectIndex": 2,
+    }
+
+    await socketio_client.emit("word:select:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)

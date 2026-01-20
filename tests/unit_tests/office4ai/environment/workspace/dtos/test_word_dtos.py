@@ -16,6 +16,9 @@ from office4ai.environment.workspace.dtos.word import (
     GetContentOptions,
     GetStylesOptions,
     ReplaceContent,
+    SelectionInfo,
+    SelectTextResult,
+    SelectTextSearchOptions,
     StyleInfo,
     StylesResult,
     TextFormat,
@@ -23,13 +26,264 @@ from office4ai.environment.workspace.dtos.word import (
     WordGetDocumentStatsResponse,
     WordGetSelectedContentRequest,
     WordGetSelectedContentResponse,
+    WordGetSelectionRequest,
+    WordGetSelectionResponse,
     WordGetStylesRequest,
     WordGetVisibleContentRequest,
     WordGetVisibleContentResponse,
     WordInsertTextRequest,
     WordReplaceSelectionRequest,
     WordReplaceSelectionResponse,
+    WordSelectTextRequest,
+    WordSelectTextResponse,
 )
+
+
+class TestWordGetSelectionRequest:
+    """Test WordGetSelectionRequest DTO"""
+
+    def test_valid_request_with_defaults(self) -> None:
+        """Test creating valid request with default values"""
+        request = WordGetSelectionRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert isinstance(request.timestamp, int)
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetSelectionRequest(documentUri="file:///test.docx")
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing documentUri
+        with pytest.raises(ValidationError) as exc_info:
+            WordGetSelectionRequest(requestId="req_001")
+
+        assert "documentUri" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordGetSelectionRequest.event_name == "word:get:selection"
+
+    def test_to_payload_camel_case(self) -> None:
+        """Test serialization to camelCase payload"""
+        request = WordGetSelectionRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+        )
+
+        payload = request.to_payload()
+
+        assert payload["requestId"] == "req_002"
+        assert payload["documentUri"] == "file:///test.docx"
+        assert isinstance(payload["timestamp"], int)
+
+    def test_build_class_method(self) -> None:
+        """Test build class method for creating requests"""
+        request = WordGetSelectionRequest.build(document_uri="file:///test.docx")
+
+        assert request.request_id is not None
+        assert isinstance(request.request_id, str)
+        assert request.document_uri == "file:///test.docx"
+
+
+class TestSelectionInfo:
+    """Test SelectionInfo DTO"""
+
+    def test_valid_selection_info_empty(self) -> None:
+        """Test creating valid selection info for empty selection (cursor)"""
+        selection = SelectionInfo(
+            isEmpty=True,
+            type="InsertionPoint",
+            start=100,
+            end=100,
+        )
+
+        assert selection.is_empty is True
+        assert selection.type == "InsertionPoint"
+        assert selection.start == 100
+        assert selection.end == 100
+        assert selection.text is None
+
+    def test_valid_selection_info_normal(self) -> None:
+        """Test creating valid selection info for normal selection"""
+        selection = SelectionInfo(
+            isEmpty=False,
+            type="Normal",
+            start=100,
+            end=150,
+            text="Selected text",
+        )
+
+        assert selection.is_empty is False
+        assert selection.type == "Normal"
+        assert selection.start == 100
+        assert selection.end == 150
+        assert selection.text == "Selected text"
+
+    def test_valid_selection_info_no_selection(self) -> None:
+        """Test creating valid selection info for no selection"""
+        selection = SelectionInfo(
+            isEmpty=True,
+            type="NoSelection",
+        )
+
+        assert selection.is_empty is True
+        assert selection.type == "NoSelection"
+        assert selection.start is None
+        assert selection.end is None
+        assert selection.text is None
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing isEmpty
+        with pytest.raises(ValidationError) as exc_info:
+            SelectionInfo(type="InsertionPoint")  # type: ignore
+
+        assert "isEmpty" in str(exc_info.value)
+
+        # Missing type
+        with pytest.raises(ValidationError) as exc_info:
+            SelectionInfo(isEmpty=True)  # type: ignore
+
+        assert "type" in str(exc_info.value)
+
+    def test_invalid_selection_type(self) -> None:
+        """Test validation fails with invalid selection type"""
+        with pytest.raises(ValidationError) as exc_info:
+            SelectionInfo(
+                isEmpty=True,
+                type="InvalidType",  # type: ignore
+            )
+
+        assert "type" in str(exc_info.value).lower()
+
+    def test_all_valid_selection_types(self) -> None:
+        """Test all valid selection types"""
+        types = ["NoSelection", "InsertionPoint", "Normal"]
+
+        for selection_type in types:
+            selection = SelectionInfo(isEmpty=True, type=selection_type)  # type: ignore
+            assert selection.type == selection_type
+
+    def test_selection_serialization(self) -> None:
+        """Test selection can be serialized to dict with correct aliases"""
+        selection = SelectionInfo(
+            isEmpty=False,
+            type="Normal",
+            start=50,
+            end=100,
+            text="Test",
+        )
+
+        data = selection.model_dump(by_alias=True)
+
+        assert data["isEmpty"] is False
+        assert data["type"] == "Normal"
+        assert data["start"] == 50
+        assert data["end"] == 100
+        assert data["text"] == "Test"
+
+    def test_selection_from_dict(self) -> None:
+        """Test creating selection from dict"""
+        data = {
+            "isEmpty": True,
+            "type": "InsertionPoint",
+            "start": 200,
+            "end": 200,
+            "text": None,
+        }
+
+        selection = SelectionInfo(**data)
+
+        assert selection.is_empty is True
+        assert selection.type == "InsertionPoint"
+        assert selection.start == 200
+        assert selection.end == 200
+
+
+class TestWordGetSelectionResponse:
+    """Test WordGetSelectionResponse DTO"""
+
+    def test_valid_response_with_data(self) -> None:
+        """Test creating valid response with selection data"""
+        selection_data = SelectionInfo(
+            isEmpty=False,
+            type="Normal",
+            start=100,
+            end=150,
+            text="Selected text",
+        )
+        response = WordGetSelectionResponse(data=selection_data)
+
+        assert response.data is not None
+        assert response.data.is_empty is False
+        assert response.data.type == "Normal"
+        assert response.data.start == 100
+        assert response.data.end == 150
+        assert response.data.text == "Selected text"
+
+    def test_valid_response_without_data(self) -> None:
+        """Test creating valid response without data"""
+        response = WordGetSelectionResponse()
+
+        assert response.data is None
+
+    def test_response_with_empty_selection(self) -> None:
+        """Test creating response with empty selection (cursor)"""
+        selection_data = SelectionInfo(
+            isEmpty=True,
+            type="InsertionPoint",
+            start=50,
+            end=50,
+        )
+        response = WordGetSelectionResponse(data=selection_data)
+
+        assert response.data.is_empty is True
+        assert response.data.type == "InsertionPoint"
+        assert response.data.start == 50
+        assert response.data.end == 50
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        selection_data = SelectionInfo(
+            isEmpty=False,
+            type="Normal",
+            start=25,
+            end=75,
+            text="Test text",
+        )
+        response = WordGetSelectionResponse(data=selection_data)
+
+        data = response.model_dump(by_alias=True)
+
+        assert "data" in data
+        assert data["data"]["isEmpty"] is False
+        assert data["data"]["type"] == "Normal"
+        assert data["data"]["start"] == 25
+        assert data["data"]["end"] == 75
+        assert data["data"]["text"] == "Test text"
+
+    def test_response_from_dict(self) -> None:
+        """Test creating response from dict"""
+        data = {
+            "data": {
+                "isEmpty": True,
+                "type": "NoSelection",
+            }
+        }
+
+        response = WordGetSelectionResponse(**data)
+
+        assert response.data is not None
+        assert response.data.is_empty is True
+        assert response.data.type == "NoSelection"
 
 
 class TestWordGetSelectedContentRequest:
@@ -1502,3 +1756,521 @@ class TestWordGetDocumentStatsResponse:
         assert data["data"]["wordCount"] == 2500
         assert data["data"]["characterCount"] == 12500
         assert data["data"]["paragraphCount"] == 35
+
+
+class TestWordSelectTextRequest:
+    """Test WordSelectTextRequest DTO"""
+
+    def test_valid_request_with_defaults(self) -> None:
+        """Test creating valid request with default values"""
+        request = WordSelectTextRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            searchText="Hello World",
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert request.search_text == "Hello World"
+        assert request.search_options is None
+        assert request.selection_mode == "select"  # Default value
+        assert request.select_index == 1  # Default value
+        assert isinstance(request.timestamp, int)
+
+    def test_valid_request_with_search_options(self) -> None:
+        """Test creating valid request with search options"""
+        search_options = SelectTextSearchOptions(
+            matchCase=True,
+            matchWholeWord=True,
+            matchWildcards=False,
+        )
+
+        request = WordSelectTextRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            searchText="test",
+            searchOptions=search_options,
+        )
+
+        assert request.search_text == "test"
+        assert request.search_options is not None
+        assert request.search_options.match_case is True
+        assert request.search_options.match_whole_word is True
+        assert request.search_options.match_wildcards is False
+
+    def test_valid_request_with_selection_modes(self) -> None:
+        """Test creating valid request with different selection modes"""
+        # Test "select" mode (default)
+        request_select = WordSelectTextRequest(
+            requestId="req_003",
+            documentUri="file:///test.docx",
+            searchText="text",
+            selectionMode="select",
+        )
+        assert request_select.selection_mode == "select"
+
+        # Test "start" mode
+        request_start = WordSelectTextRequest(
+            requestId="req_004",
+            documentUri="file:///test.docx",
+            searchText="text",
+            selectionMode="start",
+        )
+        assert request_start.selection_mode == "start"
+
+        # Test "end" mode
+        request_end = WordSelectTextRequest(
+            requestId="req_005",
+            documentUri="file:///test.docx",
+            searchText="text",
+            selectionMode="end",
+        )
+        assert request_end.selection_mode == "end"
+
+    def test_valid_request_with_select_index(self) -> None:
+        """Test creating valid request with different selectIndex"""
+        request = WordSelectTextRequest(
+            requestId="req_006",
+            documentUri="file:///test.docx",
+            searchText="test",
+            selectIndex=3,
+        )
+
+        assert request.select_index == 3
+
+    def test_request_with_dict_search_options(self) -> None:
+        """Test creating request with search options as dict"""
+        request = WordSelectTextRequest(
+            requestId="req_007",
+            documentUri="file:///test.docx",
+            searchText="pattern",
+            searchOptions={"matchCase": True, "matchWildcards": True},
+        )
+
+        assert request.search_options is not None
+        assert request.search_options.match_case is True
+        assert request.search_options.match_wildcards is True
+        assert request.search_options.match_whole_word is False
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextRequest(
+                documentUri="file:///test.docx",
+                searchText="test",
+            )
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing documentUri
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextRequest(
+                requestId="req_001",
+                searchText="test",
+            )
+
+        assert "documentUri" in str(exc_info.value)
+
+        # Missing searchText
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+            )
+
+        assert "searchText" in str(exc_info.value)
+
+    def test_invalid_selection_mode(self) -> None:
+        """Test validation fails with invalid selection mode"""
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+                searchText="test",
+                selectionMode="invalid_mode",  # type: ignore
+            )
+
+        assert "selectionMode" in str(exc_info.value)
+
+    def test_invalid_select_index(self) -> None:
+        """Test validation fails with invalid selectIndex (must be >= 1)"""
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+                searchText="test",
+                selectIndex=0,  # type: ignore
+            )
+
+        assert "selectIndex" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordSelectTextRequest.event_name == "word:select:text"
+
+    def test_to_payload_camel_case(self) -> None:
+        """Test serialization to camelCase payload"""
+        request = WordSelectTextRequest(
+            requestId="req_008",
+            documentUri="file:///test.docx",
+            searchText="Hello",
+            selectionMode="select",
+            selectIndex=2,
+        )
+
+        payload = request.to_payload()
+
+        assert payload["requestId"] == "req_008"
+        assert payload["documentUri"] == "file:///test.docx"
+        assert payload["searchText"] == "Hello"
+        assert payload["selectionMode"] == "select"
+        assert payload["selectIndex"] == 2
+        assert isinstance(payload["timestamp"], int)
+
+    def test_build_class_method(self) -> None:
+        """Test build class method for creating requests"""
+        request = WordSelectTextRequest.build(
+            document_uri="file:///test.docx",
+            search_text="Auto test",
+            selection_mode="start",
+        )
+
+        assert request.request_id is not None
+        assert isinstance(request.request_id, str)
+        assert request.document_uri == "file:///test.docx"
+        assert request.search_text == "Auto test"
+        assert request.selection_mode == "start"
+
+    def test_search_text_max_length(self) -> None:
+        """Test search text max length validation (255 characters, enforced by Word.js API)"""
+        # Test valid length (exactly 255 characters)
+        valid_text = "a" * 255
+        request = WordSelectTextRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            searchText=valid_text,
+        )
+        assert len(request.search_text) == 255
+
+        # Test invalid length (256 characters)
+        invalid_text = "a" * 256
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextRequest(
+                requestId="req_002",
+                documentUri="file:///test.docx",
+                searchText=invalid_text,
+            )
+
+        assert "searchText" in str(exc_info.value)
+        assert "255" in str(exc_info.value) or "at most 255" in str(exc_info.value).lower()
+
+
+class TestSelectTextSearchOptions:
+    """Test SelectTextSearchOptions DTO"""
+
+    def test_default_options(self) -> None:
+        """Test creating options with default values"""
+        options = SelectTextSearchOptions()
+
+        assert options.match_case is False
+        assert options.match_whole_word is False
+        assert options.match_wildcards is False
+
+    def test_custom_options(self) -> None:
+        """Test creating options with custom values"""
+        options = SelectTextSearchOptions(
+            matchCase=True,
+            matchWholeWord=True,
+            matchWildcards=True,
+        )
+
+        assert options.match_case is True
+        assert options.match_whole_word is True
+        assert options.match_wildcards is True
+
+    def test_options_from_dict(self) -> None:
+        """Test creating options from dict with aliases"""
+        options = SelectTextSearchOptions(
+            **{
+                "matchCase": True,
+                "matchWholeWord": False,
+                "matchWildcards": True,
+            }
+        )
+
+        assert options.match_case is True
+        assert options.match_whole_word is False
+        assert options.match_wildcards is True
+
+    def test_options_serialization(self) -> None:
+        """Test options can be serialized to dict with correct aliases"""
+        options = SelectTextSearchOptions(
+            matchCase=True,
+            matchWholeWord=True,
+        )
+
+        data = options.model_dump(by_alias=True)
+
+        assert data["matchCase"] is True
+        assert data["matchWholeWord"] is True
+        assert data["matchWildcards"] is False
+
+    def test_partial_options(self) -> None:
+        """Test creating options with partial fields"""
+        options = SelectTextSearchOptions(matchCase=True)
+
+        assert options.match_case is True
+        assert options.match_whole_word is False
+        assert options.match_wildcards is False
+
+
+class TestSelectTextResult:
+    """Test SelectTextResult DTO"""
+
+    def test_valid_result_with_selection(self) -> None:
+        """Test creating valid result with selection"""
+        selection_info = SelectionInfo(
+            isEmpty=False,
+            type="Normal",
+            start=100,
+            end=150,
+            text="Selected text",
+        )
+
+        result = SelectTextResult(
+            success=True,
+            matchCount=3,
+            selectedIndex=2,
+            selectedText="Selected text",
+            selectionInfo=selection_info,
+        )
+
+        assert result.success is True
+        assert result.match_count == 3
+        assert result.selected_index == 2
+        assert result.selected_text == "Selected text"
+        assert result.selection_info is not None
+        assert result.selection_info.is_empty is False
+        assert result.selection_info.start == 100
+
+    def test_valid_result_without_selection(self) -> None:
+        """Test creating valid result without selection info"""
+        result = SelectTextResult(
+            success=True,
+            matchCount=1,
+            selectedIndex=1,
+            selectedText="test",
+        )
+
+        assert result.success is True
+        assert result.match_count == 1
+        assert result.selected_index == 1
+        assert result.selected_text == "test"
+        assert result.selection_info is None
+
+    def test_result_serialization(self) -> None:
+        """Test result can be serialized to dict with correct aliases"""
+        selection_info = SelectionInfo(
+            isEmpty=False,
+            type="Normal",
+            start=50,
+            end=100,
+            text="Test",
+        )
+
+        result = SelectTextResult(
+            success=True,
+            matchCount=5,
+            selectedIndex=1,
+            selectedText="Test",
+            selectionInfo=selection_info,
+        )
+
+        data = result.model_dump(by_alias=True)
+
+        assert data["success"] is True
+        assert data["matchCount"] == 5
+        assert data["selectedIndex"] == 1
+        assert data["selectedText"] == "Test"
+        assert data["selectionInfo"]["isEmpty"] is False
+
+    def test_result_from_dict(self) -> None:
+        """Test creating result from dict"""
+        data = {
+            "success": True,
+            "matchCount": 2,
+            "selectedIndex": 1,
+            "selectedText": "Hello World",
+        }
+
+        result = SelectTextResult(**data)
+
+        assert result.success is True
+        assert result.match_count == 2
+        assert result.selected_index == 1
+        assert result.selected_text == "Hello World"
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing success
+        with pytest.raises(ValidationError) as exc_info:
+            SelectTextResult(
+                matchCount=1,
+                selectedIndex=1,
+                selectedText="test",
+            )
+
+        assert "success" in str(exc_info.value)
+
+        # Missing matchCount
+        with pytest.raises(ValidationError) as exc_info:
+            SelectTextResult(
+                success=True,
+                selectedIndex=1,
+                selectedText="test",
+            )
+
+        assert "matchCount" in str(exc_info.value)
+
+        # Missing selectedIndex
+        with pytest.raises(ValidationError) as exc_info:
+            SelectTextResult(
+                success=True,
+                matchCount=1,
+                selectedText="test",
+            )
+
+        assert "selectedIndex" in str(exc_info.value)
+
+        # Missing selectedText
+        with pytest.raises(ValidationError) as exc_info:
+            SelectTextResult(
+                success=True,
+                matchCount=1,
+                selectedIndex=1,
+            )
+
+        assert "selectedText" in str(exc_info.value)
+
+
+class TestWordSelectTextResponse:
+    """Test WordSelectTextResponse DTO"""
+
+    def test_valid_response_with_data(self) -> None:
+        """Test creating valid response with data"""
+        result_data = SelectTextResult(
+            success=True,
+            matchCount=3,
+            selectedIndex=2,
+            selectedText="Found text",
+        )
+
+        response = WordSelectTextResponse(
+            requestId="req_001",
+            success=True,
+            data=result_data,
+            timestamp=1234567890,
+        )
+
+        assert response.request_id == "req_001"
+        assert response.success is True
+        assert response.data is not None
+        assert response.data.match_count == 3
+        assert response.data.selected_text == "Found text"
+        assert response.error is None
+
+    def test_valid_response_with_error(self) -> None:
+        """Test creating valid response with error"""
+        from office4ai.environment.workspace.dtos.common import ErrorResponse
+
+        error = ErrorResponse(code="3000", message="Office API error")
+
+        response = WordSelectTextResponse(
+            requestId="req_002",
+            success=False,
+            error=error,
+            timestamp=1234567890,
+        )
+
+        assert response.request_id == "req_002"
+        assert response.success is False
+        assert response.data is None
+        assert response.error is not None
+        assert response.error.code == "3000"
+        assert response.error.message == "Office API error"
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        result_data = SelectTextResult(
+            success=True,
+            matchCount=1,
+            selectedIndex=1,
+            selectedText="Test",
+        )
+
+        response = WordSelectTextResponse(
+            requestId="req_003",
+            success=True,
+            data=result_data,
+            timestamp=1234567890,
+        )
+
+        data = response.model_dump(by_alias=True)
+
+        assert data["requestId"] == "req_003"
+        assert data["success"] is True
+        assert data["data"]["matchCount"] == 1
+        assert data["data"]["selectedText"] == "Test"
+        assert data["timestamp"] == 1234567890
+
+    def test_response_from_dict(self) -> None:
+        """Test creating response from dict"""
+        data = {
+            "requestId": "req_004",
+            "success": True,
+            "data": {
+                "success": True,
+                "matchCount": 2,
+                "selectedIndex": 1,
+                "selectedText": "Hello",
+            },
+            "timestamp": 1234567890,
+        }
+
+        response = WordSelectTextResponse(**data)
+
+        assert response.request_id == "req_004"
+        assert response.success is True
+        assert response.data is not None
+        assert response.data.match_count == 2
+        assert response.data.selected_text == "Hello"
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        # Missing requestId
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextResponse(
+                success=True,
+                timestamp=1234567890,
+            )
+
+        assert "requestId" in str(exc_info.value)
+
+        # Missing success
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextResponse(
+                requestId="req_001",
+                timestamp=1234567890,
+            )
+
+        assert "success" in str(exc_info.value)
+
+        # Missing timestamp
+        with pytest.raises(ValidationError) as exc_info:
+            WordSelectTextResponse(
+                requestId="req_001",
+                success=True,
+            )
+
+        assert "timestamp" in str(exc_info.value)

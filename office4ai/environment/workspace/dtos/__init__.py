@@ -44,11 +44,15 @@ from office4ai.environment.workspace.dtos.ppt import (
 
 # Word DTOs
 from office4ai.environment.workspace.dtos.word import (
+    SelectionInfo,
+    SelectTextResult,
     WordAppendTextRequest,
     WordExportContentRequest,
     WordGetDocumentStatsRequest,
     WordGetDocumentStructureRequest,
     WordGetSelectedContentRequest,
+    WordGetSelectionRequest,
+    WordGetSelectionResponse,
     WordGetVisibleContentRequest,
     WordInsertEquationRequest,
     WordInsertImageRequest,
@@ -57,6 +61,7 @@ from office4ai.environment.workspace.dtos.word import (
     WordInsertTOCRequest,
     WordReplaceSelectionRequest,
     WordReplaceTextRequest,
+    WordSelectTextRequest,
 )
 
 __all__ = [
@@ -67,18 +72,23 @@ __all__ = [
     "ErrorCode",
     # Word
     "WordGetSelectedContentRequest",
+    "WordGetSelectionRequest",
+    "WordGetSelectionResponse",
     "WordGetVisibleContentRequest",
     "WordGetDocumentStructureRequest",
     "WordGetDocumentStatsRequest",
     "WordInsertTextRequest",
     "WordReplaceSelectionRequest",
     "WordReplaceTextRequest",
+    "WordSelectTextRequest",
+    "SelectTextResult",
     "WordAppendTextRequest",
     "WordInsertImageRequest",
     "WordInsertTableRequest",
     "WordInsertEquationRequest",
     "WordInsertTOCRequest",
     "WordExportContentRequest",
+    "SelectionInfo",
     # Excel
     "ExcelGetSelectedRangeRequest",
     "ExcelGetUsedRangeRequest",

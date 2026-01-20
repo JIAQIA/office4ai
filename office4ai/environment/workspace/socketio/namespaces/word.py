@@ -105,6 +105,63 @@ class WordNamespace(BaseNamespace):
                 f"requestId: {data.get('requestId', 'unknown')}"
             )
 
+    async def on_word_get_selection(self, sid: str, data: Any) -> None:
+        """
+        Handle word:get:selection event from Add-In.
+
+        Gets lightweight selection position information from Word document.
+
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/36569100
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: {
+                requestId: str,
+                documentUri: str,
+                timestamp: number
+            }
+
+        Response:
+            {
+                requestId: str,
+                success: boolean,
+                data?: {
+                    isEmpty: boolean,
+                    type: "NoSelection" | "InsertionPoint" | "Normal",
+                    start?: number,
+                    end?: number,
+                    text?: string
+                },
+                error?: {
+                    code: string,
+                    message: string
+                },
+                timestamp: number
+            }
+
+        Selection Types:
+            - NoSelection: No selection exists (isEmpty: true)
+            - InsertionPoint: Cursor position only (isEmpty: true)
+            - Normal: Text selection with highlighted content (isEmpty: false)
+
+        Error Codes:
+            - 3000: OFFICE_API_ERROR - Office API call failed
+
+        Notes:
+            - Lightweight query that returns position information only
+            - For full content structure, use word:get:selectedContent instead
+            - Returns isEmpty, type, start, end positions, and text if available
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            logger.info(
+                f"Received word:get:selection from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}"
+            )
+
     async def on_word_insert_text(self, sid: str, data: Any) -> None:
         """
         Handle word:insert:text event from Add-In.
@@ -508,6 +565,115 @@ class WordNamespace(BaseNamespace):
                 f"matchCase: {match_case}, "
                 f"matchWholeWord: {match_whole_word}, "
                 f"replaceAll: {replace_all}"
+            )
+
+    async def on_word_select_text(self, sid: str, data: Any) -> None:
+        """
+        Handle word:select:text event from Add-In.
+
+        Search and select text in Word document, with options for case sensitivity,
+        whole word matching, wildcards, and selection modes.
+
+        Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/42467331
+
+        Note: This handler receives events from Add-In for logging/debugging.
+        Server → Add-In commands should use OfficeWorkspace.emit_to_document().
+
+        Args:
+            sid: Session ID
+            data: {
+                requestId: str,
+                documentUri: str,
+                searchText: string,
+                searchOptions?: {
+                    matchCase?: boolean,
+                    matchWholeWord?: boolean,
+                    matchWildcards?: boolean
+                },
+                selectionMode?: "select" | "start" | "end",
+                selectIndex?: number,
+                timestamp: number
+            }
+
+        Validation:
+            - searchText must not be empty
+            - matchCase: true = case sensitive, false = case insensitive
+            - matchWholeWord: true = match whole words only
+            - matchWildcards: true = use wildcards in search pattern
+            - selectionMode:
+                * "select" = highlight the text (default)
+                * "start" = position cursor at text start
+                * "end" = position cursor at text end
+            - selectIndex: which match to select (1-based, default: 1)
+
+        Response:
+            {
+                requestId: str,
+                success: boolean,
+                data?: {
+                    success: boolean,
+                    matchCount: number,
+                    selectedIndex: number,
+                    selectedText: string,
+                    selectionInfo?: {
+                        type: "Normal" | "NoSelection" | "InsertionPoint",
+                        start?: number,
+                        end?: number,
+                        text?: string,
+                        isEmpty: boolean
+                    }
+                },
+                error?: {
+                    code: string,
+                    message: string
+                },
+                timestamp: number
+            }
+
+        Error Codes:
+            - 3000: OFFICE_API_ERROR - Office API call failed
+            - 3001: VALIDATION_ERROR - Request parameter validation failed
+
+        Usage Scenarios:
+            1. Text positioning - quickly navigate to specific text
+            2. Batch operations - select multiple matches for processing
+            3. Smart navigation - jump to target location based on content
+            4. Content verification - check if specific text exists
+
+        Behavioral Notes:
+            - Only selects text, does not modify content
+            - Different from word:replace:text which replaces content
+            - Can iterate through all matches by incrementing selectIndex
+            - Returns matchCount even if selectedIndex > matchCount
+        """
+        client_info = self.get_client_info(sid)
+        if client_info:
+            search_text = data.get("searchText", "")
+            search_options = data.get("searchOptions", {})
+            selection_mode = data.get("selectionMode", "select")
+            select_index = data.get("selectIndex", 1)
+
+            # Validate required parameters
+            if not search_text:
+                logger.warning(
+                    f"Invalid word:select:text from {client_info.client_id}: "
+                    f"searchText required, requestId: {data.get('requestId', 'unknown')}"
+                )
+                return
+
+            match_case = search_options.get("matchCase", False)
+            match_whole_word = search_options.get("matchWholeWord", False)
+            match_wildcards = search_options.get("matchWildcards", False)
+
+            logger.info(
+                f"Received word:select:text from {client_info.client_id}, "
+                f"requestId: {data.get('requestId', 'unknown')}, "
+                f"searchText: '{search_text[:50]}...', "
+                f"selectionMode: {selection_mode}, "
+                f"selectIndex: {select_index}, "
+                f"matchCase: {match_case}, "
+                f"matchWholeWord: {match_whole_word}, "
+                f"matchWildcards: {match_wildcards}"
             )
 
     async def on_word_append_text(self, sid: str, data: Any) -> None:

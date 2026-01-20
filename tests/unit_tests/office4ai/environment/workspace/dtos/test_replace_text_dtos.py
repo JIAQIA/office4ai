@@ -83,41 +83,49 @@ class TestWordReplaceTextRequest:
         """
         # Missing requestId
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextRequest.model_validate({
-                "documentUri": "file:///test.docx",
-                "searchText": "old",
-                "replaceText": "new",
-            })
+            WordReplaceTextRequest.model_validate(
+                {
+                    "documentUri": "file:///test.docx",
+                    "searchText": "old",
+                    "replaceText": "new",
+                }
+            )
 
         assert "requestId" in str(exc_info.value)
 
         # Missing documentUri
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextRequest.model_validate({
-                "requestId": "req_001",
-                "searchText": "old",
-                "replaceText": "new",
-            })
+            WordReplaceTextRequest.model_validate(
+                {
+                    "requestId": "req_001",
+                    "searchText": "old",
+                    "replaceText": "new",
+                }
+            )
 
         assert "documentUri" in str(exc_info.value)
 
         # Missing searchText
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextRequest.model_validate({
-                "requestId": "req_001",
-                "documentUri": "file:///test.docx",
-                "replaceText": "new",
-            })
+            WordReplaceTextRequest.model_validate(
+                {
+                    "requestId": "req_001",
+                    "documentUri": "file:///test.docx",
+                    "replaceText": "new",
+                }
+            )
 
         assert "searchText" in str(exc_info.value)
 
         # Missing replaceText
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextRequest.model_validate({
-                "requestId": "req_001",
-                "documentUri": "file:///test.docx",
-                "searchText": "old",
-            })
+            WordReplaceTextRequest.model_validate(
+                {
+                    "requestId": "req_001",
+                    "documentUri": "file:///test.docx",
+                    "searchText": "old",
+                }
+            )
 
         assert "replaceText" in str(exc_info.value)
 
@@ -386,28 +394,34 @@ class TestWordReplaceTextResponse:
         """
         # Missing requestId
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextResponse.model_validate({
-                "success": True,
-                "timestamp": 1234567890,
-            })
+            WordReplaceTextResponse.model_validate(
+                {
+                    "success": True,
+                    "timestamp": 1234567890,
+                }
+            )
 
         assert "requestId" in str(exc_info.value)
 
         # Missing success
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextResponse.model_validate({
-                "requestId": "req_001",
-                "timestamp": 1234567890,
-            })
+            WordReplaceTextResponse.model_validate(
+                {
+                    "requestId": "req_001",
+                    "timestamp": 1234567890,
+                }
+            )
 
         assert "success" in str(exc_info.value)
 
         # Missing timestamp
         with pytest.raises(ValidationError) as exc_info:
-            WordReplaceTextResponse.model_validate({
-                "requestId": "req_001",
-                "success": True,
-            })
+            WordReplaceTextResponse.model_validate(
+                {
+                    "requestId": "req_001",
+                    "success": True,
+                }
+            )
 
         assert "timestamp" in str(exc_info.value)
 

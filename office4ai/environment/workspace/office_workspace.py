@@ -235,13 +235,22 @@ class OfficeWorkspace(BaseWorkspace):
 
             # 从响应中提取业务数据（response["data"]）
             # 响应格式: {requestId, success, data, timestamp, duration}
-            if response.get("success") and "data" in response:
-                # 成功：提取业务数据
-                business_data = response["data"]
-                return OfficeObs(success=True, data=business_data)
+            if response.get("success"):
+                # 协议层成功，检查业务层结果
+                if "data" in response:
+                    business_data = response["data"]
+                    # 检查业务层的 success 字段（如果存在）
+                    business_success = business_data.get("success", True)
+                    return OfficeObs(success=business_success, data=business_data)
+                else:
+                    # 协议层成功但没有业务数据（可能是不需要返回数据的操作）
+                    return OfficeObs(success=True, data={})
             else:
                 # 失败：返回错误信息
                 error_msg = response.get("error", "Unknown error")
+                # 将 dict 类型的 error 转换为字符串（前端返回 {code, message} 格式）
+                if isinstance(error_msg, dict):
+                    error_msg = f"{error_msg.get('code', 'Unknown')}: {error_msg.get('message', 'Unknown error')}"
                 logger.error(f"Action failed: {error_msg}")
                 return OfficeObs(success=False, data={}, error=error_msg)
         except Exception as e:

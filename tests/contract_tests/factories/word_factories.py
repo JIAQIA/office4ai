@@ -412,6 +412,135 @@ class WordDataFactory:
             "paragraphCount": paragraph_count,
         }
 
+    def selection_response(
+        self,
+        is_empty: bool = False,
+        selection_type: str = "Normal",
+        start: int | None = None,
+        end: int | None = None,
+        text: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        生成 word:get:selection 响应数据。
+
+        Args:
+            is_empty: 选区是否为空（光标点）
+            selection_type: 选区类型 (NoSelection, InsertionPoint, Normal)
+            start: 起始位置（字符偏移）
+            end: 结束位置（字符偏移）
+            text: 选区文本内容
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 正常选区（有高亮文本）
+            response = factory.selection_response(
+                is_empty=False,
+                selection_type="Normal",
+                start=100,
+                end=150,
+                text="Selected text"
+            )
+
+            # 光标位置（无高亮）
+            response = factory.selection_response(
+                is_empty=True,
+                selection_type="InsertionPoint",
+                start=100,
+                end=100
+            )
+
+            # 无选区
+            response = factory.selection_response(
+                is_empty=True,
+                selection_type="NoSelection"
+            )
+            ```
+        """
+        response: dict[str, Any] = {
+            "isEmpty": is_empty,
+            "type": selection_type,
+        }
+
+        # 添加可选字段
+        if start is not None:
+            response["start"] = start
+        if end is not None:
+            response["end"] = end
+        if text is not None:
+            response["text"] = text
+
+        return response
+
+    def select_text_response(
+        self,
+        success: bool = True,
+        match_count: int = 1,
+        selected_index: int = 1,
+        selected_text: str = "Selected text",
+        selection_info: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        生成 word:select:text 响应数据。
+
+        Args:
+            success: 是否成功选中
+            match_count: 找到的匹配项数量
+            selected_index: 选中的匹配项索引（1-based）
+            selected_text: 选中的文本
+            selection_info: 选区详细信息
+
+        Returns:
+            符合协议的响应数据
+
+        Examples:
+            ```python
+            factory = WordDataFactory()
+
+            # 默认响应（选中1个匹配项）
+            response = factory.select_text_response()
+
+            # 自定义响应（选中第2个匹配项，共3个）
+            response = factory.select_text_response(
+                match_count=3,
+                selected_index=2,
+                selected_text="Hello World"
+            )
+
+            # 未找到匹配
+            response = factory.select_text_response(
+                success=False,
+                match_count=0
+            )
+            ```
+        """
+        if not success:
+            return {
+                "success": False,
+                "error": {"code": "3000", "message": "Office API error"},
+            }
+
+        if selection_info is None:
+            selection_info = {
+                "type": "Normal",
+                "start": 100,
+                "end": 100 + len(selected_text),
+                "text": selected_text,
+                "isEmpty": False,
+            }
+
+        return {
+            "success": success,
+            "matchCount": match_count,
+            "selectedIndex": selected_index,
+            "selectedText": selected_text,
+            "selectionInfo": selection_info,
+        }
+
     def error_response(
         self,
         code: str = "3002",

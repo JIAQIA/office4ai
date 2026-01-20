@@ -31,6 +31,72 @@ class WordGetStylesRequest(BaseRequest):
     )
 
 
+class WordGetSelectionRequest(BaseRequest):
+    """
+    Request to get selection information from Word document.
+
+    Lightweight query that returns position information only.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/36569100
+    """
+
+    event_name: ClassVar[str] = "word:get:selection"
+
+
+class SelectionInfo(SocketIOBaseModel):
+    """
+    Selection position information.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/36569100
+    """
+
+    is_empty: bool = Field(
+        ...,
+        alias="isEmpty",
+        description="Whether the selection is empty (cursor point, no highlighted text)",
+    )
+    type: Literal["NoSelection", "InsertionPoint", "Normal"] = Field(
+        ...,
+        alias="type",
+        description="Selection type",
+    )
+    start: int | None = Field(
+        default=None,
+        alias="start",
+        description="Start position (character offset from document beginning)",
+    )
+    end: int | None = Field(
+        default=None,
+        alias="end",
+        description="End position (character offset from document beginning)",
+    )
+    text: str | None = Field(
+        default=None,
+        alias="text",
+        description="Selected text content",
+    )
+
+
+class WordGetSelectionResponse(SocketIOBaseModel):
+    """
+    Response for word:get:selection operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/36569100
+    """
+
+    data: SelectionInfo | None = Field(
+        default=None,
+        alias="data",
+        description="Selection position information",
+    )
+
+
 class WordGetSelectedContentRequest(BaseRequest):
     """
     Request to get selected content from Word document.
@@ -363,7 +429,8 @@ class WordReplaceTextRequest(BaseRequest):
     search_text: str = Field(
         ...,
         alias="searchText",
-        description="Text to search for",
+        description="Text to search for (max 255 characters, enforced by Word.js API)",
+        max_length=255,
     )
     replace_text: str = Field(
         ...,
@@ -375,6 +442,127 @@ class WordReplaceTextRequest(BaseRequest):
         alias="options",
         description="Replace options",
     )
+
+
+class WordSelectTextRequest(BaseRequest):
+    """
+    Request to search and select text in Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/42467331
+    """
+
+    event_name: ClassVar[str] = "word:select:text"
+
+    search_text: str = Field(
+        ...,
+        alias="searchText",
+        description="Text to search for (max 255 characters, enforced by Word.js API)",
+        max_length=255,
+    )
+    search_options: Optional["SelectTextSearchOptions"] = Field(
+        default=None,
+        alias="searchOptions",
+        description="Search options (matchCase, matchWholeWord, matchWildcards)",
+    )
+    selection_mode: Literal["select", "start", "end"] = Field(
+        default="select",
+        alias="selectionMode",
+        description="Selection mode: select/highlight text, start cursor at beginning, or end cursor at end",
+    )
+    select_index: int = Field(
+        default=1,
+        alias="selectIndex",
+        description="Which match to select (1-based, default: 1)",
+        ge=1,
+    )
+
+
+class SelectTextSearchOptions(SocketIOBaseModel):
+    """
+    Search options for word:select:text operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/42467331
+    """
+
+    match_case: bool = Field(
+        default=False,
+        alias="matchCase",
+        description="Match case (case-sensitive search)",
+    )
+    match_whole_word: bool = Field(
+        default=False,
+        alias="matchWholeWord",
+        description="Match whole word only",
+    )
+    match_wildcards: bool = Field(
+        default=False,
+        alias="matchWildcards",
+        description="Use wildcards in search pattern",
+    )
+
+
+class SelectTextResult(SocketIOBaseModel):
+    """
+    Result for word:select:text operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/42467331
+    """
+
+    success: bool = Field(
+        ...,
+        alias="success",
+        description="Whether text was successfully selected",
+    )
+    match_count: int = Field(
+        ...,
+        alias="matchCount",
+        description="Total number of matches found",
+    )
+    selected_index: int = Field(
+        ...,
+        alias="selectedIndex",
+        description="Index of the selected match (1-based)",
+    )
+    selected_text: str = Field(
+        ...,
+        alias="selectedText",
+        description="Text that was selected",
+    )
+    selection_info: Optional["SelectionInfo"] = Field(
+        default=None,
+        alias="selectionInfo",
+        description="Detailed selection information",
+    )
+
+
+class WordSelectTextResponse(SocketIOBaseModel):
+    """
+    Response for word:select:text operation.
+
+    Uses Pydantic aliases for protocol compliance.
+
+    Confluence Spec: https://turingfocus.atlassian.net/wiki/pages/42467331
+    """
+
+    request_id: str = Field(..., alias="requestId", description="Request ID being responded to")
+    success: bool = Field(..., alias="success", description="Whether the operation succeeded")
+    data: SelectTextResult | None = Field(
+        default=None,
+        alias="data",
+        description="Selection result with matchCount, selectedIndex, selectedText, and selectionInfo",
+    )
+    error: Optional["ErrorResponse"] = Field(
+        default=None,
+        alias="error",
+        description="Error details if failed",
+    )
+    timestamp: int = Field(..., alias="timestamp", description="Server timestamp in milliseconds")
 
 
 class WordAppendTextRequest(BaseRequest):
@@ -839,12 +1027,17 @@ class StylesResult(SocketIOBaseModel):
 
 
 # Resolve forward references
+SelectionInfo.model_rebuild()
+WordGetSelectionResponse.model_rebuild()
 GetContentOptions.model_rebuild()
 TextFormat.model_rebuild()
 ReplaceContent.model_rebuild()
 ReplaceOptions.model_rebuild()
 ReplaceTextResult.model_rebuild()
 WordReplaceTextResponse.model_rebuild()
+SelectTextSearchOptions.model_rebuild()
+SelectTextResult.model_rebuild()
+WordSelectTextResponse.model_rebuild()
 ImageData.model_rebuild()
 InsertLocation.model_rebuild()
 TableInsertOptions.model_rebuild()
