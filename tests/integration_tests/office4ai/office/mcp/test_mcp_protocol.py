@@ -8,7 +8,6 @@
 MCP 协议集成测试 | MCP protocol integration tests
 """
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -16,9 +15,8 @@ from mcp.client.session import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from pydantic import AnyUrl
 
-# 添加项目根目录到 Python 路径 | Add project root to Python path
+# 项目根目录路径 | Project root path
 project_root = Path(__file__).parent.parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
 
 
 @pytest.mark.integration

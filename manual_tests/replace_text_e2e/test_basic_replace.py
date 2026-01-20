@@ -21,136 +21,13 @@ Usage:
 
 import asyncio
 import sys
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
 
-# Add project root to path
-sys.path.insert(0, "/Users/jqq/PycharmProjects/office4ai")
-
-from office4ai.environment.workspace.base import OfficeAction
-from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-
-
-# ==============================================================================
-# 辅助函数和上下文管理器
-# ==============================================================================
-
-
-@asynccontextmanager
-async def workspace_context(host: str = "127.0.0.1", port: int = 3000) -> AsyncIterator[OfficeWorkspace]:
-    """
-    Workspace 上下文管理器，自动处理启动和停止
-
-    Args:
-        host: WebSocket 服务器地址
-        port: WebSocket 服务器端口
-
-    Yields:
-        OfficeWorkspace: 已启动并连接的 workspace 实例
-    """
-    workspace = OfficeWorkspace(host=host, port=port)
-    try:
-        await workspace.start()
-        yield workspace
-    finally:
-        await workspace.stop()
-
-
-async def wait_for_connection(workspace: OfficeWorkspace, timeout: float = 30.0) -> bool:
-    """
-    等待 Add-In 连接
-
-    Args:
-        workspace: Workspace 实例
-        timeout: 超时时间（秒）
-
-    Returns:
-        bool: 是否成功连接
-    """
-    print("\n⏳ 等待 Word Add-In 连接...")
-    connected = await workspace.wait_for_addin_connection(timeout=timeout)
-    if not connected:
-        print("❌ 超时：未检测到 Add-In 连接")
-        return False
-    return True
-
-
-def get_document_uri(workspace: OfficeWorkspace) -> str | None:
-    """
-    获取已连接文档的 URI
-
-    Args:
-        workspace: Workspace 实例
-
-    Returns:
-        Optional[str]: 文档 URI，如果未找到则返回 None
-    """
-    documents = workspace.get_connected_documents()
-    if not documents:
-        print("❌ 未找到已连接文档")
-        return None
-    return documents[0]
-
-
-async def replace_text(
-    workspace: OfficeWorkspace,
-    document_uri: str,
-    search_text: str,
-    replace_text: str,
-    options: dict | None = None,
-    wait_seconds: int = 3,
-) -> bool:
-    """
-    执行文本替换动作
-
-    Args:
-        workspace: Workspace 实例
-        document_uri: 文档 URI
-        search_text: 要搜索的文本
-        replace_text: 替换文本
-        options: 替换选项
-        wait_seconds: 等待时间（秒）
-
-    Returns:
-        bool: 是否成功
-    """
-    print(f"\n📝 查找文本: '{search_text[:50]}{'...' if len(search_text) > 50 else ''}'")
-    print(f"📝 替换文本: '{replace_text[:50]}{'...' if len(replace_text) > 50 else ''}'")
-    if options:
-        print(f"📝 选项: {options}")
-
-    params: dict[str, Any] = {
-        "document_uri": document_uri,
-        "searchText": search_text,
-        "replaceText": replace_text,
-    }
-
-    if options:
-        params["options"] = options
-
-    action = OfficeAction(
-        category="word",
-        action_name="replace:text",
-        params=params,
-    )
-
-    result = await workspace.execute(action)
-
-    if result.success:
-        print(f"✅ 替换成功")
-        print(f"   返回数据: {result.data}")
-        if result.data and "replaceCount" in result.data:
-            print(f"   替换次数: {result.data['replaceCount']}")
-    else:
-        print(f"❌ 替换失败: {result.error}")
-        if result.error:
-            print(f"   错误码: {result.error}")
-
-    # 等待一段时间让用户观察结果
-    print(f"\n⏳ 等待 {wait_seconds} 秒...")
-    await asyncio.sleep(wait_seconds)
-
-    return result.success
+from manual_tests.test_helpers import (
+    get_document_uri,
+    replace_text,
+    wait_for_connection,
+    workspace_context,
+)
 
 
 # ==============================================================================
@@ -372,7 +249,9 @@ async def test_6_long_text_replace() -> None:
     print("   - 预期: 长文本被正确替换")
     print("\n📋 准备工作:")
     print("   1. 在 Word 文档中输入以下文本 2 次:")
-    print("      'This is a long paragraph of text that should be replaced with another long paragraph. It contains multiple sentences and various punctuation marks.'")
+    print(
+        "      'This is a long paragraph of text that should be replaced with another long paragraph. It contains multiple sentences and various punctuation marks.'"
+    )
     print("   2. 保存文档")
     print("   3. 运行测试")
 

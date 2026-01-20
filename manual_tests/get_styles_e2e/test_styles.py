@@ -13,74 +13,19 @@ Get Styles E2E Tests
 
 import asyncio
 import sys
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
 from typing import Any
 
+from manual_tests.test_helpers import (
+    get_document_uri,
+    wait_for_connection,
+    workspace_context,
+)
 from office4ai.environment.workspace.base import OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 
 # ==============================================================================
 # 辅助函数和上下文管理器
 # ==============================================================================
-
-
-@asynccontextmanager
-async def workspace_context(host: str = "127.0.0.1", port: int = 3000) -> AsyncGenerator[OfficeWorkspace, None]:
-    """
-    Workspace 上下文管理器，自动处理启动和停止
-
-    Args:
-        host: WebSocket 服务器地址
-        port: WebSocket 服务器端口
-
-    Yields:
-        OfficeWorkspace: 已启动并连接的 workspace 实例
-    """
-    workspace = OfficeWorkspace(host=host, port=port)
-    try:
-        await workspace.start()
-        yield workspace
-    finally:
-        await workspace.stop()
-
-
-async def wait_for_connection(workspace: OfficeWorkspace, timeout: float = 30.0) -> bool:
-    """
-    等待 Add-In 连接
-
-    Args:
-        workspace: Workspace 实例
-        timeout: 超时时间（秒）
-
-    Returns:
-        bool: 是否成功连接
-    """
-    print("\n⏳ 等待 Word Add-In 连接...")
-    connected = await workspace.wait_for_addin_connection(timeout=timeout)
-    if not connected:
-        print("❌ 超时：未检测到 Add-In 连接")
-        return False
-    print("✅ Add-In 已连接")
-    return True
-
-
-def get_document_uri(workspace: OfficeWorkspace) -> str | None:
-    """
-    获取已连接文档的 URI
-
-    Args:
-        workspace: Workspace 实例
-
-    Returns:
-        Optional[str]: 文档 URI，如果未找到则返回 None
-    """
-    documents = workspace.get_connected_documents()
-    if not documents:
-        print("❌ 未找到已连接文档")
-        return None
-    print(f"✅ 使用文档: {documents[0]}")
-    return documents[0]
 
 
 async def get_styles(

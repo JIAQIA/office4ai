@@ -12,116 +12,13 @@ Basic Insert Text Test
 
 import asyncio
 import sys
-from contextlib import asynccontextmanager
 
-from office4ai.environment.workspace.base import OfficeAction
-from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-
-# ==============================================================================
-# 辅助函数和上下文管理器
-# ==============================================================================
-
-
-@asynccontextmanager
-async def workspace_context(host: str = "127.0.0.1", port: int = 3000):
-    """
-    Workspace 上下文管理器，自动处理启动和停止
-
-    Args:
-        host: WebSocket 服务器地址
-        port: WebSocket 服务器端口
-
-    Yields:
-        OfficeWorkspace: 已启动并连接的 workspace 实例
-    """
-    workspace = OfficeWorkspace(host=host, port=port)
-    try:
-        await workspace.start()
-        yield workspace
-    finally:
-        await workspace.stop()
-
-
-async def wait_for_connection(workspace: OfficeWorkspace, timeout: float = 30.0) -> bool:
-    """
-    等待 Add-In 连接
-
-    Args:
-        workspace: Workspace 实例
-        timeout: 超时时间（秒）
-
-    Returns:
-        bool: 是否成功连接
-    """
-    print("\n⏳ 等待 Word Add-In 连接...")
-    connected = await workspace.wait_for_addin_connection(timeout=timeout)
-    if not connected:
-        print("❌ 超时：未检测到 Add-In 连接")
-        return False
-    return True
-
-
-def get_document_uri(workspace: OfficeWorkspace) -> str | None:
-    """
-    获取已连接文档的 URI
-
-    Args:
-        workspace: Workspace 实例
-
-    Returns:
-        Optional[str]: 文档 URI，如果未找到则返回 None
-    """
-    documents = workspace.get_connected_documents()
-    if not documents:
-        print("❌ 未找到已连接文档")
-        return None
-    return documents[0]
-
-
-async def insert_text(
-    workspace: OfficeWorkspace,
-    document_uri: str,
-    text: str,
-    wait_seconds: int = 3,
-) -> bool:
-    """
-    执行文本插入动作
-
-    Args:
-        workspace: Workspace 实例
-        document_uri: 目标文档 URI
-        text: 要插入的文本
-        wait_seconds: 执行前等待秒数
-
-    Returns:
-        bool: 是否成功
-    """
-    print(f"\n📝 插入文本: '{text[:50]}{'...' if len(text) > 50 else ''}'")
-    print(f"   长度: {len(text)} 字符")
-    print("   提示: 请将光标放在要插入文本的位置")
-
-    await asyncio.sleep(wait_seconds)
-
-    action = OfficeAction(
-        category="word",
-        action_name="insert:text",
-        params={
-            "document_uri": document_uri,
-            "text": text,
-        },
-    )
-
-    result = await workspace.execute(action)
-
-    # 验证结果
-    print("\n📊 验证结果:")
-    if result.success:
-        print("✅ 插入成功")
-        print(f"   返回数据: {result.data}")
-        return True
-    else:
-        print(f"❌ 插入失败: {result.error}")
-        return False
+from manual_tests.test_helpers import (
+    get_document_uri,
+    insert_text,
+    wait_for_connection,
+    workspace_context,
+)
 
 
 async def run_test_template(

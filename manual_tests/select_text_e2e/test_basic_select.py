@@ -10,111 +10,13 @@ Usage:
 
 import asyncio
 import sys
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
 
-sys.path.insert(0, "/Users/jqq/PycharmProjects/office4ai")
-
-from office4ai.environment.workspace.base import OfficeAction
-from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-
-
-@asynccontextmanager
-async def workspace_context(host: str = "127.0.0.1", port: int = 3000) -> AsyncIterator[OfficeWorkspace]:
-    workspace = OfficeWorkspace(host=host, port=port)
-    try:
-        await workspace.start()
-        yield workspace
-    finally:
-        await workspace.stop()
-
-
-async def wait_for_connection(workspace: OfficeWorkspace, timeout: float = 30.0) -> bool:
-    print("\n⏳ 等待 Word Add-In 连接...")
-    connected = await workspace.wait_for_addin_connection(timeout=timeout)
-    if not connected:
-        print("❌ 超时：未检测到 Add-In 连接")
-        return False
-    return True
-
-
-def get_document_uri(workspace: OfficeWorkspace) -> str | None:
-    documents = workspace.get_connected_documents()
-    if not documents:
-        print("❌ 未找到已连接文档")
-        return None
-    return documents[0]
-
-
-async def select_text(
-    workspace: OfficeWorkspace,
-    document_uri: str,
-    search_text: str,
-    selection_mode: str = "select",
-    select_index: int = 1,
-    search_options: dict | None = None,
-    wait_seconds: int = 3,
-) -> tuple[bool, dict | None]:
-    """执行文本选择动作
-
-    Args:
-        workspace: Office Workspace 实例
-        document_uri: 目标文档 URI
-        search_text: 要搜索的文本
-        selection_mode: 选择模式（select/start/end）
-        select_index: 要选择的匹配索引（1-based）
-        search_options: 搜索选项（matchCase, matchWholeWord, matchWildcards）
-        wait_seconds: 等待秒数
-
-    Returns:
-        (success, data): 操作是否成功和返回数据
-
-    Note:
-        参数使用 snake_case（符合 Python 约定），
-        DTO 系统会自动转换为协议层的 camelCase
-    """
-    print(f"\n📝 搜索文本: '{search_text[:50]}{'...' if len(search_text) > 50 else ''}'")
-    print(f"📝 选择模式: {selection_mode}")
-    print(f"📝 选择索引: {select_index}")
-    if search_options:
-        print(f"📝 搜索选项: {search_options}")
-
-    # ✅ 使用 snake_case（符合 Python 约定），DTO 系统会自动转换为 camelCase
-    params: dict[str, Any] = {
-        "document_uri": document_uri,
-        "search_text": search_text,
-        "selection_mode": selection_mode,
-        "select_index": select_index,
-    }
-
-    if search_options:
-        params["search_options"] = search_options
-
-    action = OfficeAction(
-        category="word",
-        action_name="select:text",
-        params=params,
-    )
-
-    result = await workspace.execute(action)
-
-    if result.success:
-        print(f"✅ 选择成功")
-        print(f"   返回数据: {result.data}")
-        if result.data:
-            if "matchCount" in result.data:
-                print(f"   匹配数量: {result.data['matchCount']}")
-            if "selectedIndex" in result.data:
-                print(f"   选中索引: {result.data['selectedIndex']}")
-            if "selectedText" in result.data:
-                print(f"   选中文本: '{result.data['selectedText']}'")
-    else:
-        print(f"❌ 选择失败: {result.error}")
-
-    print(f"\n⏳ 等待 {wait_seconds} 秒...")
-    await asyncio.sleep(wait_seconds)
-
-    return result.success, result.data
+from manual_tests.test_helpers import (
+    get_document_uri,
+    select_text,
+    wait_for_connection,
+    workspace_context,
+)
 
 
 async def test_1_simple_selection() -> None:
@@ -134,13 +36,13 @@ async def test_1_simple_selection() -> None:
 
         print(f"\n✅ 使用文档: {document_uri}")
 
-        success, data = await select_text(workspace, document_uri, search_text="Hello World")
+        success, data, _ = await select_text(workspace, document_uri, search_text="Hello World")
 
         # 验证结果
         print("\n🔍 验证测试结果:")
         if success and data and data.get("matchCount", 0) > 0:
             print("   ✓ 找到并选中文本")
-            print(f"\n✅ 测试通过: 'Hello World' 已被选中")
+            print("\n✅ 测试通过: 'Hello World' 已被选中")
         else:
             print("   ❌ 未找到文本或操作失败")
             print("\n❌ 测试失败: 选择 'Hello World' 失败")
@@ -162,7 +64,7 @@ async def test_2_select_nth_match() -> None:
         if not document_uri:
             return
 
-        success, data = await select_text(workspace, document_uri, search_text="test", select_index=2)
+        success, data, _ = await select_text(workspace, document_uri, search_text="test", select_index=2)
 
         # 验证结果
         print("\n🔍 验证测试结果:")
@@ -170,7 +72,7 @@ async def test_2_select_nth_match() -> None:
             match_count = data.get("matchCount", 0)
             if match_count >= 2:
                 print(f"   ✓ 找到 {match_count} 个匹配")
-                print(f"   ✓ 成功选中第 2 个 'test'")
+                print("   ✓ 成功选中第 2 个 'test'")
                 print("\n✅ 测试通过: 第 2 个 'test' 已被选中")
             else:
                 print(f"   ❌ 只找到 {match_count} 个 'test'，需要至少 2 个")
@@ -196,7 +98,7 @@ async def test_3_case_insensitive() -> None:
         if not document_uri:
             return
 
-        success, data = await select_text(
+        success, data, _ = await select_text(
             workspace,
             document_uri,
             search_text="hello",
@@ -229,7 +131,7 @@ async def test_4_whole_word() -> None:
         if not document_uri:
             return
 
-        success, data = await select_text(
+        success, data, _ = await select_text(
             workspace,
             document_uri,
             search_text="test",

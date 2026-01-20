@@ -194,11 +194,10 @@ async def test_select_text_different_modes(
     modes = ["select", "start", "end"]
 
     for mode in modes:
-        mode_str = mode  # Capture loop variable
 
-        def select_text_response(request: dict) -> dict:
+        def select_text_response(request: dict, m: list[str] = mode) -> dict:
             # 验证选择模式
-            assert request["selectionMode"] == mode_str
+            assert request["selectionMode"] == m
 
             return {
                 "requestId": request["requestId"],

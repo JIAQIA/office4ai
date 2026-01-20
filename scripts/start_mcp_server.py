@@ -11,14 +11,8 @@ MCP Server 启动脚本 | MCP Server startup script
 """
 
 import asyncio
-import sys
-from pathlib import Path
 
 from office4ai.office.mcp.server import async_main
-
-# 添加项目根目录到 Python 路径 | Add project root to Python path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
 
 
 if __name__ == "__main__":

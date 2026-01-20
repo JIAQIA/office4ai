@@ -18,116 +18,13 @@ Usage:
 
 import asyncio
 import sys
-from contextlib import asynccontextmanager
 
-# Add project root to path
-sys.path.insert(0, "/Users/jqq/PycharmProjects/office4ai")
-
-from office4ai.environment.workspace.base import OfficeAction
-from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-
-
-# ==============================================================================
-# 辅助函数和上下文管理器
-# ==============================================================================
-
-
-@asynccontextmanager
-async def workspace_context(host: str = "127.0.0.1", port: int = 3000):
-    """
-    Workspace 上下文管理器，自动处理启动和停止
-
-    Args:
-        host: WebSocket 服务器地址
-        port: WebSocket 服务器端口
-
-    Yields:
-        OfficeWorkspace: 已启动并连接的 workspace 实例
-    """
-    workspace = OfficeWorkspace(host=host, port=port)
-    try:
-        await workspace.start()
-        yield workspace
-    finally:
-        await workspace.stop()
-
-
-async def wait_for_connection(workspace: OfficeWorkspace, timeout: float = 30.0) -> bool:
-    """
-    等待 Add-In 连接
-
-    Args:
-        workspace: Workspace 实例
-        timeout: 超时时间（秒）
-
-    Returns:
-        bool: 是否成功连接
-    """
-    print("\n⏳ 等待 Word Add-In 连接...")
-    connected = await workspace.wait_for_addin_connection(timeout=timeout)
-    if not connected:
-        print("❌ 超时：未检测到 Add-In 连接")
-        return False
-    return True
-
-
-def get_document_uri(workspace: OfficeWorkspace) -> str | None:
-    """
-    获取已连接文档的 URI
-
-    Args:
-        workspace: Workspace 实例
-
-    Returns:
-        Optional[str]: 文档 URI，如果未找到则返回 None
-    """
-    documents = workspace.get_connected_documents()
-    if not documents:
-        print("❌ 未找到已连接文档")
-        return None
-    return documents[0]
-
-
-async def replace_selection(
-    workspace: OfficeWorkspace,
-    document_uri: str,
-    content: dict,
-    wait_seconds: int = 3,
-) -> tuple[bool, str | None]:
-    """
-    执行选择替换动作
-
-    Args:
-        workspace: Workspace 实例
-        document_uri: 目标文档 URI
-        content: 替换内容
-        wait_seconds: 执行前等待秒数
-
-    Returns:
-        tuple[bool, str | None]: (是否成功, 错误信息)
-    """
-    print(f"\n📝 替换选择: {content}")
-    print(f"   等待 {wait_seconds} 秒...")
-
-    # Wait for user to select text
-    await asyncio.sleep(wait_seconds)
-
-    # Create action
-    action = OfficeAction(
-        category="word",
-        action_name="replace:selection",
-        params={
-            "document_uri": document_uri,
-            "content": content,
-        },
-    )
-
-    # Execute action
-    observation = await workspace.execute(action)
-
-    if observation:
-        return observation.success, observation.error
-    return False, "No observation returned"
+from manual_tests.test_helpers import (
+    get_document_uri,
+    replace_selection,
+    wait_for_connection,
+    workspace_context,
+)
 
 
 # ==============================================================================
@@ -171,7 +68,9 @@ async def test_1_replace_with_empty_selection() -> None:
         print(f"✅ 已连接文档: {document_uri}")
 
         content = {"text": "This should fail"}
-        success, error = await replace_selection(workspace, document_uri, content, wait_seconds=2)
+        success, error = await replace_selection(
+            workspace, document_uri, content, wait_seconds=2, return_error=True
+        )
 
         print("\n📥 响应:")
         print(f"   Success: {success}")
@@ -223,7 +122,9 @@ async def test_2_replace_with_empty_string() -> None:
         print(f"✅ 已连接文档: {document_uri}")
 
         content = {"text": ""}
-        success, error = await replace_selection(workspace, document_uri, content)
+        success, error = await replace_selection(
+            workspace, document_uri, content, return_error=True
+        )
 
         print("\n📥 响应:")
         print(f"   Success: {success}")
@@ -287,7 +188,9 @@ async def test_3_replace_with_image() -> None:
                 }
             ]
         }
-        success, error = await replace_selection(workspace, document_uri, content)
+        success, error = await replace_selection(
+            workspace, document_uri, content, return_error=True
+        )
 
         print("\n📥 响应:")
         print(f"   Success: {success}")

@@ -10,7 +10,9 @@
       "Skill(update-socketio-event)",
       "mcp__atlassian__search",
       "Bash(uv run pytest:*)",
-      "Bash(poe lint-fix:*)"
+      "Bash(poe lint-fix:*)",
+      "Bash(find:*)",
+      "Bash(python:*)"
     ]
   }
 }

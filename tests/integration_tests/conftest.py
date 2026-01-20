@@ -8,14 +8,12 @@
 集成测试配置 | Integration test configuration
 """
 
-import sys
 from pathlib import Path
 
 import pytest
 
-# 添加项目根目录到 Python 路径 | Add project root to Python path
+# 项目根目录路径 | Project root path
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
 
 
 @pytest.fixture(scope="session")

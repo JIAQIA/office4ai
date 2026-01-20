@@ -12,12 +12,11 @@ Location-based Insert Text Tests
 
 import asyncio
 import sys
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 from office4ai.environment.workspace.base import OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
+from manual_tests.test_helpers import ready_workspace
 
 
 @dataclass
@@ -30,54 +29,6 @@ class InsertTestConfig:
     prep_time: int = 3
     verify_message: str = ""
     description: str = ""
-
-
-@asynccontextmanager
-async def workspace_test_context(
-    host: str = "127.0.0.1",
-    port: int = 3000,
-    connection_timeout: float = 30.0,
-) -> AsyncGenerator[tuple[OfficeWorkspace | None, str | None], None]:
-    """
-    Workspace 测试上下文管理器
-
-    负责 workspace 的启动、连接、清理等通用逻辑
-    """
-    workspace = OfficeWorkspace(host=host, port=port)
-    document_uri = None
-
-    try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
-
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=connection_timeout)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            yield None, None
-            return
-
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            yield None, None
-            return
-
-        document_uri = documents[0]
-        print(f"✅ 使用文档: {document_uri}")
-
-        yield workspace, document_uri
-
-    except Exception as e:
-        print(f"\n❌ 测试失败: {e}")
-        import traceback
-
-        traceback.print_exc()
-        yield None, None
-
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
 
 
 def print_test_header(test_number: int, test_name: str) -> None:
@@ -151,13 +102,18 @@ async def run_single_test(test_number: int, config: InsertTestConfig) -> bool:
     """
     print_test_header(test_number, config.test_name)
 
-    async with workspace_test_context() as (workspace, document_uri):
-        if not workspace or not document_uri:
-            return False
+    try:
+        async with ready_workspace() as (workspace, document_uri):
+            success = await execute_single_insert_test(workspace, document_uri, config)
+            print_test_footer(test_number, success)
+            return success
+    except Exception as e:
+        print(f"\n❌ 测试失败: {e}")
+        import traceback
 
-        success = await execute_single_insert_test(workspace, document_uri, config)
-        print_test_footer(test_number, success)
-        return success
+        traceback.print_exc()
+        print_test_footer(test_number, False)
+        return False
 
 
 # ============================================================================

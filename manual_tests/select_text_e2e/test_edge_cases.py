@@ -10,91 +10,13 @@ Usage:
 
 import asyncio
 import sys
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
 
-sys.path.insert(0, "/Users/jqq/PycharmProjects/office4ai")
-
-from office4ai.environment.workspace.base import OfficeAction
-from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-
-
-@asynccontextmanager
-async def workspace_context(host: str = "127.0.0.1", port: int = 3000) -> AsyncIterator[OfficeWorkspace]:
-    workspace = OfficeWorkspace(host=host, port=port)
-    try:
-        await workspace.start()
-        yield workspace
-    finally:
-        await workspace.stop()
-
-
-async def wait_for_connection(workspace: OfficeWorkspace, timeout: float = 30.0) -> bool:
-    print("\n⏳ 等待 Word Add-In 连接...")
-    connected = await workspace.wait_for_addin_connection(timeout=timeout)
-    if not connected:
-        print("❌ 超时：未检测到 Add-In 连接")
-        return False
-    return True
-
-
-def get_document_uri(workspace: OfficeWorkspace) -> str | None:
-    documents = workspace.get_connected_documents()
-    if not documents:
-        print("❌ 未找到已连接文档")
-        return None
-    return documents[0]
-
-
-async def select_text(
-    workspace: OfficeWorkspace,
-    document_uri: str,
-    search_text: str,
-    selection_mode: str = "select",
-    select_index: int = 1,
-    wait_seconds: int = 3,
-) -> tuple[bool, dict | None, str | None]:
-    """执行文本选择动作
-
-    Returns:
-        (success, data, error): 操作是否成功、返回数据和错误消息
-    """
-    print(f"\n📝 搜索文本: '{search_text[:50]}{'...' if len(search_text) > 50 else ''}'")
-    print(f"📝 选择模式: {selection_mode}")
-    print(f"📝 选择索引: {select_index}")
-
-    params: dict[str, Any] = {
-        "document_uri": document_uri,
-        "searchText": search_text,
-        "selectionMode": selection_mode,
-        "selectIndex": select_index,
-    }
-
-    action = OfficeAction(
-        category="word",
-        action_name="select:text",
-        params=params,
-    )
-
-    result = await workspace.execute(action)
-
-    if result.success:
-        print(f"✅ 选择成功")
-        print(f"   返回数据: {result.data}")
-        if result.data:
-            if "matchCount" in result.data:
-                print(f"   匹配数量: {result.data['matchCount']}")
-            if "selectedIndex" in result.data:
-                print(f"   选中索引: {result.data['selectedIndex']}")
-            if "selectedText" in result.data:
-                print(f"   选中文本: '{result.data['selectedText']}'")
-    else:
-        print(f"❌ 选择失败: {result.error}")
-
-    print(f"\n⏳ 等待 {wait_seconds} 秒...")
-    await asyncio.sleep(wait_seconds)
-
-    return result.success, result.data, result.error
+from manual_tests.test_helpers import (
+    get_document_uri,
+    select_text,
+    wait_for_connection,
+    workspace_context,
+)
 
 
 async def test_1_no_matches() -> None:
@@ -185,7 +107,6 @@ async def test_2_empty_search_text() -> None:
 
         # 验证结果
         print("\n🔍 验证测试结果:")
-        test_passed = True
 
         # 空文本搜索应该失败或返回警告
         if success:
@@ -272,7 +193,7 @@ async def test_4_special_characters() -> None:
 
         # 测试 1: 特殊符号
         print("\n--- 测试 4.1: 特殊符号 ---")
-        success1, _ = await select_text(
+        success1, _, _ = await select_text(
             workspace,
             document_uri,
             search_text="@#$%",
@@ -281,7 +202,7 @@ async def test_4_special_characters() -> None:
 
         # 测试 2: 邮箱格式
         print("\n--- 测试 4.2: 邮箱格式 ---")
-        success2, _ = await select_text(
+        success2, _, _ = await select_text(
             workspace,
             document_uri,
             search_text="test@example.com",
@@ -290,7 +211,7 @@ async def test_4_special_characters() -> None:
 
         # 测试 3: 括号
         print("\n--- 测试 4.3: 括号 ---")
-        success3, _ = await select_text(
+        success3, _, _ = await select_text(
             workspace,
             document_uri,
             search_text="(parenthesis)",

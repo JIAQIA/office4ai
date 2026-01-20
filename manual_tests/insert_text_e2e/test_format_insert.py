@@ -17,537 +17,370 @@ import sys
 
 from office4ai.environment.workspace.base import OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
+from manual_tests.test_helpers import ready_workspace
 
 
 async def test_bold_text_insert():
-    """
-    测试 1: 插入粗体文本
-    format={bold: true}
-    """
+    """测试 1: 插入粗体文本"""
     print("\n" + "=" * 70)
     print("🧪 测试 1: 插入粗体文本")
     print("=" * 70)
 
-    workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
-
     try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
+        async with ready_workspace() as (workspace, document_uri):
+            print("\n📝 插入粗体文本: '这是粗体文本'")
+            print("   格式: bold=true")
+            print("   提示: 请将光标放在要插入文本的位置")
 
-        # 等待连接
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=30.0)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            return False
+            await asyncio.sleep(3)
 
-        # 获取文档
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            return False
+            action = OfficeAction(
+                category="word",
+                action_name="insert:text",
+                params={
+                    "document_uri": document_uri,
+                    "text": "这是粗体文本",
+                    "location": "Cursor",
+                    "format": {"bold": True},
+                },
+            )
 
-        test_document_uri = documents[0]
-        print(f"✅ 使用文档: {test_document_uri}")
+            result = await workspace.execute(action)
 
-        # 执行插入动作
-        print("\n📝 插入粗体文本: '这是粗体文本'")
-        print("   格式: bold=true")
-        print("   提示: 请将光标放在要插入文本的位置")
+            if result.success:
+                print("\n📊 验证结果:")
+                print("✅ 插入成功")
+                print(f"   返回数据: {result.data}")
+                print("\n   请检查 Word 文档，确认文本为粗体")
+            else:
+                print(f"\n❌ 插入失败: {result.error}")
+                return False
 
-        await asyncio.sleep(3)
-
-        action = OfficeAction(
-            category="word",
-            action_name="insert:text",
-            params={
-                "document_uri": test_document_uri,
-                "text": "这是粗体文本",
-                "location": "Cursor",
-                "format": {"bold": True},
-            },
-        )
-
-        result = await workspace.execute(action)
-
-        # 验证结果
-        print("\n📊 验证结果:")
-        if result.success:
-            print("✅ 插入成功")
-            print(f"   返回数据: {result.data}")
-            print("\n   请检查 Word 文档，确认文本为粗体")
-        else:
-            print(f"❌ 插入失败: {result.error}")
-            return False
-
-        print("\n" + "=" * 70)
-        print("✅ 测试 1 完成")
-        print("=" * 70)
-        return True
+            print("\n" + "=" * 70)
+            print("✅ 测试 1 完成")
+            print("=" * 70)
+            return True
 
     except Exception as e:
         print(f"\n❌ 测试失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
-
 
 async def test_italic_text_insert():
-    """
-    测试 2: 插入斜体文本
-    format={italic: true}
-    """
+    """测试 2: 插入斜体文本"""
     print("\n" + "=" * 70)
     print("🧪 测试 2: 插入斜体文本")
     print("=" * 70)
 
-    workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
-
     try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
+        async with ready_workspace() as (workspace, document_uri):
+            print("\n📝 插入斜体文本: '这是斜体文本'")
+            print("   格式: italic=true")
+            print("   提示: 请将光标放在要插入文本的位置")
 
-        # 等待连接
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=30.0)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            return False
+            await asyncio.sleep(3)
 
-        # 获取文档
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            return False
+            action = OfficeAction(
+                category="word",
+                action_name="insert:text",
+                params={
+                    "document_uri": document_uri,
+                    "text": "这是斜体文本",
+                    "location": "Cursor",
+                    "format": {"italic": True},
+                },
+            )
 
-        test_document_uri = documents[0]
-        print(f"✅ 使用文档: {test_document_uri}")
+            result = await workspace.execute(action)
 
-        # 执行插入动作
-        print("\n📝 插入斜体文本: '这是斜体文本'")
-        print("   格式: italic=true")
-        print("   提示: 请将光标放在要插入文本的位置")
+            if result.success:
+                print("\n📊 验证结果:")
+                print("✅ 插入成功")
+                print(f"   返回数据: {result.data}")
+                print("\n   请检查 Word 文档，确认文本为斜体")
+            else:
+                print(f"\n❌ 插入失败: {result.error}")
+                return False
 
-        await asyncio.sleep(3)
-
-        action = OfficeAction(
-            category="word",
-            action_name="insert:text",
-            params={
-                "document_uri": test_document_uri,
-                "text": "这是斜体文本",
-                "location": "Cursor",
-                "format": {"italic": True},
-            },
-        )
-
-        result = await workspace.execute(action)
-
-        # 验证结果
-        print("\n📊 验证结果:")
-        if result.success:
-            print("✅ 插入成功")
-            print(f"   返回数据: {result.data}")
-            print("\n   请检查 Word 文档，确认文本为斜体")
-        else:
-            print(f"❌ 插入失败: {result.error}")
-            return False
-
-        print("\n" + "=" * 70)
-        print("✅ 测试 2 完成")
-        print("=" * 70)
-        return True
+            print("\n" + "=" * 70)
+            print("✅ 测试 2 完成")
+            print("=" * 70)
+            return True
 
     except Exception as e:
         print(f"\n❌ 测试失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
-
 
 async def test_font_size_insert():
-    """
-    测试 3: 插入不同字体大小的文本
-    format={fontSize: 20}
-    """
+    """测试 3: 插入不同字体大小的文本"""
     print("\n" + "=" * 70)
     print("🧪 测试 3: 插入不同字体大小的文本")
     print("=" * 70)
 
-    workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
-
     try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
+        async with ready_workspace() as (workspace, document_uri):
+            test_cases = [
+                (12, "小号文本 (12pt)"),
+                (16, "中号文本 (16pt)"),
+                (24, "大号文本 (24pt)"),
+            ]
 
-        # 等待连接
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=30.0)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            return False
+            print("\n📝 将插入 3 个不同字体大小的文本")
+            print("   提示: 请将光标放在要插入文本的位置")
 
-        # 获取文档
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            return False
+            await asyncio.sleep(3)
 
-        test_document_uri = documents[0]
-        print(f"✅ 使用文档: {test_document_uri}")
+            results = []
+            for font_size, text in test_cases:
+                print(f"\n--- 插入 {text} ---")
 
-        # 测试三个不同的字体大小
-        test_cases = [
-            (12, "小号文本 (12pt)"),
-            (16, "中号文本 (16pt)"),
-            (24, "大号文本 (24pt)"),
-        ]
+                action = OfficeAction(
+                    category="word",
+                    action_name="insert:text",
+                    params={
+                        "document_uri": document_uri,
+                        "text": f"{text}\n",
+                        "location": "Cursor",
+                        "format": {"fontSize": font_size},
+                    },
+                )
 
-        print("\n📝 将插入 3 个不同字体大小的文本")
-        print("   提示: 请将光标放在要插入文本的位置")
+                result = await workspace.execute(action)
+                results.append(result.success)
 
-        await asyncio.sleep(3)
+                if result.success:
+                    print(f"✅ 插入成功 (fontSize={font_size})")
+                else:
+                    print(f"❌ 插入失败: {result.error}")
 
-        results = []
-        for font_size, text in test_cases:
-            print(f"\n--- 插入 {text} ---")
+                await asyncio.sleep(1)
 
-            action = OfficeAction(
-                category="word",
-                action_name="insert:text",
-                params={
-                    "document_uri": test_document_uri,
-                    "text": f"{text}\n",
-                    "location": "Cursor",
-                    "format": {"fontSize": font_size},
-                },
-            )
+            print("\n📊 验证结果:")
+            success_count = sum(results)
+            print(f"   成功: {success_count}/{len(results)}")
 
-            result = await workspace.execute(action)
-            results.append(result.success)
-
-            if result.success:
-                print(f"✅ 插入成功 (fontSize={font_size})")
+            if all(results):
+                print("\n   ✅ 所有插入都成功！")
+                print("   请检查 Word 文档，确认字体大小递增效果")
             else:
-                print(f"❌ 插入失败: {result.error}")
+                print("\n   ⚠️  部分插入失败")
+                return False
 
-            await asyncio.sleep(1)
-
-        # 验证结果
-        print("\n📊 验证结果:")
-        success_count = sum(results)
-        print(f"   成功: {success_count}/{len(results)}")
-
-        if all(results):
-            print("\n   ✅ 所有插入都成功！")
-            print("   请检查 Word 文档，确认字体大小递增效果")
-        else:
-            print("\n   ⚠️  部分插入失败")
-            return False
-
-        print("\n" + "=" * 70)
-        print("✅ 测试 3 完成")
-        print("=" * 70)
-        return True
+            print("\n" + "=" * 70)
+            print("✅ 测试 3 完成")
+            print("=" * 70)
+            return True
 
     except Exception as e:
         print(f"\n❌ 测试失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
-
 
 async def test_font_name_insert():
-    """
-    测试 4: 插入不同字体的文本
-    format={fontName: "Arial"}
-    """
+    """测试 4: 插入不同字体的文本"""
     print("\n" + "=" * 70)
     print("🧪 测试 4: 插入不同字体的文本")
     print("=" * 70)
 
-    workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
-
     try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
+        async with ready_workspace() as (workspace, document_uri):
+            test_cases = [
+                ("Arial", "Arial 字体"),
+                ("Times New Roman", "Times New Roman 字体"),
+                ("Courier New", "Courier New 字体"),
+            ]
 
-        # 等待连接
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=30.0)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            return False
+            print("\n📝 将插入 3 个不同字体的文本")
+            print("   提示: 请将光标放在要插入文本的位置")
 
-        # 获取文档
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            return False
+            await asyncio.sleep(3)
 
-        test_document_uri = documents[0]
-        print(f"✅ 使用文档: {test_document_uri}")
+            results = []
+            for font_name, text in test_cases:
+                print(f"\n--- 插入 {text} ---")
 
-        # 测试不同的字体
-        test_cases = [
-            ("Arial", "Arial 字体"),
-            ("Times New Roman", "Times New Roman 字体"),
-            ("Courier New", "Courier New 字体"),
-        ]
+                action = OfficeAction(
+                    category="word",
+                    action_name="insert:text",
+                    params={
+                        "document_uri": document_uri,
+                        "text": f"{text}\n",
+                        "location": "Cursor",
+                        "format": {"fontName": font_name},
+                    },
+                )
 
-        print("\n📝 将插入 3 个不同字体的文本")
-        print("   提示: 请将光标放在要插入文本的位置")
+                result = await workspace.execute(action)
+                results.append(result.success)
 
-        await asyncio.sleep(3)
+                if result.success:
+                    print(f"✅ 插入成功 (fontName={font_name})")
+                else:
+                    print(f"❌ 插入失败: {result.error}")
 
-        results = []
-        for font_name, text in test_cases:
-            print(f"\n--- 插入 {text} ---")
+                await asyncio.sleep(1)
 
-            action = OfficeAction(
-                category="word",
-                action_name="insert:text",
-                params={
-                    "document_uri": test_document_uri,
-                    "text": f"{text}\n",
-                    "location": "Cursor",
-                    "format": {"fontName": font_name},
-                },
-            )
+            print("\n📊 验证结果:")
+            success_count = sum(results)
+            print(f"   成功: {success_count}/{len(results)}")
 
-            result = await workspace.execute(action)
-            results.append(result.success)
-
-            if result.success:
-                print(f"✅ 插入成功 (fontName={font_name})")
+            if all(results):
+                print("\n   ✅ 所有插入都成功！")
+                print("   请检查 Word 文档，确认不同字体效果")
             else:
-                print(f"❌ 插入失败: {result.error}")
+                print("\n   ⚠️  部分插入失败")
+                return False
 
-            await asyncio.sleep(1)
-
-        # 验证结果
-        print("\n📊 验证结果:")
-        success_count = sum(results)
-        print(f"   成功: {success_count}/{len(results)}")
-
-        if all(results):
-            print("\n   ✅ 所有插入都成功！")
-            print("   请检查 Word 文档，确认不同字体效果")
-        else:
-            print("\n   ⚠️  部分插入失败")
-            return False
-
-        print("\n" + "=" * 70)
-        print("✅ 测试 4 完成")
-        print("=" * 70)
-        return True
+            print("\n" + "=" * 70)
+            print("✅ 测试 4 完成")
+            print("=" * 70)
+            return True
 
     except Exception as e:
         print(f"\n❌ 测试失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
-
 
 async def test_color_insert():
-    """
-    测试 5: 插入不同颜色的文本
-    format={color: "#FF0000"}
-    """
+    """测试 5: 插入不同颜色的文本"""
     print("\n" + "=" * 70)
     print("🧪 测试 5: 插入不同颜色的文本")
     print("=" * 70)
 
-    workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
+    try:
+        async with ready_workspace() as (workspace, document_uri):
+            test_cases = [
+                ("#FF0000", "红色文本"),
+                ("#00FF00", "绿色文本"),
+                ("#0000FF", "蓝色文本"),
+            ]
+
+            print("\n📝 将插入 3 个不同颜色的文本")
+            print("   提示: 请将光标放在要插入文本的位置")
+
+            await asyncio.sleep(3)
+
+            results = []
+            for color, text in test_cases:
+                print(f"\n--- 插入 {text} ---")
+
+                action = OfficeAction(
+                    category="word",
+                    action_name="insert:text",
+                    params={
+                        "document_uri": document_uri,
+                        "text": f"{text}\n",
+                        "location": "Cursor",
+                        "format": {"color": color},
+                    },
+                )
+
+                result = await workspace.execute(action)
+                results.append(result.success)
+
+                if result.success:
+                    print(f"✅ 插入成功 (color={color})")
+                else:
+                    print(f"❌ 插入失败: {result.error}")
+
+                await asyncio.sleep(1)
+
+            print("\n📊 验证结果:")
+            success_count = sum(results)
+            print(f"   成功: {success_count}/{len(results)}")
+
+            if all(results):
+                print("\n   ✅ 所有插入都成功！")
+                print("   请检查 Word 文档，确认不同颜色效果")
+            else:
+                print("\n   ⚠️  部分插入失败")
+                return False
+
+            print("\n" + "=" * 70)
+            print("✅ 测试 5 完成")
+            print("=" * 70)
+            return True
+
+    except Exception as e:
+        print(f"\n❌ 测试失败: {e}")
+        import traceback
+
+        traceback.print_exc()
+        return False
+
+
+async def test_combined_format_insert():
+    """测试 6: 插入带组合格式的文本"""
+    print("\n" + "=" * 70)
+    print("🧪 测试 6: 插入带组合格式的文本")
+    print("=" * 70)
 
     try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
+        async with ready_workspace() as (workspace, document_uri):
+            print("\n📝 插入带组合格式的文本: '组合格式文本'")
+            print("   格式:")
+            print("     - bold: true")
+            print("     - italic: true")
+            print("     - fontSize: 18")
+            print("     - fontName: Arial")
+            print("     - color: #FF0000 (红色)")
+            print("\n   提示: 请将光标放在要插入文本的位置")
 
-        # 等待连接
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=30.0)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            return False
-
-        # 获取文档
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            return False
-
-        test_document_uri = documents[0]
-        print(f"✅ 使用文档: {test_document_uri}")
-
-        # 测试不同的颜色
-        test_cases = [
-            ("#FF0000", "红色文本"),
-            ("#00FF00", "绿色文本"),
-            ("#0000FF", "蓝色文本"),
-        ]
-
-        print("\n📝 将插入 3 个不同颜色的文本")
-        print("   提示: 请将光标放在要插入文本的位置")
-
-        await asyncio.sleep(3)
-
-        results = []
-        for color, text in test_cases:
-            print(f"\n--- 插入 {text} ---")
+            await asyncio.sleep(3)
 
             action = OfficeAction(
                 category="word",
                 action_name="insert:text",
                 params={
-                    "document_uri": test_document_uri,
-                    "text": f"{text}\n",
+                    "document_uri": document_uri,
+                    "text": "组合格式文本",
                     "location": "Cursor",
-                    "format": {"color": color},
+                    "format": {
+                        "bold": True,
+                        "italic": True,
+                        "fontSize": 18,
+                        "fontName": "Arial",
+                        "color": "#FF0000",
+                    },
                 },
             )
 
             result = await workspace.execute(action)
-            results.append(result.success)
 
             if result.success:
-                print(f"✅ 插入成功 (color={color})")
+                print("\n📊 验证结果:")
+                print("✅ 插入成功")
+                print(f"   返回数据: {result.data}")
+                print("\n   请检查 Word 文档，确认组合格式效果")
+                print("   (粗体、斜体、18号、Arial、红色)")
             else:
-                print(f"❌ 插入失败: {result.error}")
+                print(f"\n❌ 插入失败: {result.error}")
+                return False
 
-            await asyncio.sleep(1)
-
-        # 验证结果
-        print("\n📊 验证结果:")
-        success_count = sum(results)
-        print(f"   成功: {success_count}/{len(results)}")
-
-        if all(results):
-            print("\n   ✅ 所有插入都成功！")
-            print("   请检查 Word 文档，确认不同颜色效果")
-        else:
-            print("\n   ⚠️  部分插入失败")
-            return False
-
-        print("\n" + "=" * 70)
-        print("✅ 测试 5 完成")
-        print("=" * 70)
-        return True
+            print("\n" + "=" * 70)
+            print("✅ 测试 6 完成")
+            print("=" * 70)
+            return True
 
     except Exception as e:
         print(f"\n❌ 测试失败: {e}")
         import traceback
+
         traceback.print_exc()
         return False
-
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
-
-
-async def test_combined_format_insert():
-    """
-    测试 6: 插入带组合格式的文本
-    format={bold: true, italic: true, fontSize: 18, fontName: "Arial", color: "#FF0000"}
-    """
-    print("\n" + "=" * 70)
-    print("🧪 测试 6: 插入带组合格式的文本")
-    print("=" * 70)
-
-    workspace = OfficeWorkspace(host="127.0.0.1", port=3000)
-
-    try:
-        await workspace.start()
-        print("✅ Workspace 启动成功")
-
-        # 等待连接
-        print("\n⏳ 等待 Word Add-In 连接...")
-        connected = await workspace.wait_for_addin_connection(timeout=30.0)
-        if not connected:
-            print("❌ 超时：未检测到 Add-In 连接")
-            return False
-
-        # 获取文档
-        documents = workspace.get_connected_documents()
-        if not documents:
-            print("❌ 未找到已连接文档")
-            return False
-
-        test_document_uri = documents[0]
-        print(f"✅ 使用文档: {test_document_uri}")
-
-        # 执行插入动作
-        print("\n📝 插入带组合格式的文本: '组合格式文本'")
-        print("   格式:")
-        print("     - bold: true")
-        print("     - italic: true")
-        print("     - fontSize: 18")
-        print("     - fontName: Arial")
-        print("     - color: #FF0000 (红色)")
-        print("\n   提示: 请将光标放在要插入文本的位置")
-
-        await asyncio.sleep(3)
-
-        action = OfficeAction(
-            category="word",
-            action_name="insert:text",
-            params={
-                "document_uri": test_document_uri,
-                "text": "组合格式文本",
-                "location": "Cursor",
-                "format": {
-                    "bold": True,
-                    "italic": True,
-                    "fontSize": 18,
-                    "fontName": "Arial",
-                    "color": "#FF0000",
-                },
-            },
-        )
-
-        result = await workspace.execute(action)
-
-        # 验证结果
-        print("\n📊 验证结果:")
-        if result.success:
-            print("✅ 插入成功")
-            print(f"   返回数据: {result.data}")
-            print("\n   请检查 Word 文档，确认组合格式效果")
-            print("   (粗体、斜体、18号、Arial、红色)")
-        else:
-            print(f"❌ 插入失败: {result.error}")
-            return False
-
-        print("\n" + "=" * 70)
-        print("✅ 测试 6 完成")
-        print("=" * 70)
-        return True
-
-    except Exception as e:
-        print(f"\n❌ 测试失败: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
-
-    finally:
-        await workspace.stop()
-        print("✅ Workspace 已停止")
 
 
 async def run_all_tests():
