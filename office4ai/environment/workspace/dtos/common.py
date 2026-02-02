@@ -347,30 +347,42 @@ class ErrorCode:
     """
 
     # General errors (1xxx)
-    UNKNOWN_ERROR = "1000"
+    UNKNOWN = "1000"
     INVALID_REQUEST = "1001"
     TIMEOUT = "1002"
     NOT_IMPLEMENTED = "1003"
+    INTERNAL_ERROR = "1004"
+    RATE_LIMITED = "1005"
 
     # Authentication errors (2xxx)
     UNAUTHORIZED = "2000"
     TOKEN_EXPIRED = "2001"
     INVALID_TOKEN = "2002"
     HANDSHAKE_FAILED = "2003"
+    SESSION_INVALID = "2004"
+    CONNECTION_LOST = "2005"
 
-    # Office API errors (3xxx)
-    OFFICE_API_ERROR = "3000"
+    # Document errors (3xxx)
+    DOCUMENT_ERROR = "3000"
     DOCUMENT_NOT_FOUND = "3001"
     SELECTION_EMPTY = "3002"
-    DOCUMENT_READ_ONLY = "3003"  # Word document is read-only
+    DOCUMENT_READ_ONLY = "3003"
     OPERATION_FAILED = "3004"
-    FILE_NOT_ACCESSIBLE = "3005"
+    RESOURCE_NOT_ACCESSIBLE = "3005"
+    CONTENT_TOO_LARGE = "3006"
+    FORMAT_NOT_SUPPORTED = "3007"
+    POSITION_INVALID = "3008"
+    RANGE_INVALID = "3009"
+    ELEMENT_NOT_FOUND = "3010"
+    STYLE_NOT_FOUND = "3011"
+    SEARCH_NO_MATCH = "3012"
 
     # Validation errors (4xxx)
     VALIDATION_ERROR = "4000"
     MISSING_PARAM = "4001"
     INVALID_PARAM = "4002"
     INVALID_PARAM_TYPE = "4003"
+    PARAM_OUT_OF_RANGE = "4004"
 
 
 # Forward reference resolution

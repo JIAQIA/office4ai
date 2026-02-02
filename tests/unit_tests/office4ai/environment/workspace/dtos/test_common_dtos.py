@@ -62,7 +62,7 @@ class TestBaseResponse:
 
     def test_error_response(self) -> None:
         """Test creating error response"""
-        error = ErrorResponse(code=ErrorCode.OFFICE_API_ERROR, message="Operation failed")
+        error = ErrorResponse(code=ErrorCode.DOCUMENT_ERROR, message="Operation failed")
 
         response = BaseResponse(requestId="req_123", success=False, error=error, timestamp=1234567890000)
 
@@ -94,7 +94,7 @@ class TestErrorResponse:
 
     def test_error_without_details(self) -> None:
         """Test error without optional details"""
-        error = ErrorResponse(code=ErrorCode.UNKNOWN_ERROR, message="Something went wrong")
+        error = ErrorResponse(code=ErrorCode.UNKNOWN, message="Something went wrong")
 
         assert error.details is None
 
@@ -104,13 +104,13 @@ class TestErrorCode:
 
     def test_general_errors(self) -> None:
         """Test general error codes (1xxx)"""
-        assert ErrorCode.UNKNOWN_ERROR == "1000"
+        assert ErrorCode.UNKNOWN == "1000"
         assert ErrorCode.INVALID_REQUEST == "1001"
         assert ErrorCode.TIMEOUT == "1002"
 
-    def test_office_api_errors(self) -> None:
-        """Test Office API error codes (3xxx)"""
-        assert ErrorCode.OFFICE_API_ERROR == "3000"
+    def test_document_errors(self) -> None:
+        """Test document error codes (3xxx)"""
+        assert ErrorCode.DOCUMENT_ERROR == "3000"
         assert ErrorCode.DOCUMENT_NOT_FOUND == "3001"
         assert ErrorCode.SELECTION_EMPTY == "3002"
 
