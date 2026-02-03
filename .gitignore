@@ -214,4 +214,7 @@ certs/
 *.crt
 *.key
 
+# E2E test working directory
+manual_tests/.test_working/
+
 # End

@@ -6,10 +6,59 @@ This is the core routing component for Workspace → Add-In communication.
 """
 
 import logging
+import os
 import time
 from dataclasses import dataclass
+from urllib.parse import unquote, urlparse
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_document_uri(uri: str) -> str:
+    """
+    Normalize a document URI for consistent matching.
+
+    Handles:
+    1. URL decoding (e.g., %2F → /)
+    2. Symlink resolution (e.g., /var → /private/var on macOS)
+    3. Path normalization
+
+    Args:
+        uri: Document URI (e.g., file:///path/to/doc.docx)
+
+    Returns:
+        Normalized URI
+    """
+    if not uri.startswith("file://"):
+        return uri
+
+    try:
+        # Parse the URI
+        parsed = urlparse(uri)
+
+        # URL-decode the path
+        path = unquote(parsed.path)
+
+        # On file:// URIs, the path might have an extra leading slash on some systems
+        # e.g., file:///var/... or file:////var/... (Windows UNC paths)
+        if path.startswith("//"):
+            path = path[1:]
+
+        # Resolve symlinks and normalize the path
+        try:
+            # Use os.path.realpath to resolve symlinks
+            # This handles /var → /private/var on macOS
+            real_path = os.path.realpath(path)
+        except OSError:
+            # If path doesn't exist, just normalize it
+            real_path = os.path.normpath(path)
+
+        # Reconstruct the URI
+        return f"file://{real_path}"
+
+    except Exception as e:
+        logger.warning(f"Failed to normalize URI '{uri}': {e}")
+        return uri
 
 
 @dataclass
@@ -70,10 +119,16 @@ class ConnectionManager:
             ClientInfo: Registered client information
         """
         logger.info("Client registered", extra={"client_id": client_id, "document_uri": document_uri})
+
+        # Normalize document URI for consistent matching
+        normalized_uri = normalize_document_uri(document_uri)
+        if normalized_uri != document_uri:
+            logger.debug(f"Normalized URI: {document_uri} → {normalized_uri}")
+
         client_info = ClientInfo(
             socket_id=socket_id,
             client_id=client_id,
-            document_uri=document_uri,
+            document_uri=normalized_uri,  # Store normalized URI
             namespace=namespace,
             connected_at=time.time(),
         )
@@ -82,12 +137,12 @@ class ConnectionManager:
         self._clients[socket_id] = client_info
         self._client_id_to_socket[client_id] = socket_id
 
-        # Map document_uri → socket_id
-        if document_uri not in self._document_to_sockets:
-            self._document_to_sockets[document_uri] = set()
-        self._document_to_sockets[document_uri].add(socket_id)
+        # Map document_uri → socket_id (using normalized URI)
+        if normalized_uri not in self._document_to_sockets:
+            self._document_to_sockets[normalized_uri] = set()
+        self._document_to_sockets[normalized_uri].add(socket_id)
 
-        logger.info(f"Client registered: {client_id} ({socket_id}) for {document_uri} on {namespace}")
+        logger.info(f"Client registered: {client_id} ({socket_id}) for {normalized_uri} on {namespace}")
 
         return client_info
 
@@ -130,7 +185,9 @@ class ConnectionManager:
         Returns:
             Socket ID if found, None otherwise
         """
-        sockets = self._document_to_sockets.get(document_uri)
+        # Normalize URI for lookup
+        normalized_uri = normalize_document_uri(document_uri)
+        sockets = self._document_to_sockets.get(normalized_uri)
         if not sockets:
             return None
 
@@ -169,7 +226,9 @@ class ConnectionManager:
         Returns:
             List of ClientInfo objects
         """
-        socket_ids = self._document_to_sockets.get(document_uri, set())
+        # Normalize URI for lookup
+        normalized_uri = normalize_document_uri(document_uri)
+        socket_ids = self._document_to_sockets.get(normalized_uri, set())
         return [self._clients[sid] for sid in socket_ids if sid in self._clients]
 
     def get_clients_by_namespace(self, namespace: str) -> list[ClientInfo]:
@@ -194,7 +253,9 @@ class ConnectionManager:
         Returns:
             True if document has active connections, False otherwise
         """
-        return document_uri in self._document_to_sockets and bool(self._document_to_sockets[document_uri])
+        # Normalize URI for lookup
+        normalized_uri = normalize_document_uri(document_uri)
+        return normalized_uri in self._document_to_sockets and bool(self._document_to_sockets[normalized_uri])
 
     def get_connection_count(self) -> int:
         """

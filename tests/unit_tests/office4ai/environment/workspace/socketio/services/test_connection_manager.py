@@ -4,10 +4,74 @@ Test ConnectionManager functionality
 测试 ConnectionManager 的所有核心功能。
 """
 
+import os
+
+import pytest
+
 from office4ai.environment.workspace.socketio.services.connection_manager import (
     ClientInfo,
     ConnectionManager,
+    normalize_document_uri,
 )
+
+
+class TestNormalizeDocumentUri:
+    """Test URI normalization function"""
+
+    def test_simple_file_uri(self) -> None:
+        """Test simple file:// URI passthrough"""
+        uri = "file:///Users/test/doc.docx"
+        # Result depends on whether the file exists
+        result = normalize_document_uri(uri)
+        assert result.startswith("file://")
+        assert "doc.docx" in result
+
+    def test_url_encoded_path(self) -> None:
+        """Test URL-encoded path decoding"""
+        # %2F is URL-encoded /
+        uri = "file:///%2FUsers%2Ftest%2Fdoc.docx"
+        result = normalize_document_uri(uri)
+        # After decoding, should have normal slashes
+        assert "%2F" not in result
+        assert "Users" in result
+        assert "doc.docx" in result
+
+    def test_url_encoded_spaces(self) -> None:
+        """Test URL-encoded spaces"""
+        uri = "file:///Users/test/my%20doc.docx"
+        result = normalize_document_uri(uri)
+        assert "%20" not in result
+        assert "my doc.docx" in result or "my%20doc.docx" not in result
+
+    @pytest.mark.skipif(os.name != "posix", reason="macOS/Linux only")
+    def test_var_to_private_var(self) -> None:
+        """Test /var → /private/var symlink resolution on macOS"""
+        # Use a known path that exists
+        uri = "file:///var"
+        result = normalize_document_uri(uri)
+        # On macOS, /var is a symlink to /private/var
+        if os.path.realpath("/var") == "/private/var":
+            assert "/private/var" in result
+
+    def test_non_file_uri_passthrough(self) -> None:
+        """Test non-file:// URIs are passed through unchanged"""
+        uri = "https://example.com/doc.docx"
+        result = normalize_document_uri(uri)
+        assert result == uri
+
+    def test_lookup_with_different_uri_formats(self, connection_manager: ConnectionManager) -> None:
+        """Test that different URI formats for same path match correctly"""
+        # Register with URL-encoded path
+        connection_manager.register_client(
+            "socket1", "client1", "file:///%2Ftmp%2Ftest.docx", "/word"
+        )
+
+        # Lookup with decoded path should work
+        socket_id = connection_manager.get_socket_by_document("file:///tmp/test.docx")
+        assert socket_id == "socket1"
+
+        # Check document is active
+        assert connection_manager.is_document_active("file:///tmp/test.docx")
 
 
 class TestConnectionManager:
