@@ -11,312 +11,153 @@ get_document_structure_e2e/
 └── README.md                   # 本文档
 ```
 
+## 特性
+
+- **自动复制测试文档** - 使用临时副本，不影响原始夹具
+- **自动打开 Word** - 无需手动打开文档
+- **自动验证结果** - 比对预期值和实际返回
+- **自动清理** - 成功后删除临时文件，失败则保留供调试
+- **正确的清理顺序** - 先关闭文档再停止 Workspace，避免 2 分钟等待
+
 ## 测试概览
 
-### 1. 基本结构获取测试 (`test_basic_structure.py`)
-
-测试不同文档类型的结构信息获取。
-
-| 测试编号 | 测试名称 | 描述 |
-|---------|---------|------|
-| 1 | 空白文档结构 | 获取空白文档的结构信息 |
-| 2 | 简单文档结构 | 获取包含简单文本的文档结构 |
-| 3 | 复杂文档结构 | 获取包含多种元素的文档结构 |
-| 4 | 多段落文档结构 | 获取包含大量段落的文档结构 |
-
-**运行方式：**
-
-**方式一：从项目根目录运行（推荐）**
-```bash
-# 运行单个测试
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 2
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 3
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 4
-
-# 运行所有测试
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test all
-```
-
-**方式二：进入测试目录后运行**
-```bash
-# 进入测试目录
-cd manual_tests/get_document_structure_e2e
-
-# 运行单个测试
-uv run python test_basic_structure.py --test 1
-uv run python test_basic_structure.py --test 2
-uv run python test_basic_structure.py --test 3
-uv run python test_basic_structure.py --test 4
-
-# 运行所有测试
-uv run python test_basic_structure.py --test all
-```
-
----
-
-## 前置条件
-
-运行这些测试前，请确保：
-
-1. ✅ **Workspace 服务器可访问**
-   - 测试会自动启动 Workspace 在 `http://127.0.0.1:3000`
-   - 无需手动启动服务器
-
-2. ✅ **Word Add-In 已加载**
-   - 在 Word 中加载 `office-editor4ai` Add-In
-   - Add-In 会自动连接到 `http://127.0.0.1:3000`
-
-3. ✅ **Word 文档已打开**
-   - 根据测试场景打开对应的 Word 文档（.docx）
-   - 确保文档未被锁定
-
-4. ✅ **文档准备**
-   - 测试 1: 使用空白文档
-   - 测试 2: 使用包含简单文本的文档
-   - 测试 3: 使用包含表格、图片的复杂文档
-   - 测试 4: 使用包含多个段落的长文档
-
----
-
-## 测试流程
-
-每个测试都会执行以下步骤：
-
-```
-1. 启动 Office Workspace (127.0.0.1:3000)
-2. 等待 Word Add-In 连接 (最多30秒)
-   ⚠️  如果超时，请检查 Add-In 是否正确加载
-3. 获取已连接文档列表
-4. 执行获取文档结构动作
-5. 验证返回结果（段落数、表格数、图片数、节数）
-6. 清理资源（停止 Workspace）
-```
-
----
+| 测试编号 | 测试名称 | 描述 | 夹具 |
+|---------|---------|------|------|
+| 1 | 空白文档结构 | 获取空白文档的结构信息 | empty.docx |
+| 2 | 简单文档结构 | 获取包含简单文本的文档结构 | simple.docx |
+| 3 | 复杂文档结构 | 获取包含表格和列表的文档结构 | complex.docx |
+| 4 | 大文档结构 | 获取包含大量段落的文档结构（性能测试） | large.docx |
 
 ## 快速开始
 
-### 1. 运行单个测试
+### 运行单个测试
 
-**从项目根目录运行（推荐）：**
 ```bash
-# 运行空白文档结构测试
+# 运行测试 1（空白文档）
 uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1
 
-# 运行简单文档结构测试
+# 运行测试 2（简单文档）
 uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 2
 
-# 运行复杂文档结构测试
+# 运行测试 3（复杂文档）
 uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 3
 
-# 运行多段落文档结构测试
+# 运行测试 4（大文档）
 uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 4
 ```
 
-**或者进入测试目录后运行：**
+### 运行所有测试
+
 ```bash
-# 进入测试目录
-cd manual_tests/get_document_structure_e2e
-
-# 运行空白文档结构测试
-uv run python test_basic_structure.py --test 1
-
-# 运行简单文档结构测试
-uv run python test_basic_structure.py --test 2
-
-# 运行复杂文档结构测试
-uv run python test_basic_structure.py --test 3
-
-# 运行多段落文档结构测试
-uv run python test_basic_structure.py --test 4
-```
-
-### 2. 运行所有测试
-
-**从项目根目录运行（推荐）：**
-```bash
-# 运行所有测试（4个）
 uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test all
 ```
 
-**或者进入测试目录后运行：**
+### 列出所有测试
+
 ```bash
-cd manual_tests/get_document_structure_e2e
-
-# 运行所有测试（4个）
-uv run python test_basic_structure.py --test all
+uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --list
 ```
 
----
+### 其他选项
 
-## 预期结果
+```bash
+# 手动打开文档模式（不自动打开）
+uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1 --no-auto-open
 
-### ✅ 成功情况
+# 失败时也清理文件
+uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1 --always-cleanup
+```
+
+## 前置条件
+
+1. **Word Add-In 已加载** - 在 Word 中加载 `office-editor4ai` Add-In
+2. **python-docx 已安装** - 用于创建测试夹具
+
+## 预期输出
+
+### 成功示例
 
 ```
+======================================================================
+🧪 测试 1: 空白文档结构
+======================================================================
+📋 描述: 空白文档应该有 0-1 段落（Word 默认有一个空段落），0 表格，0 图片，1 节
+📄 夹具: empty.docx
+📄 创建工作副本: empty_20260203_160000.docx
+📂 打开文档: empty_20260203_160000.docx
 ✅ Workspace 启动成功
+⏳ 等待 Word Add-In 连接...
 ✅ Add-In 已连接
-✅ 使用文档: file:///path/to/document.docx
-📝 获取文档结构...
+
+📝 执行: 获取文档结构...
+
+⏱️  执行时间: 350.6ms
 ✅ 获取成功
-   段落数: 10
-   表格数: 2
-   图片数: 1
+   段落数: 1
+   表格数: 0
+   图片数: 0
    节数: 1
-✅ 测试完成
+
+📊 验证结果:
+   ✅ 段落数: 1 (预期 1)
+   ✅ 表格数: 0 (预期 0)
+   ✅ 图片数: 0 (预期 0)
+   ✅ 节数: 1 (预期 1)
+
+======================================================================
+✅ 测试 1 通过
+======================================================================
+📕 已关闭文档: empty_20260203_160000.docx
+🧹 已清理: empty_20260203_160000.docx
 ```
 
-### ❌ 失败情况
+## 测试夹具
 
-如果测试失败，请检查：
+测试夹具自动创建在 `manual_tests/fixtures/get_document_structure_e2e/` 目录：
 
-1. **Add-In 未连接**
-   ```
-   ❌ 超时：未检测到 Add-In 连接
-   请检查:
-   1. Word Add-In 是否已加载
-   2. Add-In 是否能访问 http://127.0.0.1:3000
-   3. 浏览器控制台是否有错误
-   ```
+| 文件 | 内容 |
+|------|------|
+| empty.docx | 空白文档 |
+| simple.docx | 包含标题和 3 个段落的简单文档 |
+| complex.docx | 包含标题、段落、表格和列表的复杂文档 |
+| large.docx | 包含约 30 个段落的大文档 |
 
-2. **文档未找到**
-   ```
-   ❌ 未找到已连接文档
-   ```
-   解决方法：在 Word 中打开一个文档
-
-3. **获取失败**
-   ```
-   ❌ 获取失败: {error details}
-   ```
-   解决方法：检查 Word 文档是否可访问，是否已损坏
-
----
-
-## 测试场景说明
-
-### 测试 1: 空白文档结构
-
-**目的：** 验证对空白文档的结构统计是否正确。
-
-**测试内容：**
-- 使用完全空白的 Word 文档
-- 验证 paragraphCount = 0 或 1（取决于是否包含空段落）
-- 验证 tableCount = 0
-- 验证 imageCount = 0
-- 验证 sectionCount = 1
-
-**预期结果：** 返回的结构信息应该反映空白文档的状态。
-
----
-
-### 测试 2: 简单文档结构
-
-**目的：** 验证对包含简单文本的文档的结构统计。
-
-**测试内容：**
-- 使用包含几段简单文本的文档
-- 验证 paragraphCount > 0
-- 验证其他计数正确
-
-**预期结果：** 返回的段落数量应该与实际段落数一致。
-
----
-
-### 测试 3: 复杂文档结构
-
-**目的：** 验证对包含多种元素的文档的结构统计。
-
-**测试内容：**
-- 使用包含文本、表格、图片的复杂文档
-- 验证 paragraphCount > 0
-- 验证 tableCount > 0
-- 验证 imageCount > 0
-
-**预期结果：** 返回的所有计数应该与文档中实际元素数量一致。
-
----
-
-### 测试 4: 多段落文档结构
-
-**目的：** 验证对包含大量段落的文档的结构统计（性能测试）。
-
-**测试内容：**
-- 使用包含大量段落（例如 50+）的文档
-- 验证 paragraphCount 的准确性
-
-**预期结果：** 应该快速返回准确的段落计数。
-
----
+工作副本存放在 `manual_tests/.test_working/` 目录（已加入 .gitignore）。
 
 ## 常见问题
 
 ### Q1: Add-In 连接超时
 
-**问题：** `❌ 超时：未检测到 Add-In 连接`
+**问题：** `超时：未检测到 Add-In 连接`
 
 **解决方法：**
 1. 确认 Word Add-In 已加载
 2. 检查 Add-In 是否能访问 `http://127.0.0.1:3000`
 3. 打开浏览器开发者工具查看控制台错误
 
-### Q2: 文档未找到
+### Q2: 测试后等待很长时间
 
-**问题：** `❌ 未找到已连接文档`
+**问题：** 测试完成后等待约 2 分钟才退出
 
-**解决方法：**
-1. 在 Word 中打开一个文档
-2. 确保文档已完全加载
-3. 重新运行测试
+**原因：** 清理顺序错误。如果先停止 Workspace 而文档还开着，需要等待 Socket.IO 连接超时。
 
-### Q3: 计数不准确
+**解决方法：** 本测试已修复此问题，会先关闭文档再停止 Workspace。
+
+### Q3: 文档结构计数不准确
 
 **问题：** 返回的计数与实际不符
 
 **解决方法：**
 1. 手动检查文档中的元素数量
-2. 确认文档中没有隐藏的元素
-3. 检查段落计数是否包含空段落
-4. 查看图片计数是否包含嵌入式和浮动图片
+2. Word 的段落计数可能包含空段落
+3. 图片计数可能包含不同类型的图片（嵌入式、浮动等）
 
----
+## 相关文件
 
-## 调试技巧
-
-### 1. 查看详细日志
-
-测试会输出详细的执行日志，包括：
-- Workspace 启动状态
-- Add-In 连接状态
-- 文档列表
-- 执行的动作
-- 返回的结构信息
-
-### 2. 手动验证
-
-测试完成后，在 Word 中手动检查：
-- 段落数是否正确
-- 表格数是否正确
-- 图片数是否正确
-- 节数是否正确
-
-### 3. 对比验证
-
-可以使用 Word 的"字数统计"功能对比段落数量。
-
----
-
-## 相关文档
-
-- [Confluence 文档](https://turingfocus.atlassian.net/wiki/pages/30769153) - 事件规范
+- [E2E 基础设施](../e2e_base.py) - 测试运行器和夹具管理
 - [DTO 定义](../../office4ai/environment/workspace/dtos/word.py) - 数据结构定义
-- [Namespace 实现](../../office4ai/environment/workspace/socketio/namespaces/word.py) - 事件处理实现
-- [单元测试](../../tests/unit_tests/office4ai/environment/workspace/socketio/namespaces/test_word_namespace.py) - 单元测试
-- [契约测试](../../tests/contract_tests/word/test_get_document_structure.py) - 契约测试
-
----
+- [连接调试 SKILL](../../.claude/skills/debug-socketio-connection/SKILL.md) - 连接问题排查指南
 
 ## 最后更新
 
-2026-01-12
+2026-02-03

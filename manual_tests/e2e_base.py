@@ -112,6 +112,27 @@ class ExpectedStats:
 
 
 @dataclass
+class ExpectedStructure:
+    """
+    预期的文档结构数据
+
+    用于自动验证 word:get:documentStructure 测试结果。
+    设置为 None 的字段将跳过验证。
+    """
+
+    paragraph_count: int | None = None
+    table_count: int | None = None
+    image_count: int | None = None
+    section_count: int | None = None
+
+    # 允许的误差范围
+    paragraph_count_tolerance: int = 0
+    table_count_tolerance: int = 0
+    image_count_tolerance: int = 0
+    section_count_tolerance: int = 0
+
+
+@dataclass
 class TestCase:
     """
     测试用例定义
@@ -466,6 +487,78 @@ class E2ETestRunner:
                 messages.append(
                     f"❌ 段落数不匹配: {actual_pc} (预期 {expected.paragraph_count}, "
                     f"误差 {diff} > 允许 {expected.paragraph_count_tolerance})"
+                )
+                success = False
+
+        return success, messages
+
+    def verify_structure(
+        self,
+        actual: dict[str, Any],
+        expected: "ExpectedStructure",
+    ) -> tuple[bool, list[str]]:
+        """
+        验证文档结构数据
+
+        Args:
+            actual: 实际返回的结构数据
+            expected: 预期的结构数据
+
+        Returns:
+            (success, messages): 是否通过和验证消息列表
+        """
+        messages: list[str] = []
+        success = True
+
+        # 验证段落数
+        if expected.paragraph_count is not None:
+            actual_pc = actual.get("paragraphCount", 0)
+            diff = abs(actual_pc - expected.paragraph_count)
+            if diff <= expected.paragraph_count_tolerance:
+                messages.append(f"✅ 段落数: {actual_pc} (预期 {expected.paragraph_count})")
+            else:
+                messages.append(
+                    f"❌ 段落数不匹配: {actual_pc} (预期 {expected.paragraph_count}, "
+                    f"误差 {diff} > 允许 {expected.paragraph_count_tolerance})"
+                )
+                success = False
+
+        # 验证表格数
+        if expected.table_count is not None:
+            actual_tc = actual.get("tableCount", 0)
+            diff = abs(actual_tc - expected.table_count)
+            if diff <= expected.table_count_tolerance:
+                messages.append(f"✅ 表格数: {actual_tc} (预期 {expected.table_count})")
+            else:
+                messages.append(
+                    f"❌ 表格数不匹配: {actual_tc} (预期 {expected.table_count}, "
+                    f"误差 {diff} > 允许 {expected.table_count_tolerance})"
+                )
+                success = False
+
+        # 验证图片数
+        if expected.image_count is not None:
+            actual_ic = actual.get("imageCount", 0)
+            diff = abs(actual_ic - expected.image_count)
+            if diff <= expected.image_count_tolerance:
+                messages.append(f"✅ 图片数: {actual_ic} (预期 {expected.image_count})")
+            else:
+                messages.append(
+                    f"❌ 图片数不匹配: {actual_ic} (预期 {expected.image_count}, "
+                    f"误差 {diff} > 允许 {expected.image_count_tolerance})"
+                )
+                success = False
+
+        # 验证节数
+        if expected.section_count is not None:
+            actual_sc = actual.get("sectionCount", 0)
+            diff = abs(actual_sc - expected.section_count)
+            if diff <= expected.section_count_tolerance:
+                messages.append(f"✅ 节数: {actual_sc} (预期 {expected.section_count})")
+            else:
+                messages.append(
+                    f"❌ 节数不匹配: {actual_sc} (预期 {expected.section_count}, "
+                    f"误差 {diff} > 允许 {expected.section_count_tolerance})"
                 )
                 success = False
 
