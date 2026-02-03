@@ -1,0 +1,659 @@
+"""
+E2E 测试基础设施
+
+提供自动化的文档夹具管理、自动打开、验证和清理功能。
+
+使用方式:
+    from manual_tests.e2e_base import E2ETestRunner, DocumentFixture
+
+    runner = E2ETestRunner()
+    async with runner.prepare_document("fixtures/empty.docx") as fixture:
+        # fixture.document_uri 是复制后的文档 URI
+        # 文档已经自动打开
+        result = await run_test(fixture)
+        # 成功后自动删除，失败则保留
+"""
+
+import asyncio
+import platform
+import shutil
+import subprocess
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+from urllib.parse import quote
+
+from office4ai.environment.workspace.office_workspace import OfficeWorkspace
+
+# ==============================================================================
+# 配置常量
+# ==============================================================================
+
+# 测试夹具根目录
+FIXTURES_ROOT = Path(__file__).parent / "fixtures"
+
+# 临时文件目录（测试副本存放位置）
+# 使用项目内的目录，避免系统临时目录的路径解析问题（如 macOS /var → /private/var）
+# 同时方便调试时查看测试文件
+TEMP_ROOT = Path(__file__).parent / ".test_working"
+
+
+# ==============================================================================
+# 数据类
+# ==============================================================================
+
+
+@dataclass
+class DocumentFixture:
+    """
+    文档夹具，管理测试文档的生命周期
+
+    Attributes:
+        original_path: 原始夹具文件路径
+        working_path: 工作副本路径（测试实际使用的文件）
+        document_uri: Word Add-In 使用的文档 URI
+        cleanup_on_success: 成功后是否清理
+        document_closed: 文档是否已关闭（避免重复关闭）
+    """
+
+    original_path: Path
+    working_path: Path
+    document_uri: str
+    cleanup_on_success: bool = True
+    document_closed: bool = False
+
+    def cleanup(self) -> None:
+        """清理工作副本"""
+        if self.working_path.exists():
+            self.working_path.unlink()
+            print(f"🧹 已清理: {self.working_path.name}")
+
+
+@dataclass
+class TestResult:
+    """
+    测试结果
+
+    Attributes:
+        success: 是否成功
+        message: 结果消息
+        data: 返回的数据
+        error: 错误信息
+        duration_ms: 执行时间（毫秒）
+    """
+
+    success: bool
+    message: str
+    data: dict[str, Any] | None = None
+    error: str | None = None
+    duration_ms: float = 0.0
+
+
+@dataclass
+class ExpectedStats:
+    """
+    预期的文档统计数据
+
+    用于自动验证测试结果。
+    设置为 None 的字段将跳过验证。
+    """
+
+    word_count: int | None = None
+    character_count: int | None = None
+    paragraph_count: int | None = None
+
+    # 允许的误差范围（用于大文档等场景）
+    word_count_tolerance: int = 0
+    character_count_tolerance: int = 0
+    paragraph_count_tolerance: int = 0
+
+
+@dataclass
+class TestCase:
+    """
+    测试用例定义
+
+    Attributes:
+        name: 测试名称
+        fixture_name: 夹具文件名（相对于 fixtures 目录）
+        description: 测试描述
+        expected: 预期结果
+        validator: 自定义验证函数（可选）
+    """
+
+    name: str
+    fixture_name: str
+    description: str
+    expected: ExpectedStats | None = None
+    validator: Callable[[dict[str, Any]], bool] | None = None
+    tags: list[str] = field(default_factory=list)
+
+
+# ==============================================================================
+# 文档操作工具
+# ==============================================================================
+
+
+def path_to_file_uri(path: Path) -> str:
+    """
+    将文件路径转换为 file:// URI
+
+    Args:
+        path: 文件路径
+
+    Returns:
+        file:// URI
+    """
+    # 确保路径是绝对路径
+    abs_path = path.resolve()
+    # URL 编码路径（保留 /）
+    encoded = quote(str(abs_path), safe="/")
+    return f"file://{encoded}"
+
+
+def open_document(path: Path) -> subprocess.Popen[bytes] | None:
+    """
+    使用系统默认应用打开文档
+
+    Args:
+        path: 文档路径
+
+    Returns:
+        进程对象，如果失败则返回 None
+    """
+    system = platform.system()
+
+    try:
+        if system == "Darwin":  # macOS
+            # 使用 open 命令，-a 指定应用（可选）
+            process = subprocess.Popen(
+                ["open", str(path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        elif system == "Windows":
+            # 使用 start 命令
+            process = subprocess.Popen(
+                ["cmd", "/c", "start", "", str(path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                shell=True,
+            )
+        else:  # Linux
+            # 使用 xdg-open
+            process = subprocess.Popen(
+                ["xdg-open", str(path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        return process
+    except Exception as e:
+        print(f"❌ 打开文档失败: {e}")
+        return None
+
+
+def close_document(path: Path) -> bool:
+    """
+    关闭文档（通过 AppleScript 或其他方式）
+
+    注意：这个功能在不同平台上实现方式不同，
+    且可能不完全可靠。
+
+    Args:
+        path: 文档路径
+
+    Returns:
+        是否成功
+    """
+    system = platform.system()
+
+    try:
+        if system == "Darwin":  # macOS
+            # 使用文档名称匹配（而非路径，因为 Word 返回 HFS 格式路径）
+            doc_name = path.name
+            script = f'''
+            tell application "Microsoft Word"
+                close (every document whose name is "{doc_name}") saving no
+            end tell
+            '''
+            result = subprocess.run(
+                ["osascript", "-e", script],
+                capture_output=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                print(f"📕 已关闭文档: {doc_name}")
+                return True
+            else:
+                print(f"⚠️  AppleScript 返回错误: {result.stderr.decode()}")
+                return False
+        # 其他平台暂不支持自动关闭
+        return False
+    except Exception as e:
+        print(f"⚠️  关闭文档失败: {e}")
+        return False
+
+
+# ==============================================================================
+# E2E 测试运行器
+# ==============================================================================
+
+
+class E2ETestRunner:
+    """
+    E2E 测试运行器
+
+    提供自动化的文档夹具管理、Workspace 连接、测试执行和清理功能。
+    """
+
+    def __init__(
+        self,
+        fixtures_dir: str | Path | None = None,
+        host: str = "127.0.0.1",
+        port: int = 3000,
+        connection_timeout: float = 30.0,
+        auto_open: bool = True,
+        cleanup_on_success: bool = True,
+    ):
+        """
+        初始化测试运行器
+
+        Args:
+            fixtures_dir: 夹具目录（默认使用 FIXTURES_ROOT）
+            host: Workspace 服务器地址
+            port: Workspace 服务器端口
+            connection_timeout: Add-In 连接超时时间（秒）
+            auto_open: 是否自动打开文档
+            cleanup_on_success: 成功后是否清理测试副本
+        """
+        self.fixtures_dir = Path(fixtures_dir) if fixtures_dir else FIXTURES_ROOT
+        self.host = host
+        self.port = port
+        self.connection_timeout = connection_timeout
+        self.auto_open = auto_open
+        self.cleanup_on_success = cleanup_on_success
+
+        # 确保临时目录存在
+        TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+
+    def _create_working_copy(self, fixture_path: Path) -> Path:
+        """
+        创建夹具文件的工作副本
+
+        Args:
+            fixture_path: 原始夹具文件路径
+
+        Returns:
+            工作副本路径
+        """
+        # 生成唯一的文件名
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        working_name = f"{fixture_path.stem}_{timestamp}{fixture_path.suffix}"
+        working_path = TEMP_ROOT / working_name
+
+        # 复制文件
+        shutil.copy2(fixture_path, working_path)
+        return working_path
+
+    @asynccontextmanager
+    async def prepare_document(
+        self,
+        fixture_name: str,
+        open_delay: float = 2.0,
+    ) -> AsyncIterator[DocumentFixture]:
+        """
+        准备测试文档（复制、打开）
+
+        Args:
+            fixture_name: 夹具文件名（相对于 fixtures_dir）
+            open_delay: 打开后等待时间（秒），让 Office 加载插件
+
+        Yields:
+            DocumentFixture: 文档夹具对象
+
+        Example:
+            async with runner.prepare_document("empty.docx") as fixture:
+                print(fixture.document_uri)
+        """
+        # 解析夹具路径
+        fixture_path = self.fixtures_dir / fixture_name
+        if not fixture_path.exists():
+            raise FileNotFoundError(f"夹具文件不存在: {fixture_path}")
+
+        # 创建工作副本
+        working_path = self._create_working_copy(fixture_path)
+        print(f"📄 创建工作副本: {working_path.name}")
+
+        # 生成 document URI
+        document_uri = path_to_file_uri(working_path)
+
+        fixture = DocumentFixture(
+            original_path=fixture_path,
+            working_path=working_path,
+            document_uri=document_uri,
+            cleanup_on_success=self.cleanup_on_success,
+        )
+
+        success = False
+        try:
+            # 自动打开文档
+            if self.auto_open:
+                print(f"📂 打开文档: {working_path.name}")
+                open_document(working_path)
+                await asyncio.sleep(open_delay)
+
+            yield fixture
+            success = True
+
+        finally:
+            # 清理逻辑
+            if success and fixture.cleanup_on_success:
+                # 尝试关闭文档（如果还没关闭的话）
+                if self.auto_open and not fixture.document_closed:
+                    close_document(working_path)
+                    fixture.document_closed = True
+                    await asyncio.sleep(0.5)
+                fixture.cleanup()
+            elif not success:
+                print(f"⚠️  测试失败，保留文件供调试: {working_path}")
+
+    @asynccontextmanager
+    async def run_with_workspace(
+        self,
+        fixture_name: str,
+        open_delay: float = 2.0,
+    ) -> AsyncIterator[tuple[OfficeWorkspace, DocumentFixture]]:
+        """
+        准备文档并启动 Workspace
+
+        这是最常用的上下文管理器，一次性完成：
+        1. 复制测试文档
+        2. 打开文档
+        3. 启动 Workspace
+        4. 等待 Add-In 连接
+
+        Args:
+            fixture_name: 夹具文件名
+            open_delay: 打开后等待时间
+
+        Yields:
+            (workspace, fixture): Workspace 实例和文档夹具
+
+        Example:
+            async with runner.run_with_workspace("simple.docx") as (workspace, fixture):
+                result = await workspace.execute(action)
+        """
+        async with self.prepare_document(fixture_name, open_delay) as fixture:
+            workspace = OfficeWorkspace(host=self.host, port=self.port)
+            try:
+                await workspace.start()
+                print("✅ Workspace 启动成功")
+
+                # 等待 Add-In 连接
+                print("⏳ 等待 Word Add-In 连接...")
+                connected = await workspace.wait_for_addin_connection(
+                    timeout=self.connection_timeout
+                )
+                if not connected:
+                    raise RuntimeError("超时：未检测到 Add-In 连接")
+                print("✅ Add-In 已连接")
+
+                yield workspace, fixture
+
+            finally:
+                # 先关闭文档，让 Add-In 断开连接
+                # 这样 workspace.stop() 就不用等待连接超时
+                if self.auto_open and not fixture.document_closed:
+                    close_document(fixture.working_path)
+                    fixture.document_closed = True
+                    await asyncio.sleep(0.5)  # 等待 Add-In 断开
+                await workspace.stop()
+
+    def verify_stats(
+        self,
+        actual: dict[str, Any],
+        expected: ExpectedStats,
+    ) -> tuple[bool, list[str]]:
+        """
+        验证文档统计数据
+
+        Args:
+            actual: 实际返回的统计数据
+            expected: 预期的统计数据
+
+        Returns:
+            (success, messages): 是否通过和验证消息列表
+        """
+        messages: list[str] = []
+        success = True
+
+        # 验证字数
+        if expected.word_count is not None:
+            actual_wc = actual.get("wordCount", 0)
+            diff = abs(actual_wc - expected.word_count)
+            if diff <= expected.word_count_tolerance:
+                messages.append(f"✅ 字数: {actual_wc} (预期 {expected.word_count})")
+            else:
+                messages.append(
+                    f"❌ 字数不匹配: {actual_wc} (预期 {expected.word_count}, "
+                    f"误差 {diff} > 允许 {expected.word_count_tolerance})"
+                )
+                success = False
+
+        # 验证字符数
+        if expected.character_count is not None:
+            actual_cc = actual.get("characterCount", 0)
+            diff = abs(actual_cc - expected.character_count)
+            if diff <= expected.character_count_tolerance:
+                messages.append(f"✅ 字符数: {actual_cc} (预期 {expected.character_count})")
+            else:
+                messages.append(
+                    f"❌ 字符数不匹配: {actual_cc} (预期 {expected.character_count}, "
+                    f"误差 {diff} > 允许 {expected.character_count_tolerance})"
+                )
+                success = False
+
+        # 验证段落数
+        if expected.paragraph_count is not None:
+            actual_pc = actual.get("paragraphCount", 0)
+            diff = abs(actual_pc - expected.paragraph_count)
+            if diff <= expected.paragraph_count_tolerance:
+                messages.append(f"✅ 段落数: {actual_pc} (预期 {expected.paragraph_count})")
+            else:
+                messages.append(
+                    f"❌ 段落数不匹配: {actual_pc} (预期 {expected.paragraph_count}, "
+                    f"误差 {diff} > 允许 {expected.paragraph_count_tolerance})"
+                )
+                success = False
+
+        return success, messages
+
+
+# ==============================================================================
+# 测试夹具创建工具
+# ==============================================================================
+
+
+def create_empty_docx(path: Path) -> None:
+    """创建空白 Word 文档"""
+    from docx import Document
+
+    doc = Document()
+    doc.save(str(path))
+
+
+def create_simple_docx(path: Path) -> None:
+    """
+    创建简单文本文档
+
+    内容：
+    - 标题
+    - 3 个段落，每段若干句话
+    """
+    from docx import Document
+
+    doc = Document()
+
+    # 标题
+    doc.add_heading("测试文档", level=1)
+
+    # 段落
+    paragraphs = [
+        "这是第一个段落。它包含一些简单的中文文本。这段文字用于测试文档统计功能。",
+        "第二个段落在这里。我们需要确保字数统计是准确的。Word 的统计功能会计算所有文字。",
+        "最后一个段落。测试结束。谢谢使用 Office4AI。",
+    ]
+
+    for para in paragraphs:
+        doc.add_paragraph(para)
+
+    doc.save(str(path))
+
+
+def create_complex_docx(path: Path) -> None:
+    """
+    创建复杂文档（包含表格、列表等）
+
+    内容：
+    - 标题
+    - 段落
+    - 表格
+    - 列表
+    """
+    from docx import Document
+
+    doc = Document()
+
+    # 标题
+    doc.add_heading("复杂测试文档", level=1)
+
+    # 段落
+    doc.add_paragraph("这是一个包含多种元素的复杂文档。")
+
+    # 子标题
+    doc.add_heading("表格示例", level=2)
+
+    # 表格
+    table = doc.add_table(rows=3, cols=3)
+    table.style = "Table Grid"
+    for i, row in enumerate(table.rows):
+        for j, cell in enumerate(row.cells):
+            cell.text = f"单元格 {i+1}-{j+1}"
+
+    # 列表
+    doc.add_heading("列表示例", level=2)
+    items = ["第一项", "第二项", "第三项"]
+    for item in items:
+        doc.add_paragraph(item, style="List Bullet")
+
+    # 结尾段落
+    doc.add_paragraph("这是文档的结尾。")
+
+    doc.save(str(path))
+
+
+def create_large_docx(path: Path, pages: int = 10) -> None:
+    """
+    创建大文档（多页）
+
+    Args:
+        path: 保存路径
+        pages: 页数（约估）
+    """
+    from docx import Document
+
+    doc = Document()
+
+    doc.add_heading("大型测试文档", level=1)
+
+    # 每页大约需要 500-600 字
+    para_text = (
+        "这是一段用于填充大型文档的文本。"
+        "我们需要足够多的内容来测试文档统计功能的性能。"
+        "Word 文档可能包含大量的文字、段落和其他元素。"
+        "这个测试旨在验证系统在处理大型文档时的表现。"
+    ) * 5
+
+    # 生成足够的段落
+    for i in range(pages * 3):  # 每页约 3 段
+        doc.add_paragraph(f"第 {i+1} 段：{para_text}")
+
+    doc.save(str(path))
+
+
+def ensure_fixtures(fixture_dir: Path) -> dict[str, Path]:
+    """
+    确保所有测试夹具文件存在
+
+    如果文件不存在，则创建它们。
+
+    Args:
+        fixture_dir: 夹具目录
+
+    Returns:
+        夹具文件路径字典
+    """
+    fixture_dir.mkdir(parents=True, exist_ok=True)
+
+    fixtures = {
+        "empty.docx": create_empty_docx,
+        "simple.docx": create_simple_docx,
+        "complex.docx": create_complex_docx,
+        "large.docx": lambda p: create_large_docx(p, pages=10),
+    }
+
+    paths: dict[str, Path] = {}
+    for name, creator in fixtures.items():
+        path = fixture_dir / name
+        if not path.exists():
+            print(f"📝 创建夹具: {name}")
+            creator(path)
+        paths[name] = path
+
+    return paths
+
+
+# ==============================================================================
+# 命令行工具
+# ==============================================================================
+
+
+def main() -> None:
+    """命令行入口：创建测试夹具"""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="E2E 测试夹具管理工具")
+    parser.add_argument(
+        "--create-fixtures",
+        metavar="DIR",
+        help="创建测试夹具到指定目录",
+    )
+    parser.add_argument(
+        "--clean-temp",
+        action="store_true",
+        help="清理临时测试文件",
+    )
+
+    args = parser.parse_args()
+
+    if args.create_fixtures:
+        fixture_dir = Path(args.create_fixtures)
+        paths = ensure_fixtures(fixture_dir)
+        print(f"\n✅ 已创建 {len(paths)} 个夹具文件到: {fixture_dir}")
+        for name, path in paths.items():
+            print(f"   - {name}: {path}")
+
+    if args.clean_temp:
+        if TEMP_ROOT.exists():
+            count = len(list(TEMP_ROOT.glob("*.docx")))
+            shutil.rmtree(TEMP_ROOT)
+            print(f"🧹 已清理 {count} 个临时文件")
+        else:
+            print("📭 无临时文件需要清理")
+
+
+if __name__ == "__main__":
+    main()
