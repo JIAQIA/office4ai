@@ -18,13 +18,17 @@ import asyncio
 import platform
 import shutil
 import subprocess
+import inspect
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
+
+if TYPE_CHECKING:
+    from docx import Document as DocxDocument
 
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 
@@ -44,6 +48,89 @@ TEMP_ROOT = Path(__file__).parent / ".test_working"
 # ==============================================================================
 # 数据类
 # ==============================================================================
+
+
+@dataclass
+class DocumentReader:
+    """
+    文档内容读取器
+
+    提供对测试文档内容的只读访问，用于双重验证。
+    通过 python-docx 读取修改后的文档，验证实际内容。
+
+    Example:
+        reader = DocumentReader(fixture.working_path)
+        assert reader.contains("预期文本")
+        assert reader.paragraph_contains(0, "第一段内容")
+    """
+
+    path: Path
+    _doc: "DocxDocument | None" = field(default=None, repr=False)
+
+    @property
+    def doc(self) -> "DocxDocument":
+        """懒加载 Document 对象"""
+        if self._doc is None:
+            from docx import Document
+
+            self._doc = Document(str(self.path))
+        return self._doc
+
+    def reload(self) -> None:
+        """
+        重新加载文档
+
+        当文档被修改后，调用此方法刷新缓存的 Document 对象。
+        """
+        self._doc = None
+
+    @property
+    def paragraphs(self) -> list[str]:
+        """获取所有段落文本"""
+        return [p.text for p in self.doc.paragraphs]
+
+    @property
+    def text(self) -> str:
+        """获取全文文本（段落用换行连接）"""
+        return "\n".join(self.paragraphs)
+
+    @property
+    def table_count(self) -> int:
+        """获取表格数量"""
+        return len(self.doc.tables)
+
+    def contains(self, text: str) -> bool:
+        """检查文档是否包含指定文本"""
+        return text in self.text
+
+    def paragraph_contains(self, index: int, text: str) -> bool:
+        """
+        检查指定段落是否包含文本
+
+        Args:
+            index: 段落索引（0-based）
+            text: 要搜索的文本
+
+        Returns:
+            如果段落存在且包含文本返回 True，否则返回 False
+        """
+        if 0 <= index < len(self.doc.paragraphs):
+            return text in self.doc.paragraphs[index].text
+        return False
+
+    def get_paragraph(self, index: int) -> str | None:
+        """
+        获取指定段落的文本
+
+        Args:
+            index: 段落索引（0-based）
+
+        Returns:
+            段落文本，如果索引无效返回 None
+        """
+        if 0 <= index < len(self.doc.paragraphs):
+            return self.doc.paragraphs[index].text
+        return None
 
 
 @dataclass
@@ -132,6 +219,47 @@ class ExpectedStructure:
     section_count_tolerance: int = 0
 
 
+# ==============================================================================
+# Validator 类型定义
+# ==============================================================================
+
+# 传统验证器：仅接收协议返回的 data
+DataValidator = Callable[[dict[str, Any]], bool]
+
+# 内容验证器：接收 data 和 DocumentReader，用于双重验证
+ContentValidator = Callable[[dict[str, Any], DocumentReader], bool]
+
+# 统一验证器类型（向后兼容）
+Validator = DataValidator | ContentValidator
+
+
+def _call_validator(
+    validator: Validator,
+    data: dict[str, Any],
+    reader: DocumentReader,
+) -> bool:
+    """
+    智能调用验证器
+
+    根据验证器的参数数量自动判断是传统模式还是双重验证模式。
+
+    Args:
+        validator: 验证函数
+        data: 协议返回的数据
+        reader: 文档读取器
+
+    Returns:
+        验证结果
+    """
+    sig = inspect.signature(validator)
+    if len(sig.parameters) == 2:
+        # 双重验证模式：传入 data 和 reader
+        return validator(data, reader)  # type: ignore[call-arg]
+    else:
+        # 传统模式：仅传入 data
+        return validator(data)  # type: ignore[call-arg]
+
+
 @dataclass
 class TestCase:
     """
@@ -143,13 +271,15 @@ class TestCase:
         description: 测试描述
         expected: 预期结果
         validator: 自定义验证函数（可选）
+            - DataValidator: (data) -> bool - 仅验证协议返回
+            - ContentValidator: (data, reader) -> bool - 双重验证（协议 + 文档内容）
     """
 
     name: str
     fixture_name: str
     description: str
     expected: ExpectedStats | None = None
-    validator: Callable[[dict[str, Any]], bool] | None = None
+    validator: Validator | None = None
     tags: list[str] = field(default_factory=list)
 
 

@@ -34,11 +34,13 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
 
 from manual_tests.e2e_base import (
+    DocumentReader,
     E2ETestRunner,
     ExpectedStructure,
+    Validator,
+    _call_validator,
     ensure_fixtures,
 )
 from office4ai.environment.workspace.base import OfficeAction
@@ -62,6 +64,8 @@ class StructureTestCase:
         description: 测试描述
         expected: 预期结果
         validator: 自定义验证函数（可选）
+            - DataValidator: (data) -> bool - 仅验证协议返回
+            - ContentValidator: (data, reader) -> bool - 双重验证（协议 + 文档内容）
         tags: 标签列表
     """
 
@@ -69,7 +73,7 @@ class StructureTestCase:
     fixture_name: str
     description: str
     expected: ExpectedStructure | None = None
-    validator: Callable[[dict[str, Any]], bool] | None = None
+    validator: Validator | None = None
     tags: list[str] = field(default_factory=list)
 
 
@@ -112,10 +116,7 @@ TEST_CASES: list[StructureTestCase] = [
             image_count=0,
             section_count=1,
         ),
-        validator=lambda data: (
-            data.get("paragraphCount", 0) > 0
-            and data.get("tableCount", 0) > 0
-        ),
+        validator=lambda data: (data.get("paragraphCount", 0) > 0 and data.get("tableCount", 0) > 0),
         tags=["advanced"],
     ),
     StructureTestCase(
@@ -209,7 +210,9 @@ async def run_single_test(
 
             # 自定义验证
             if test_case.validator:
-                if test_case.validator(data):
+                # 创建文档读取器（用于双重验证）
+                reader = DocumentReader(fixture.working_path)
+                if _call_validator(test_case.validator, data, reader):
                     print("   ✅ 自定义验证通过")
                 else:
                     print("   ❌ 自定义验证失败")

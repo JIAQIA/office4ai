@@ -35,9 +35,11 @@ import time
 from pathlib import Path
 
 from manual_tests.e2e_base import (
+    DocumentReader,
     E2ETestRunner,
     ExpectedStats,
     TestCase,
+    _call_validator,
     ensure_fixtures,
 )
 from office4ai.environment.workspace.base import OfficeAction
@@ -188,7 +190,9 @@ async def run_single_test(
 
             # 自定义验证
             if test_case.validator:
-                if test_case.validator(data):
+                # 创建文档读取器（用于双重验证）
+                reader = DocumentReader(fixture.working_path)
+                if _call_validator(test_case.validator, data, reader):
                     print("   ✅ 自定义验证通过")
                 else:
                     print("   ❌ 自定义验证失败")
