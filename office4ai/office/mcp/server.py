@@ -66,8 +66,11 @@ class OfficeMCPServer(BaseMCPServer):
         # Excel 工具 (未来) | Excel tools (future)
 
     def _register_resources(self) -> None:
-        """本次不实现任何 Resource | No Resources implemented yet"""
-        pass
+        """注册资源 | Register resources"""
+        from office4ai.a2c_smcp.resources.connected_documents import ConnectedDocumentsResource
+
+        docs_resource = ConnectedDocumentsResource(self.workspace)
+        self.resources[docs_resource.base_uri] = docs_resource
 
     async def _async_startup(self) -> None:
         """启动 OfficeWorkspace (Socket.IO Server) | Start OfficeWorkspace"""

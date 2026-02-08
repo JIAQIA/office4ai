@@ -55,13 +55,14 @@ class TestOfficeMCPServer:
             for tool_name in expected_tools:
                 assert tool_name in server.tools, f"Tool {tool_name} not registered"
 
-    def test_no_resources_registered(self):
-        """测试资源未注册 | Test no resources registered"""
+    def test_resources_registered(self):
+        """测试资源已注册 | Test resources are registered"""
         with patch.dict(os.environ, {}, clear=True):
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            assert len(server.resources) == 0
+            assert len(server.resources) == 1
+            assert "office://workspace/documents" in server.resources
 
     @pytest.mark.parametrize("transport", ["stdio", "sse", "streamable-http"])
     def test_server_supports_all_transports(self, transport):
