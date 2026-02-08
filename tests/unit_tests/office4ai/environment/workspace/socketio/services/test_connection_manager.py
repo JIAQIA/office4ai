@@ -62,9 +62,7 @@ class TestNormalizeDocumentUri:
     def test_lookup_with_different_uri_formats(self, connection_manager: ConnectionManager) -> None:
         """Test that different URI formats for same path match correctly"""
         # Register with URL-encoded path
-        connection_manager.register_client(
-            "socket1", "client1", "file:///%2Ftmp%2Ftest.docx", "/word"
-        )
+        connection_manager.register_client("socket1", "client1", "file:///%2Ftmp%2Ftest.docx", "/word")
 
         # Lookup with decoded path should work
         socket_id = connection_manager.get_socket_by_document("file:///tmp/test.docx")
