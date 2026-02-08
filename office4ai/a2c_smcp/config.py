@@ -22,6 +22,7 @@ class MCPServerConfig(BaseConfig, metaclass=BaseConfigMetaclass):
                 "TRANSPORT": "transport",
                 "HOST": "host",
                 "PORT": "port",
+                "SOCKETIO_PORT": "socketio_port",
             },
         ),
         CLArgSource(
@@ -30,6 +31,7 @@ class MCPServerConfig(BaseConfig, metaclass=BaseConfigMetaclass):
                 "transport": "transport",
                 "host": "host",
                 "port": "port",
+                "socketio_port": "socketio_port",
             },
         ),
     ]
@@ -37,8 +39,9 @@ class MCPServerConfig(BaseConfig, metaclass=BaseConfigMetaclass):
     transport: Literal["stdio", "sse", "streamable-http"] = Field(default="stdio")
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=8000)
+    socketio_port: int = Field(default=3000)
 
-    @field_validator("port")
+    @field_validator("port", "socketio_port")
     @classmethod
     def validate_port(cls, v: int) -> int:
         """验证端口范围 | Validate port range"""

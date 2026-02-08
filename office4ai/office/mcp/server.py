@@ -12,23 +12,72 @@ from loguru import logger
 
 from office4ai.a2c_smcp.config import MCPServerConfig
 from office4ai.a2c_smcp.server import BaseMCPServer
+from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 
 
 class OfficeMCPServer(BaseMCPServer):
+    """
+    Office 级别的统一 MCP Server | Office-level unified MCP Server
+
+    一个 Server 实例同时处理 Word、PPT、Excel 三种文档类型。
+    Socket.IO Server 的生命周期与 MCP Server 一致。
+    """
+
     def __init__(self, config: MCPServerConfig) -> None:
-        super().__init__(config=config, server_name="office4ai-mcp")
+        # 同步：创建 workspace 实例 (未启动)
+        self.workspace = OfficeWorkspace(
+            host=config.host,
+            port=config.socketio_port,
+        )
+        super().__init__(config=config, server_name="office4ai")
 
     def _register_tools(self) -> None:
-        """注册所有工具 | Register all tools"""
-        # Milestone 0: 暂不注册任何工具，返回空列表
-        # Milestone 0: No tools registered yet, return empty list
-        pass
+        """注册所有平台的工具 | Register all platform tools"""
+        from office4ai.a2c_smcp.tools.word import (
+            WordAppendTextTool,
+            WordGetSelectedContentTool,
+            WordGetVisibleContentTool,
+            WordInsertEquationTool,
+            WordInsertImageTool,
+            WordInsertTableTool,
+            WordInsertTextTool,
+            WordInsertTOCTool,
+            WordReplaceTextTool,
+        )
+
+        word_tools = [
+            WordGetSelectedContentTool(self.workspace),
+            WordGetVisibleContentTool(self.workspace),
+            WordInsertTextTool(self.workspace),
+            WordAppendTextTool(self.workspace),
+            WordReplaceTextTool(self.workspace),
+            WordInsertImageTool(self.workspace),
+            WordInsertTableTool(self.workspace),
+            WordInsertEquationTool(self.workspace),
+            WordInsertTOCTool(self.workspace),
+        ]
+
+        for tool in word_tools:
+            self.tools[tool.name] = tool
+
+        logger.info(f"已注册 {len(word_tools)} 个 Word 工具 | Registered {len(word_tools)} Word tools")
+
+        # PPT 工具 (未来) | PPT tools (future)
+        # Excel 工具 (未来) | Excel tools (future)
 
     def _register_resources(self) -> None:
-        """注册所有资源 | Register all resources"""
-        # Milestone 0: 暂不注册任何资源，返回空列表
-        # Milestone 0: No resources registered yet, return empty list
+        """本次不实现任何 Resource | No Resources implemented yet"""
         pass
+
+    async def _async_startup(self) -> None:
+        """启动 OfficeWorkspace (Socket.IO Server) | Start OfficeWorkspace"""
+        logger.info("启动 OfficeWorkspace | Starting OfficeWorkspace...")
+        await self.workspace.start()
+
+    async def _async_shutdown(self) -> None:
+        """停止 OfficeWorkspace (Socket.IO Server) | Stop OfficeWorkspace"""
+        logger.info("停止 OfficeWorkspace | Stopping OfficeWorkspace...")
+        await self.workspace.stop()
 
 
 async def async_main() -> None:

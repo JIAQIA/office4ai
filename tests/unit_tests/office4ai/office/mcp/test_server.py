@@ -28,28 +28,39 @@ class TestOfficeMCPServer:
             server = OfficeMCPServer(config)
 
             assert server.config == config
-            assert server.server.name == "office4ai-mcp"
-            assert len(server.tools) == 0
-            assert len(server.resources) == 0
+            assert server.server.name == "office4ai"
+            assert server.workspace is not None
+            assert not server.workspace.is_running
 
-    @pytest.mark.asyncio
-    async def test_register_tools(self):
-        """测试工具注册 | Test tool registration"""
+    def test_tools_registered(self):
+        """测试工具已注册 | Test tools are registered"""
         with patch.dict(os.environ, {}, clear=True):
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            # Milestone 0: 应该没有注册任何工具 | Milestone 0: No tools should be registered
-            assert len(server.tools) == 0
+            # 9 个 Word 工具 | 9 Word tools
+            assert len(server.tools) == 9
 
-    @pytest.mark.asyncio
-    async def test_register_resources(self):
-        """测试资源注册 | Test resource registration"""
+            expected_tools = [
+                "word_get_selected_content",
+                "word_get_visible_content",
+                "word_insert_text",
+                "word_append_text",
+                "word_replace_text",
+                "word_insert_image",
+                "word_insert_table",
+                "word_insert_equation",
+                "word_insert_toc",
+            ]
+            for tool_name in expected_tools:
+                assert tool_name in server.tools, f"Tool {tool_name} not registered"
+
+    def test_no_resources_registered(self):
+        """测试资源未注册 | Test no resources registered"""
         with patch.dict(os.environ, {}, clear=True):
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            # Milestone 0: 应该没有注册任何资源 | Milestone 0: No resources should be registered
             assert len(server.resources) == 0
 
     @pytest.mark.parametrize("transport", ["stdio", "sse", "streamable-http"])
@@ -61,10 +72,25 @@ class TestOfficeMCPServer:
 
             assert server.config.transport == transport
 
-    def test_server_name(self):
-        """测试服务器名称 | Test server name"""
+    def test_workspace_port_from_config(self):
+        """测试 workspace 使用 config 中的 socketio_port | Test workspace uses socketio_port from config"""
+        with MCPServerConfig.change_config_sources(DataSource(data={"socketio_port": 4000})):
+            config = MCPServerConfig()
+            server = OfficeMCPServer(config)
+
+            assert server.workspace.port == 4000
+
+    @pytest.mark.asyncio
+    async def test_async_lifecycle(self):
+        """测试 async 生命周期钩子 | Test async lifecycle hooks"""
         with patch.dict(os.environ, {}, clear=True):
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            assert server.server.name == "office4ai-mcp"
+            # 启动 workspace
+            await server._async_startup()
+            assert server.workspace.is_running
+
+            # 停止 workspace
+            await server._async_shutdown()
+            assert not server.workspace.is_running

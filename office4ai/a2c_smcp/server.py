@@ -50,6 +50,14 @@ class BaseMCPServer(ABC):
     def _register_resources(self) -> None:
         raise NotImplementedError
 
+    async def _async_startup(self) -> None:  # noqa: B027
+        """async 启动钩子, 子类可 override | Async startup hook, subclass can override"""
+        pass
+
+    async def _async_shutdown(self) -> None:  # noqa: B027
+        """async 关闭钩子, 子类可 override | Async shutdown hook, subclass can override"""
+        pass
+
     def _setup_handlers(self) -> None:
         @self.server.list_tools()  # type: ignore[no-untyped-call]
         async def list_tools() -> list[Tool]:
@@ -106,21 +114,25 @@ class BaseMCPServer(ABC):
             return await resource.read()
 
     async def run(self) -> None:
-        transport = self.config.transport
+        await self._async_startup()
+        try:
+            transport = self.config.transport
 
-        if transport == "stdio":
-            await self._run_stdio()
-            return
+            if transport == "stdio":
+                await self._run_stdio()
+                return
 
-        if transport == "sse":
-            await self._run_sse()
-            return
+            if transport == "sse":
+                await self._run_sse()
+                return
 
-        if transport == "streamable-http":
-            await self._run_streamable_http()
-            return
+            if transport == "streamable-http":
+                await self._run_streamable_http()
+                return
 
-        raise ValueError(f"不支持的传输模式 | Unsupported transport mode: {transport}")
+            raise ValueError(f"不支持的传输模式 | Unsupported transport mode: {transport}")
+        finally:
+            await self._async_shutdown()
 
     async def _run_stdio(self) -> None:
         async with stdio_server() as (read_stream, write_stream):
