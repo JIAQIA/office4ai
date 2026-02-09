@@ -15,10 +15,10 @@ E2E 测试基础设施
 """
 
 import asyncio
+import inspect
 import platform
 import shutil
 import subprocess
-import inspect
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -35,6 +35,9 @@ from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 # ==============================================================================
 # 配置常量
 # ==============================================================================
+
+# Add-In 名称（用于自动激活）
+DEFAULT_ADDIN_NAME = "word-editor"
 
 # 测试夹具根目录
 FIXTURES_ROOT = Path(__file__).parent / "fixtures"
@@ -389,6 +392,182 @@ def close_document(path: Path) -> bool:
 
 
 # ==============================================================================
+# Add-In 自动激活（macOS AppleScript）
+# ==============================================================================
+
+
+def _run_applescript(script: str, timeout: float = 15.0) -> tuple[bool, str]:
+    """
+    执行 AppleScript 并返回结果
+
+    Args:
+        script: AppleScript 脚本内容
+        timeout: 超时时间（秒）
+
+    Returns:
+        (success, output): 是否成功和输出内容
+    """
+    try:
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True,
+            timeout=timeout,
+        )
+        output = result.stdout.decode().strip()
+        if result.returncode == 0:
+            return True, output
+        else:
+            stderr = result.stderr.decode().strip()
+            return False, stderr
+    except subprocess.TimeoutExpired:
+        return False, "AppleScript 执行超时"
+    except Exception as e:
+        return False, str(e)
+
+
+async def activate_word_addin(addin_name: str = DEFAULT_ADDIN_NAME) -> bool:
+    """
+    通过 AppleScript UI 自动化激活 Word Add-In（仅 macOS）
+
+    自动完成两步操作：
+    1. 点击 Word 功能区的「加载项」按钮
+    2. 在弹出面板中点击目标 Add-In
+
+    如果自动化失败，会打印日志提示用户手动操作。
+
+    Args:
+        addin_name: Add-In 名称（部分匹配即可）
+
+    Returns:
+        是否成功激活
+    """
+    if platform.system() != "Darwin":
+        print("⚠️  自动激活 Add-In 仅支持 macOS，请手动激活")
+        return False
+
+    print(f"🔌 尝试自动激活 Add-In: {addin_name}...")
+
+    # Phase 1: 点击「加载项」按钮
+    # Word macOS UI 结构: front window → tab group 1 → scroll area → groups → AXButton "加载项"
+    # 使用 entire contents 扁平化搜索，避免嵌套遍历失败
+    # 功能区可能处于折叠状态（无 scroll area），需要先点击选项卡展开
+    script_phase1 = '''
+tell application "Microsoft Word" to activate
+delay 0.5
+
+tell application "System Events"
+    tell process "Microsoft Word"
+        set tg to tab group 1 of front window
+
+        -- 检查功能区是否展开（scroll area 存在则展开）
+        set ribbonExpanded to false
+        try
+            set saCount to count of scroll areas of tg
+            if saCount > 0 then set ribbonExpanded to true
+        end try
+
+        -- 如果功能区折叠，点击「开始」展开
+        if not ribbonExpanded then
+            repeat with rb in radio buttons of tg
+                if name of rb is "开始" or name of rb is "Home" then
+                    click rb
+                    delay 0.5
+                    exit repeat
+                end if
+            end repeat
+        end if
+
+        -- 使用 entire contents 扁平搜索「加载项」按钮
+        set allElems to entire contents of tg
+        repeat with elem in allElems
+            try
+                if role of elem is "AXButton" then
+                    set eName to name of elem
+                    if eName is "加载项" or eName is "Add-ins" then
+                        click elem
+                        return "ok"
+                    end if
+                end if
+            end try
+        end repeat
+
+        return "not_found"
+    end tell
+end tell
+'''
+
+    ok, output = _run_applescript(script_phase1)
+    if not ok or output != "ok":
+        print(f"   ⚠️  未能自动点击「加载项」按钮 (原因: {output})")
+        print(f"   👆 请手动点击「加载项」→「{addin_name}...」")
+        return False
+
+    print("   ✅ Phase 1: 已点击「加载项」按钮")
+
+    # Phase 2: 提示用户手动点击目标 Add-In
+    # Office 的加载项弹窗是自绘 UI（非原生 AX 元素），无法通过 AppleScript 自动化点击。
+    # 如果文档已通过 Office.AutoShowTaskpaneWithDocument 预标记，则此弹窗不会出现，
+    # Add-In 会自动加载，此函数返回 False 不影响后续流程。
+    print(f"   👆 请在弹出的加载项面板中点击「{addin_name}...」")
+    return False
+
+
+def dump_word_ui_hierarchy() -> None:
+    """
+    调试工具：打印 Word 前端窗口的 UI 元素层级
+
+    当自动激活失败时，运行此函数查看 Word 的 UI 结构，
+    帮助调整 AppleScript 中的元素定位逻辑。
+
+    Usage:
+        python -c "from manual_tests.e2e_base import dump_word_ui_hierarchy; dump_word_ui_hierarchy()"
+    """
+    if platform.system() != "Darwin":
+        print("仅支持 macOS")
+        return
+
+    script = '''
+tell application "Microsoft Word" to activate
+delay 0.5
+
+tell application "System Events"
+    tell process "Microsoft Word"
+        set output to ""
+        set uiElems to UI elements of front window
+        repeat with elem in uiElems
+            try
+                set elemRole to role of elem
+                set elemName to name of elem
+                set elemDesc to description of elem
+                set output to output & "[" & elemRole & "] name=" & elemName & " desc=" & elemDesc & linefeed
+                -- 一层子元素
+                try
+                    set children to UI elements of elem
+                    repeat with child in children
+                        try
+                            set cRole to role of child
+                            set cName to name of child
+                            set cDesc to description of child
+                            set output to output & "  [" & cRole & "] name=" & cName & " desc=" & cDesc & linefeed
+                        end try
+                    end repeat
+                end try
+            end try
+        end repeat
+        return output
+    end tell
+end tell
+'''
+
+    ok, output = _run_applescript(script, timeout=30.0)
+    if ok:
+        print("=== Word UI Hierarchy ===")
+        print(output)
+    else:
+        print(f"获取 UI 层级失败: {output}")
+
+
+# ==============================================================================
 # E2E 测试运行器
 # ==============================================================================
 
@@ -407,6 +586,7 @@ class E2ETestRunner:
         port: int = 3000,
         connection_timeout: float = 30.0,
         auto_open: bool = True,
+        auto_activate: bool = True,
         cleanup_on_success: bool = True,
     ):
         """
@@ -418,6 +598,7 @@ class E2ETestRunner:
             port: Workspace 服务器端口
             connection_timeout: Add-In 连接超时时间（秒）
             auto_open: 是否自动打开文档
+            auto_activate: 是否自动激活 Add-In（通过 AppleScript，仅 macOS）
             cleanup_on_success: 成功后是否清理测试副本
         """
         self.fixtures_dir = Path(fixtures_dir) if fixtures_dir else FIXTURES_ROOT
@@ -425,6 +606,7 @@ class E2ETestRunner:
         self.port = port
         self.connection_timeout = connection_timeout
         self.auto_open = auto_open
+        self.auto_activate = auto_activate
         self.cleanup_on_success = cleanup_on_success
 
         # 确保临时目录存在
@@ -542,6 +724,12 @@ class E2ETestRunner:
             try:
                 await workspace.start()
                 print("✅ Workspace 启动成功")
+
+                # 自动激活 Add-In（仅 macOS，需要辅助功能权限）
+                if self.auto_open and self.auto_activate:
+                    activated = await activate_word_addin()
+                    if not activated:
+                        print("👆 请手动点击「加载项」→「word-editor...」激活 Add-In")
 
                 # 等待 Add-In 连接
                 print("⏳ 等待 Word Add-In 连接...")
