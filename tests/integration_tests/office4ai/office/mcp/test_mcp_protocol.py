@@ -38,10 +38,10 @@ class TestMCPProtocol:
 
                 # 验证服务器信息 | Verify server info
                 assert result is not None
-                assert result.serverInfo.name == "office4ai-mcp"
+                assert result.serverInfo.name == "office4ai"
 
-    async def test_list_tools_empty(self):
-        """测试 list_tools 返回空列表 | Test list_tools returns empty list"""
+    async def test_list_tools(self):
+        """测试 list_tools 返回已注册工具 | Test list_tools returns registered tools"""
         server_params = StdioServerParameters(
             command="uv",
             args=["run", "python", "-m", "office4ai.office.mcp.server"],
@@ -54,10 +54,14 @@ class TestMCPProtocol:
 
                 # 获取工具列表 | Get tools list
                 tools_result = await session.list_tools()
-                assert len(tools_result.tools) == 0
+                assert len(tools_result.tools) == 9  # 9 个 Word 工具
 
-    async def test_list_resources_empty(self):
-        """测试 list_resources 返回空列表 | Test list_resources returns empty list"""
+                # 验证工具名称前缀 | Verify tool name prefix
+                tool_names = {t.name for t in tools_result.tools}
+                assert all(name.startswith("word_") for name in tool_names)
+
+    async def test_list_resources(self):
+        """测试 list_resources 返回已注册资源 | Test list_resources returns registered resources"""
         server_params = StdioServerParameters(
             command="uv",
             args=["run", "python", "-m", "office4ai.office.mcp.server"],
@@ -70,7 +74,10 @@ class TestMCPProtocol:
 
                 # 获取资源列表 | Get resources list
                 resources_result = await session.list_resources()
-                assert len(resources_result.resources) == 0
+                assert len(resources_result.resources) == 1  # ConnectedDocuments
+
+                # 验证资源 URI | Verify resource URI
+                assert resources_result.resources[0].uri == AnyUrl("office://workspace/documents")
 
     async def test_call_tool_not_found(self):
         """测试调用不存在的工具 | Test calling non-existent tool"""
