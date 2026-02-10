@@ -1,190 +1,334 @@
 """
-Basic Text Selection Test
+Basic Select Text E2E Tests (自动化版本)
 
-测试基础的文本选择功能。
+测试基本的文本选择功能。
 
-Usage:
+测试场景:
+1. 简单选中文本
+2. 选择第N个匹配
+3. 不区分大小写
+4. 全字匹配
+
+运行方式:
     uv run python manual_tests/select_text_e2e/test_basic_select.py --test 1
     uv run python manual_tests/select_text_e2e/test_basic_select.py --test all
+    uv run python manual_tests/select_text_e2e/test_basic_select.py --list
 """
 
 import asyncio
 import sys
+import time
+from pathlib import Path
+from typing import Any
 
-from manual_tests.test_helpers import (
-    get_document_uri,
-    select_text,
-    wait_for_connection,
-    workspace_context,
+from manual_tests.e2e_base import (
+    DocumentReader,
+    E2ETestRunner,
+    TestCase,
+    _call_validator,
+    ensure_fixtures,
 )
+from office4ai.environment.workspace.base import OfficeAction
+
+# ==============================================================================
+# 配置
+# ==============================================================================
+
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "select_text_e2e"
+
+# ==============================================================================
+# Validator 函数
+# ==============================================================================
 
 
-async def test_1_simple_selection() -> None:
-    """测试 1: 简单选中文本"""
-    print("\n" + "=" * 60)
-    print("测试 1: 简单选中文本")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 文档中输入多次 'Hello World'")
-
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
-
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
-
-        print(f"\n✅ 使用文档: {document_uri}")
-
-        success, data, _ = await select_text(workspace, document_uri, search_text="Hello World")
-
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        if success and data and data.get("matchCount", 0) > 0:
-            print("   ✓ 找到并选中文本")
-            print("\n✅ 测试通过: 'Hello World' 已被选中")
-        else:
-            print("   ❌ 未找到文本或操作失败")
-            print("\n❌ 测试失败: 选择 'Hello World' 失败")
-            print("   请确认文档中包含 'Hello World' 文本")
+def validate_simple_select(data: dict[str, Any]) -> bool:
+    """验证简单选中: 找到并选中 'Hello World'"""
+    match_count = data.get("matchCount", 0)
+    selected_text = data.get("selectedText")
+    if match_count > 0 and selected_text == "Hello World":
+        print(f"   ✅ 匹配数: {match_count}, 选中文本: '{selected_text}'")
+        return True
+    print(f"   ❌ matchCount={match_count}, selectedText='{selected_text}' (预期 'Hello World')")
+    return False
 
 
-async def test_2_select_nth_match() -> None:
-    """测试 2: 选择第N个匹配项"""
-    print("\n" + "=" * 60)
-    print("测试 2: 选择第N个匹配项")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 文档中输入 5 次 'test'")
-
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
-
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
-
-        success, data, _ = await select_text(workspace, document_uri, search_text="test", select_index=2)
-
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        if success and data:
-            match_count = data.get("matchCount", 0)
-            if match_count >= 2:
-                print(f"   ✓ 找到 {match_count} 个匹配")
-                print("   ✓ 成功选中第 2 个 'test'")
-                print("\n✅ 测试通过: 第 2 个 'test' 已被选中")
-            else:
-                print(f"   ❌ 只找到 {match_count} 个 'test'，需要至少 2 个")
-                print("\n❌ 测试失败: 文档中 'test' 数量不足")
-        else:
-            print("   ❌ 操作失败或未找到匹配")
-            print("\n❌ 测试失败: 选择第 2 个 'test' 失败")
-            print("   请确认文档中至少有 2 个 'test' 文本")
+def validate_select_nth(data: dict[str, Any]) -> bool:
+    """验证选择第N个匹配: 至少有 2 个 'test' 匹配"""
+    match_count = data.get("matchCount", 0)
+    if match_count >= 2:
+        print(f"   ✅ 匹配数: {match_count} (>= 2), 成功选中第 2 个匹配")
+        return True
+    print(f"   ❌ matchCount={match_count} (预期 >= 2)")
+    return False
 
 
-async def test_3_case_insensitive() -> None:
-    """测试 3: 不区分大小写"""
-    print("\n" + "=" * 60)
-    print("测试 3: 不区分大小写")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入 'Hello', 'HELLO', 'hello'")
+def validate_case_insensitive(data: dict[str, Any]) -> bool:
+    """验证不区分大小写: 搜索 'hello' 能匹配到"""
+    match_count = data.get("matchCount", 0)
+    if match_count > 0:
+        print(f"   ✅ 不区分大小写匹配成功, matchCount={match_count}")
+        return True
+    print(f"   ❌ matchCount={match_count} (预期 > 0)")
+    return False
 
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
 
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
+def validate_whole_word(data: dict[str, Any]) -> bool:
+    """验证全字匹配: 搜索 'test' 只匹配完整单词"""
+    match_count = data.get("matchCount", 0)
+    selected_text = data.get("selectedText")
+    if match_count > 0 and selected_text == "test":
+        print(f"   ✅ 全字匹配成功, matchCount={match_count}, selectedText='{selected_text}'")
+        return True
+    print(f"   ❌ matchCount={match_count}, selectedText='{selected_text}' (预期 'test')")
+    return False
 
-        success, data, _ = await select_text(
+
+# ==============================================================================
+# 选择操作参数
+# ==============================================================================
+
+_SELECT_CONFIGS: list[dict[str, Any]] = [
+    # Test 1: 简单选中
+    {
+        "search_text": "Hello World",
+    },
+    # Test 2: 选择第N个匹配
+    {
+        "search_text": "test",
+        "select_index": 2,
+    },
+    # Test 3: 不区分大小写
+    {
+        "search_text": "hello",
+        "search_options": {"matchCase": False},
+    },
+    # Test 4: 全字匹配
+    {
+        "search_text": "test",
+        "search_options": {"matchWholeWord": True},
+    },
+]
+
+TEST_CASES: list[TestCase] = [
+    TestCase(
+        name="简单选中文本",
+        fixture_name="simple.docx",
+        description="搜索 'Hello World' 并选中，验证 matchCount > 0 且 selectedText 正确",
+        validator=validate_simple_select,
+        tags=["basic", "select"],
+    ),
+    TestCase(
+        name="选择第N个匹配",
+        fixture_name="simple.docx",
+        description="搜索 'test' 并选中第 2 个匹配，验证 matchCount >= 2",
+        validator=validate_select_nth,
+        tags=["basic", "select_index"],
+    ),
+    TestCase(
+        name="不区分大小写",
+        fixture_name="simple.docx",
+        description="搜索 'hello' (matchCase=False)，验证能匹配到大小写不同的文本",
+        validator=validate_case_insensitive,
+        tags=["basic", "case_insensitive"],
+    ),
+    TestCase(
+        name="全字匹配",
+        fixture_name="simple.docx",
+        description="搜索 'test' (matchWholeWord=True)，验证只匹配完整单词",
+        validator=validate_whole_word,
+        tags=["basic", "whole_word"],
+    ),
+]
+
+
+# ==============================================================================
+# 测试执行
+# ==============================================================================
+
+
+async def run_single_test(
+    runner: E2ETestRunner,
+    test_case: TestCase,
+    test_number: int,
+) -> bool:
+    """执行单个测试用例"""
+    print("\n" + "=" * 70)
+    print(f"🧪 测试 {test_number}: {test_case.name}")
+    print("=" * 70)
+    print(f"📋 描述: {test_case.description}")
+    print(f"📄 夹具: {test_case.fixture_name}")
+
+    fixture_path = f"select_text_e2e/{test_case.fixture_name}"
+    config = _SELECT_CONFIGS[test_number - 1]
+
+    try:
+        async with runner.run_with_workspace(fixture_path, open_delay=3.0) as (
             workspace,
-            document_uri,
-            search_text="hello",
-            search_options={"matchCase": False},
-        )
+            fixture,
+        ):
+            search_text = config["search_text"]
+            selection_mode = config.get("selection_mode", "select")
+            select_index = config.get("select_index", 1)
+            search_options = config.get("search_options")
 
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        if success and data and data.get("matchCount", 0) > 0:
-            print("   ✓ 不区分大小写匹配成功")
-            print("\n✅ 测试通过: 找到大小写不同的 'hello'")
-        else:
-            print("   ❌ 未找到匹配")
-            print("\n❌ 测试失败: 不区分大小写匹配失败")
-            print("   请确认文档中包含 'Hello', 'HELLO' 或 'hello'")
+            print(f"\n📝 执行: 选择文本...")
+            print(f"   搜索: '{search_text}'")
+            print(f"   模式: {selection_mode}, 索引: {select_index}")
+            if search_options:
+                print(f"   搜索选项: {search_options}")
 
+            start_time = time.time()
 
-async def test_4_whole_word() -> None:
-    """测试 4: 全字匹配"""
-    print("\n" + "=" * 60)
-    print("测试 4: 全字匹配")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入 'test', 'test123', 'mytest'")
+            action = OfficeAction(
+                category="word",
+                action_name="select:text",
+                params={
+                    "document_uri": fixture.document_uri,
+                    "search_text": search_text,
+                    "selection_mode": selection_mode,
+                    "select_index": select_index,
+                    **({"search_options": search_options} if search_options else {}),
+                },
+            )
 
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
+            result = await workspace.execute(action)
+            elapsed_ms = (time.time() - start_time) * 1000
 
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
+            print(f"\n⏱️  执行时间: {elapsed_ms:.1f}ms")
 
-        success, data, _ = await select_text(
-            workspace,
-            document_uri,
-            search_text="test",
-            search_options={"matchWholeWord": True},
-        )
+            if not result.success:
+                print(f"❌ 选择失败: {result.error}")
+                return False
 
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        if success and data and data.get("matchCount", 0) > 0:
-            selected_text = data.get("selectedText", "")
-            if selected_text == "test":
-                print("   ✓ 全字匹配成功")
-                print(f"   ✓ 选中文本: '{selected_text}'")
-                print("\n✅ 测试通过: 只选中完整的 'test' 单词")
+            print("✅ 协议返回成功")
+            data = result.data or {}
+            if "matchCount" in data:
+                print(f"   匹配数: {data['matchCount']}")
+            if "selectedText" in data:
+                print(f"   选中文本: '{data['selectedText']}'")
+
+            # DataValidator 验证
+            print("\n📊 验证结果:")
+            passed = True
+
+            if test_case.validator:
+                reader = DocumentReader(fixture.working_path)
+                if not _call_validator(test_case.validator, data, reader):
+                    passed = False
+
+            print("\n" + "=" * 70)
+            if passed:
+                print(f"✅ 测试 {test_number} 通过")
             else:
-                print(f"   ⚠️  选中的文本不完全是 'test': '{selected_text}'")
-        else:
-            print("   ❌ 未找到完整的 'test' 单词")
-            print("\n❌ 测试失败: 全字匹配失败")
-            print("   请确认文档中包含完整的 'test' 单词")
+                print(f"❌ 测试 {test_number} 失败")
+            print("=" * 70)
+            return passed
+
+    except Exception as e:
+        print(f"\n❌ 测试异常: {e}")
+        import traceback
+
+        traceback.print_exc()
+        return False
 
 
-async def main() -> None:
-    if len(sys.argv) < 2 or sys.argv[1] != "--test":
-        print("Usage: python test_basic_select.py --test <1-4|all>")
+async def run_tests(
+    test_indices: list[int],
+    auto_open: bool = True,
+    cleanup_on_success: bool = True,
+) -> bool:
+    """运行指定的测试"""
+    ensure_fixtures(FIXTURES_DIR)
+
+    runner = E2ETestRunner(
+        fixtures_dir=FIXTURES_DIR.parent,
+        auto_open=auto_open,
+        cleanup_on_success=cleanup_on_success,
+    )
+
+    results: list[bool] = []
+
+    for idx in test_indices:
+        if idx < 1 or idx > len(TEST_CASES):
+            print(f"⚠️  无效的测试编号: {idx}")
+            continue
+
+        test_case = TEST_CASES[idx - 1]
+
+        if len(test_indices) > 1 and results:
+            print("\n" + "-" * 70)
+            print("⏳ 准备下一个测试...")
+            if auto_open:
+                await asyncio.sleep(2.0)
+            else:
+                input("按回车继续...")
+
+        result = await run_single_test(runner, test_case, idx)
+        results.append(result)
+
+    if len(results) > 1:
+        print("\n" + "=" * 70)
+        print(f"📈 总体结果: {sum(results)}/{len(results)} 测试通过")
+        print("=" * 70)
+
+    return all(results)
+
+
+# ==============================================================================
+# 命令行入口
+# ==============================================================================
+
+
+def main() -> None:
+    """命令行入口"""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Basic Select Text E2E Tests (自动化版本)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--test",
+        choices=[str(i) for i in range(1, len(TEST_CASES) + 1)] + ["all"],
+        default="1",
+        help="要运行的测试",
+    )
+    parser.add_argument("--no-auto-open", action="store_true", help="不自动打开文档")
+    parser.add_argument("--always-cleanup", action="store_true", help="无论成功失败都清理")
+    parser.add_argument("--list", action="store_true", help="列出所有测试用例")
+
+    args = parser.parse_args()
+
+    if args.list:
+        print("\n📋 可用测试用例:\n")
+        for i, tc in enumerate(TEST_CASES, 1):
+            print(f"  {i}. {tc.name}")
+            print(f"     夹具: {tc.fixture_name}")
+            print(f"     描述: {tc.description}")
+            print(f"     标签: {', '.join(tc.tags)}")
+            print()
         return
 
-    test_arg = sys.argv[2] if len(sys.argv) > 2 else "1"
-
-    tests = {
-        "1": test_1_simple_selection,
-        "2": test_2_select_nth_match,
-        "3": test_3_case_insensitive,
-        "4": test_4_whole_word,
-    }
-
-    if test_arg == "all":
-        for test_num, test_func in tests.items():
-            try:
-                await test_func()
-                print("\n" + "▓" * 60)
-                print(f"✅ 测试 {test_num} 完成\n")
-            except Exception as e:
-                print(f"\n❌ 测试 {test_num} 失败: {e}\n")
-    elif test_arg in tests:
-        try:
-            await tests[test_arg]()
-        except Exception as e:
-            print(f"\n❌ 测试失败: {e}\n")
+    if args.test == "all":
+        test_indices = list(range(1, len(TEST_CASES) + 1))
     else:
-        print(f"❌ 无效的测试编号: {test_arg}")
-        print("   可用测试: 1-4, all")
+        test_indices = [int(args.test)]
+
+    try:
+        success = asyncio.run(
+            run_tests(
+                test_indices=test_indices,
+                auto_open=not args.no_auto_open,
+                cleanup_on_success=not args.always_cleanup or True,
+            )
+        )
+        sys.exit(0 if success else 1)
+
+    except KeyboardInterrupt:
+        print("\n\n⏸️  测试被用户中断")
+        sys.exit(130)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

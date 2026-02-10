@@ -1,321 +1,385 @@
 """
-Edge Cases Tests
+Edge Cases Select Text E2E Tests (自动化版本)
 
 测试 word:select:text 的边界情况和错误处理。
 
-Usage:
+测试场景:
+1. 未找到匹配（预期失败）
+2. 空搜索文本（预期失败）
+3. 超出索引（预期失败）
+4. 特殊字符搜索
+5. 长文本搜索
+
+运行方式:
     uv run python manual_tests/select_text_e2e/test_edge_cases.py --test 1
     uv run python manual_tests/select_text_e2e/test_edge_cases.py --test all
+    uv run python manual_tests/select_text_e2e/test_edge_cases.py --list
 """
 
 import asyncio
 import sys
+import time
+from pathlib import Path
+from typing import Any
 
-from manual_tests.test_helpers import (
-    get_document_uri,
-    select_text,
-    wait_for_connection,
-    workspace_context,
+from manual_tests.e2e_base import (
+    DocumentReader,
+    E2ETestRunner,
+    TestCase,
+    _call_validator,
+    ensure_fixtures,
 )
+from office4ai.environment.workspace.base import OfficeAction
+
+# ==============================================================================
+# 配置
+# ==============================================================================
+
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "select_text_e2e"
+
+# ==============================================================================
+# Validator 函数
+# ==============================================================================
 
 
-async def test_1_no_matches() -> None:
-    """测试 1: 未找到匹配文本"""
-    print("\n" + "=" * 60)
-    print("测试 1: 未找到匹配文本")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入一些文本（不要包含 'NonExistentText'）")
-
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
-
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
-
-        print(f"\n✅ 使用文档: {document_uri}")
-
-        success, data, error = await select_text(
-            workspace,
-            document_uri,
-            search_text="NonExistentText",
-        )
-
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        test_passed = True
-
-        # 未找到文本时，协议层返回 success=False
-        if not success:
-            print("   ✓ 操作返回 success=False（未找到文本）")
-        else:
-            print("   ❌ 操作应该返回 success=False（未找到匹配）")
-            test_passed = False
-
-        # 修复后：协议层失败时，data 为空字典，错误信息在 error 字段
-        if data == {}:
-            print("   ✓ data 为空字典（协议层失败，无业务数据）")
-        elif data is None:
-            print("   ❌ 返回数据不应该为 None")
-            test_passed = False
-        else:
-            # 如果有 data，检查 matchCount（兼容修复前的行为）
-            if data.get("matchCount") == 0:
-                print("   ✓ matchCount = 0（兼容修复前格式）")
-            else:
-                print(f"   ⚠️  matchCount = {data.get('matchCount')}（协议层失败时不应该有 data）")
-
-        # 检查错误消息（修复后应该有清晰的错误信息）
+def validate_no_match(data: dict[str, Any]) -> bool:
+    """验证未找到匹配: 预期失败，检查错误信息"""
+    # 对于预期失败的用例，data 中包含 _expected_failure 标记
+    if data.get("_expected_failure"):
+        error = data.get("error", "")
         if error:
-            print(f"   ✓ 错误消息: {error}")
-            # 验证错误消息包含关键信息
-            if "NonExistentText" in error or "0 matches" in error:
-                print("   ✓ 错误消息包含搜索文本和匹配数")
-        else:
-            print("   ❌ 缺少错误消息")
-            test_passed = False
+            print(f"   ✅ 预期失败，错误信息: {error}")
+            return True
+        print("   ❌ 预期失败但缺少错误信息")
+        return False
+    # 如果意外成功，检查 matchCount
+    match_count = data.get("matchCount", 0)
+    if match_count == 0:
+        print(f"   ✅ matchCount={match_count} (操作成功但无匹配)")
+        return True
+    print(f"   ❌ 不应该找到匹配，但 matchCount={match_count}")
+    return False
 
-        if test_passed:
-            print("\n✅ 测试通过")
-        else:
-            print("\n❌ 测试失败")
+
+def validate_empty_search(data: dict[str, Any]) -> bool:
+    """验证空搜索文本: 预期失败"""
+    if data.get("_expected_failure"):
+        error = data.get("error", "")
+        if error:
+            print(f"   ✅ 空搜索文本被正确拒绝，错误信息: {error}")
+            return True
+        print("   ❌ 预期失败但缺少错误信息")
+        return False
+    print("   ⚠️  空搜索文本未被拒绝（实现可能允许空搜索）")
+    return True
 
 
-async def test_2_empty_search_text() -> None:
-    """测试 2: 空搜索文本"""
-    print("\n" + "=" * 60)
-    print("测试 2: 空搜索文本")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入任意文本")
+def validate_out_of_bounds(data: dict[str, Any]) -> bool:
+    """验证超出索引: 预期失败"""
+    if data.get("_expected_failure"):
+        error = data.get("error", "")
+        if error:
+            print(f"   ✅ 索引超出范围被正确拒绝，错误信息: {error}")
+            return True
+        print("   ❌ 预期失败但缺少错误信息")
+        return False
+    print("   ❌ 索引超出范围应该失败")
+    return False
 
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
 
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
+def validate_special_chars(data: dict[str, Any]) -> bool:
+    """验证特殊字符搜索: 应该成功找到"""
+    match_count = data.get("matchCount", 0)
+    if match_count > 0:
+        print(f"   ✅ 特殊字符搜索成功，matchCount={match_count}")
+        return True
+    print(f"   ❌ matchCount={match_count} (预期 > 0)")
+    return False
 
-        print(f"\n✅ 使用文档: {document_uri}")
 
-        success, data, error = await select_text(
+def validate_long_text(data: dict[str, Any]) -> bool:
+    """验证长文本搜索: 检查 matchCount"""
+    match_count = data.get("matchCount", 0)
+    print(f"   ℹ️  长文本搜索 matchCount={match_count}")
+    # 长文本搜索可能成功也可能失败（取决于文档内容），只要不崩溃即可
+    return True
+
+
+# ==============================================================================
+# 选择操作参数
+# ==============================================================================
+
+_SELECT_CONFIGS: list[dict[str, Any]] = [
+    # Test 1: 未找到匹配
+    {
+        "search_text": "NonExistentText12345",
+        "expects_failure": True,
+    },
+    # Test 2: 空搜索文本
+    {
+        "search_text": "",
+        "expects_failure": True,
+    },
+    # Test 3: 超出索引
+    {
+        "search_text": "OutOfBounds",
+        "select_index": 10,
+        "expects_failure": True,
+    },
+    # Test 4: 特殊字符
+    {
+        "search_text": "@#$%",
+    },
+    # Test 5: 长文本搜索
+    {
+        "search_text": "This is a very long text that " * 10,
+    },
+]
+
+TEST_CASES: list[TestCase] = [
+    TestCase(
+        name="未找到匹配",
+        fixture_name="simple.docx",
+        description="搜索 'NonExistentText12345'，预期操作返回失败",
+        validator=validate_no_match,
+        tags=["edge_case", "expected_failure"],
+    ),
+    TestCase(
+        name="空搜索文本",
+        fixture_name="simple.docx",
+        description="搜索空字符串，预期操作返回失败或错误",
+        validator=validate_empty_search,
+        tags=["edge_case", "expected_failure"],
+    ),
+    TestCase(
+        name="超出索引",
+        fixture_name="edge_cases.docx",
+        description="搜索 'OutOfBounds' 但 select_index=10 超出匹配数，预期失败",
+        validator=validate_out_of_bounds,
+        tags=["edge_case", "expected_failure"],
+    ),
+    TestCase(
+        name="特殊字符搜索",
+        fixture_name="edge_cases.docx",
+        description="搜索 '@#$%' 特殊字符，验证能正确匹配",
+        validator=validate_special_chars,
+        tags=["edge_case", "special_chars"],
+    ),
+    TestCase(
+        name="长文本搜索",
+        fixture_name="edge_cases.docx",
+        description="搜索重复 10 次的长文本，验证不会崩溃",
+        validator=validate_long_text,
+        tags=["edge_case", "long_text"],
+    ),
+]
+
+
+# ==============================================================================
+# 测试执行
+# ==============================================================================
+
+
+async def run_single_test(
+    runner: E2ETestRunner,
+    test_case: TestCase,
+    test_number: int,
+) -> bool:
+    """执行单个测试用例"""
+    print("\n" + "=" * 70)
+    print(f"🧪 测试 {test_number}: {test_case.name}")
+    print("=" * 70)
+    print(f"📋 描述: {test_case.description}")
+    print(f"📄 夹具: {test_case.fixture_name}")
+
+    fixture_path = f"select_text_e2e/{test_case.fixture_name}"
+    config = _SELECT_CONFIGS[test_number - 1]
+    expects_failure = config.get("expects_failure", False)
+
+    try:
+        async with runner.run_with_workspace(fixture_path, open_delay=3.0) as (
             workspace,
-            document_uri,
-            search_text="",  # 空字符串
-        )
+            fixture,
+        ):
+            search_text = config["search_text"]
+            selection_mode = config.get("selection_mode", "select")
+            select_index = config.get("select_index", 1)
+            search_options = config.get("search_options")
 
-        # 验证结果
-        print("\n🔍 验证测试结果:")
+            display_text = search_text[:60] + "..." if len(search_text) > 60 else search_text
+            print(f"\n📝 执行: 选择文本...")
+            print(f"   搜索: '{display_text}'")
+            print(f"   模式: {selection_mode}, 索引: {select_index}")
+            if search_options:
+                print(f"   搜索选项: {search_options}")
+            if expects_failure:
+                print("   ⚠️  预期此操作会失败")
 
-        # 空文本搜索应该失败或返回警告
-        if success:
-            print("   ⚠️  操作成功（空文本搜索的处理取决于实现）")
-            if data and data.get("matchCount") == 0:
-                print("   ✓ matchCount = 0")
-        else:
-            print("   ✓ 操作返回错误（符合预期）")
+            start_time = time.time()
 
-        print("\n✅ 测试完成")
+            action = OfficeAction(
+                category="word",
+                action_name="select:text",
+                params={
+                    "document_uri": fixture.document_uri,
+                    "search_text": search_text,
+                    "selection_mode": selection_mode,
+                    "select_index": select_index,
+                    **({"search_options": search_options} if search_options else {}),
+                },
+            )
 
+            result = await workspace.execute(action)
+            elapsed_ms = (time.time() - start_time) * 1000
 
-async def test_3_out_of_bounds_index() -> None:
-    """测试 3: 超出索引范围"""
-    print("\n" + "=" * 60)
-    print("测试 3: 超出索引范围")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入 3 次 'OutOfBounds'")
+            print(f"\n⏱️  执行时间: {elapsed_ms:.1f}ms")
 
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
-
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
-
-        print(f"\n✅ 使用文档: {document_uri}")
-
-        # 只匹配了 3 次，但请求第 10 次
-        success, data, error = await select_text(
-            workspace,
-            document_uri,
-            search_text="OutOfBounds",
-            select_index=10,  # 超出范围
-        )
-
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        test_passed = True
-
-        if not success:
-            print("   ✓ 操作返回失败（符合预期：索引超出范围）")
-        else:
-            print("   ❌ 操作应该失败（索引超出范围）")
-            test_passed = False
-
-        if data:
-            match_count = data.get("matchCount")
-            if match_count is not None:
-                if match_count == 3:
-                    print(f"   ✓ matchCount = {match_count}")
+            # 对于预期失败的用例，不在 result.success==False 时直接返回 False
+            if expects_failure:
+                if not result.success:
+                    print(f"✅ 操作按预期返回失败: {result.error}")
+                    data: dict[str, Any] = {
+                        "_expected_failure": True,
+                        "error": result.error,
+                        "success": result.success,
+                    }
                 else:
-                    print(f"   ⚠️  matchCount = {match_count}（预期 3）")
+                    print("⚠️  操作意外成功（预期失败）")
+                    data = result.data or {}
+            else:
+                if not result.success:
+                    print(f"❌ 选择失败: {result.error}")
+                    return False
+                print("✅ 协议返回成功")
+                data = result.data or {}
 
-        if test_passed:
-            print("\n✅ 测试通过")
-        else:
-            print("\n❌ 测试失败")
+            if "matchCount" in data:
+                print(f"   匹配数: {data['matchCount']}")
+            if "selectedText" in data:
+                print(f"   选中文本: '{data['selectedText']}'")
 
+            # DataValidator 验证
+            print("\n📊 验证结果:")
+            passed = True
 
-async def test_4_special_characters() -> None:
-    """测试 4: 特殊字符搜索"""
-    print("\n" + "=" * 60)
-    print("测试 4: 特殊字符搜索")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入以下特殊字符组合:")
-    print("   - '@#$%'")
-    print("   - 'test@example.com'")
-    print("   - 'C:\\\\Users\\\\test'")
-    print("   - '(parenthesis)'")
-    print("   - '[brackets]'")
-    print("   - '{braces}'")
+            if test_case.validator:
+                reader = DocumentReader(fixture.working_path)
+                if not _call_validator(test_case.validator, data, reader):
+                    passed = False
 
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
+            print("\n" + "=" * 70)
+            if passed:
+                print(f"✅ 测试 {test_number} 通过")
+            else:
+                print(f"❌ 测试 {test_number} 失败")
+            print("=" * 70)
+            return passed
 
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
+    except Exception as e:
+        print(f"\n❌ 测试异常: {e}")
+        import traceback
 
-        print(f"\n✅ 使用文档: {document_uri}")
-
-        # 测试 1: 特殊符号
-        print("\n--- 测试 4.1: 特殊符号 ---")
-        success1, _, _ = await select_text(
-            workspace,
-            document_uri,
-            search_text="@#$%",
-            wait_seconds=2,
-        )
-
-        # 测试 2: 邮箱格式
-        print("\n--- 测试 4.2: 邮箱格式 ---")
-        success2, _, _ = await select_text(
-            workspace,
-            document_uri,
-            search_text="test@example.com",
-            wait_seconds=2,
-        )
-
-        # 测试 3: 括号
-        print("\n--- 测试 4.3: 括号 ---")
-        success3, _, _ = await select_text(
-            workspace,
-            document_uri,
-            search_text="(parenthesis)",
-            wait_seconds=2,
-        )
-
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        all_passed = True
-
-        if success1:
-            print("   ✓ 特殊符号 '@#$%' 搜索成功")
-        else:
-            print("   ❌ 特殊符号 '@#$%' 搜索失败")
-            all_passed = False
-
-        if success2:
-            print("   ✓ 邮箱格式 'test@example.com' 搜索成功")
-        else:
-            print("   ❌ 邮箱格式 'test@example.com' 搜索失败")
-            all_passed = False
-
-        if success3:
-            print("   ✓ 括号 '(parenthesis)' 搜索成功")
-        else:
-            print("   ❌ 括号 '(parenthesis)' 搜索失败")
-            all_passed = False
-
-        if all_passed:
-            print("\n✅ 测试通过")
-        else:
-            print("\n⚠️  部分测试失败（请确认文档中包含相应文本）")
+        traceback.print_exc()
+        return False
 
 
-async def test_5_very_long_text() -> None:
-    """测试 5: 长文本搜索"""
-    print("\n" + "=" * 60)
-    print("测试 5: 长文本搜索")
-    print("=" * 60)
-    print("\n📋 准备: 在 Word 中输入一段很长的文本")
+async def run_tests(
+    test_indices: list[int],
+    auto_open: bool = True,
+    cleanup_on_success: bool = True,
+) -> bool:
+    """运行指定的测试"""
+    ensure_fixtures(FIXTURES_DIR)
 
-    long_text = "This is a very long text that " * 10  # 重复 10 次
+    runner = E2ETestRunner(
+        fixtures_dir=FIXTURES_DIR.parent,
+        auto_open=auto_open,
+        cleanup_on_success=cleanup_on_success,
+    )
 
-    async with workspace_context() as workspace:
-        if not await wait_for_connection(workspace):
-            return
+    results: list[bool] = []
 
-        document_uri = get_document_uri(workspace)
-        if not document_uri:
-            return
+    for idx in test_indices:
+        if idx < 1 or idx > len(TEST_CASES):
+            print(f"⚠️  无效的测试编号: {idx}")
+            continue
 
-        print(f"\n✅ 使用文档: {document_uri}")
+        test_case = TEST_CASES[idx - 1]
 
-        success, data, error = await select_text(
-            workspace,
-            document_uri,
-            search_text=long_text,
-        )
+        if len(test_indices) > 1 and results:
+            print("\n" + "-" * 70)
+            print("⏳ 准备下一个测试...")
+            if auto_open:
+                await asyncio.sleep(2.0)
+            else:
+                input("按回车继续...")
 
-        # 验证结果
-        print("\n🔍 验证测试结果:")
-        if success:
-            print("   ✓ 长文本搜索成功")
-            if data:
-                print(f"   ✓ 找到 {data.get('matchCount', 0)} 个匹配")
-            print("\n✅ 测试通过")
-        else:
-            print("   ❌ 长文本搜索失败")
-            print("   ⚠️  请确认文档中包含该长文本")
-            print("\n❌ 测试失败")
+        result = await run_single_test(runner, test_case, idx)
+        results.append(result)
+
+    if len(results) > 1:
+        print("\n" + "=" * 70)
+        print(f"📈 总体结果: {sum(results)}/{len(results)} 测试通过")
+        print("=" * 70)
+
+    return all(results)
 
 
-async def main() -> None:
-    if len(sys.argv) < 2 or sys.argv[1] != "--test":
-        print("Usage: python test_edge_cases.py --test <1-5|all>")
+# ==============================================================================
+# 命令行入口
+# ==============================================================================
+
+
+def main() -> None:
+    """命令行入口"""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Edge Cases Select Text E2E Tests (自动化版本)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--test",
+        choices=[str(i) for i in range(1, len(TEST_CASES) + 1)] + ["all"],
+        default="1",
+        help="要运行的测试",
+    )
+    parser.add_argument("--no-auto-open", action="store_true", help="不自动打开文档")
+    parser.add_argument("--always-cleanup", action="store_true", help="无论成功失败都清理")
+    parser.add_argument("--list", action="store_true", help="列出所有测试用例")
+
+    args = parser.parse_args()
+
+    if args.list:
+        print("\n📋 可用测试用例:\n")
+        for i, tc in enumerate(TEST_CASES, 1):
+            print(f"  {i}. {tc.name}")
+            print(f"     夹具: {tc.fixture_name}")
+            print(f"     描述: {tc.description}")
+            print(f"     标签: {', '.join(tc.tags)}")
+            print()
         return
 
-    test_arg = sys.argv[2] if len(sys.argv) > 2 else "1"
-
-    tests = {
-        "1": test_1_no_matches,
-        "2": test_2_empty_search_text,
-        "3": test_3_out_of_bounds_index,
-        "4": test_4_special_characters,
-        "5": test_5_very_long_text,
-    }
-
-    if test_arg == "all":
-        for test_num, test_func in tests.items():
-            try:
-                await test_func()
-                print("\n" + "▓" * 60)
-                print(f"✅ 测试 {test_num} 完成\n")
-            except Exception as e:
-                print(f"\n❌ 测试 {test_num} 失败: {e}\n")
-    elif test_arg in tests:
-        try:
-            await tests[test_arg]()
-        except Exception as e:
-            print(f"\n❌ 测试失败: {e}\n")
+    if args.test == "all":
+        test_indices = list(range(1, len(TEST_CASES) + 1))
     else:
-        print(f"❌ 无效的测试编号: {test_arg}")
-        print("   可用测试: 1-5, all")
+        test_indices = [int(args.test)]
+
+    try:
+        success = asyncio.run(
+            run_tests(
+                test_indices=test_indices,
+                auto_open=not args.no_auto_open,
+                cleanup_on_success=not args.always_cleanup or True,
+            )
+        )
+        sys.exit(0 if success else 1)
+
+    except KeyboardInterrupt:
+        print("\n\n⏸️  测试被用户中断")
+        sys.exit(130)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

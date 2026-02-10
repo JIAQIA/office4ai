@@ -1,188 +1,325 @@
 """
-Basic Insert Text Test
+Basic Insert Text E2E Tests (自动化版本)
 
-测试基本的文本插入功能（使用默认参数）。
+测试基本的文本插入功能（使用 location="End" 避免光标定位问题）。
 
 测试场景:
-1. 插入纯文本（使用默认 location="Cursor"）
-2. 插入多行文本
-3. 插入特殊字符
-4. 插入长文本
+1. 简单文本插入
+2. 多行文本插入
+3. 特殊字符插入
+4. 长文本插入
+
+运行方式:
+    uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test 1
+    uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
+    uv run python manual_tests/insert_text_e2e/test_basic_insert.py --list
 """
 
 import asyncio
 import sys
+import time
+from pathlib import Path
+from typing import Any
 
-from manual_tests.test_helpers import (
-    get_document_uri,
-    insert_text,
-    wait_for_connection,
-    workspace_context,
+from manual_tests.e2e_base import (
+    DocumentReader,
+    E2ETestRunner,
+    TestCase,
+    _call_validator,
+    ensure_fixtures,
 )
+from office4ai.environment.workspace.base import OfficeAction
+
+# ==============================================================================
+# 配置
+# ==============================================================================
+
+FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "insert_text_e2e"
+
+# ==============================================================================
+# Validator 函数
+# ==============================================================================
 
 
-async def run_test_template(
-    test_name: str,
-    test_number: int,
-    text: str,
-    wait_seconds: int = 3,
-) -> bool:
-    """
-    测试执行模板：封装通用的测试流程
+def validate_simple_insert(data: dict[str, Any], reader: DocumentReader) -> bool:
+    """验证简单文本插入"""
+    reader.reload()
+    if not reader.contains("Hello World"):
+        print("   ❌ 文档中未找到 'Hello World'")
+        return False
+    print("   ✅ 文档内容验证通过: 包含 'Hello World'")
+    return True
 
-    Args:
-        test_name: 测试名称
-        test_number: 测试编号
-        text: 要插入的文本
-        wait_seconds: 执行前等待秒数
 
-    Returns:
-        bool: 测试是否成功
-    """
-    print("\n" + "=" * 70)
-    print(f"🧪 测试 {test_number}: {test_name}")
-    print("=" * 70)
-
-    async with workspace_context() as workspace:
-        try:
-            print("✅ Workspace 启动成功")
-
-            # 等待连接
-            if not await wait_for_connection(workspace):
-                return False
-
-            # 获取文档
-            document_uri = get_document_uri(workspace)
-            if not document_uri:
-                return False
-
-            print(f"✅ 使用文档: {document_uri}")
-
-            # 执行插入
-            if not await insert_text(workspace, document_uri, text, wait_seconds):
-                return False
-
-            print("\n" + "=" * 70)
-            print(f"✅ 测试 {test_number} 完成")
-            print("=" * 70)
-            return True
-
-        except Exception as e:
-            print(f"\n❌ 测试失败: {e}")
-            import traceback
-
-            traceback.print_exc()
+def validate_multiline_insert(data: dict[str, Any], reader: DocumentReader) -> bool:
+    """验证多行文本插入"""
+    reader.reload()
+    for line in ["第一行文本", "第二行文本", "第三行文本"]:
+        if not reader.contains(line):
+            print(f"   ❌ 文档中未找到 '{line}'")
             return False
+    print("   ✅ 文档内容验证通过: 包含所有行")
+    return True
+
+
+def validate_special_chars_insert(data: dict[str, Any], reader: DocumentReader) -> bool:
+    """验证特殊字符插入"""
+    reader.reload()
+    if not reader.contains("@#$%^&*()"):
+        print("   ❌ 文档中未找到特殊字符")
+        return False
+    print("   ✅ 文档内容验证通过: 包含特殊字符")
+    return True
+
+
+def validate_long_text_insert(data: dict[str, Any], reader: DocumentReader) -> bool:
+    """验证长文本插入"""
+    reader.reload()
+    if not reader.contains("这是一段较长的文本"):
+        print("   ❌ 文档中未找到长文本")
+        return False
+    if not reader.contains("确保插入长文本不会导致系统卡顿或超时"):
+        print("   ❌ 文档中未找到长文本尾部内容")
+        return False
+    print("   ✅ 文档内容验证通过: 长文本完整插入")
+    return True
 
 
 # ==============================================================================
-# 测试函数（使用模板简化）
+# 测试数据
 # ==============================================================================
 
+SIMPLE_TEXT = "Hello World"
 
-async def test_simple_text_insert():
-    """测试 1: 简单文本插入"""
-    return await run_test_template(
-        test_name="简单文本插入",
-        test_number=1,
-        text="Hello World",
-    )
-
-
-async def test_multiline_text_insert():
-    """测试 2: 多行文本插入"""
-    multiline_text = """第一行文本
+MULTILINE_TEXT = """第一行文本
 第二行文本
 第三行文本"""
-    return await run_test_template(
-        test_name="多行文本插入",
-        test_number=2,
-        text=multiline_text,
-    )
+
+SPECIAL_TEXT = "特殊字符测试: @#$%^&*()_+-=[]{}|;':\",./<>?~`"
+
+LONG_TEXT = (
+    "这是一段较长的文本，用于测试 Word Add-In 处理较长内容的能力。"
+    "这段文本包含了多个句子，每个句子都测试不同的字符和标点符号。\n"
+    "在插入这段文本后，我们应该验证：\n"
+    "1. 文本是否完整插入\n"
+    "2. 格式是否保持正确\n"
+    "3. 是否有乱码或丢失字符\n\n"
+    "此外，我们还需要测试性能，确保插入长文本不会导致系统卡顿或超时。"
+    "这个测试对于确保用户体验非常重要，因为在实际使用中，用户可能会插入大段文本。"
+)
+
+# 测试用例定义
+TEST_CASES: list[TestCase] = [
+    TestCase(
+        name="简单文本插入",
+        fixture_name="empty.docx",
+        description="在空文档末尾插入 'Hello World'，验证文档包含该文本",
+        validator=validate_simple_insert,
+        tags=["basic"],
+    ),
+    TestCase(
+        name="多行文本插入",
+        fixture_name="empty.docx",
+        description="在空文档末尾插入多行文本，验证每行都存在",
+        validator=validate_multiline_insert,
+        tags=["basic"],
+    ),
+    TestCase(
+        name="特殊字符插入",
+        fixture_name="empty.docx",
+        description="在空文档末尾插入包含特殊字符的文本，验证字符完整",
+        validator=validate_special_chars_insert,
+        tags=["basic"],
+    ),
+    TestCase(
+        name="长文本插入",
+        fixture_name="empty.docx",
+        description="在空文档末尾插入长文本（含多段落），验证完整性",
+        validator=validate_long_text_insert,
+        tags=["basic"],
+    ),
+]
+
+# 每个测试用例对应的插入文本
+_INSERT_TEXTS = [SIMPLE_TEXT, MULTILINE_TEXT, SPECIAL_TEXT, LONG_TEXT]
 
 
-async def test_special_characters_insert():
-    """测试 3: 特殊字符插入"""
-    special_text = "特殊字符测试: @#$%^&*()_+-=[]{}|;':\",./<>?~`"
-    return await run_test_template(
-        test_name="特殊字符插入",
-        test_number=3,
-        text=special_text,
-    )
+# ==============================================================================
+# 测试执行
+# ==============================================================================
 
 
-async def test_long_text_insert():
-    """测试 4: 长文本插入"""
-    long_text = """
-这是一段较长的文本，用于测试 Word Add-In 处理较长内容的能力。
-这段文本包含了多个句子，每个句子都测试不同的字符和标点符号。
-在插入这段文本后，我们应该验证：
-
-1. 文本是否完整插入
-2. 格式是否保持正确
-3. 是否有乱码或丢失字符
-
-此外，我们还需要测试性能，确保插入长文本不会导致系统卡顿或超时。
-这个测试对于确保用户体验非常重要，因为在实际使用中，用户可能会插入大段文本。
-""".strip()
-    return await run_test_template(
-        test_name="长文本插入",
-        test_number=4,
-        text=long_text,
-    )
-
-
-async def run_all_tests():
-    """运行所有基本插入测试"""
-    print("\n🚀 运行所有基本插入测试...\n")
-    results = []
-    results.append(await test_simple_text_insert())
-    await asyncio.sleep(2)
-    results.append(await test_multiline_text_insert())
-    await asyncio.sleep(2)
-    results.append(await test_special_characters_insert())
-    await asyncio.sleep(2)
-    results.append(await test_long_text_insert())
-    success = all(results)
-
+async def run_single_test(
+    runner: E2ETestRunner,
+    test_case: TestCase,
+    test_number: int,
+) -> bool:
+    """执行单个测试用例"""
     print("\n" + "=" * 70)
-    print(f"📈 总体结果: {sum(results)}/{len(results)} 测试通过")
+    print(f"🧪 测试 {test_number}: {test_case.name}")
     print("=" * 70)
-    return success
+    print(f"📋 描述: {test_case.description}")
+    print(f"📄 夹具: {test_case.fixture_name}")
+
+    fixture_path = f"insert_text_e2e/{test_case.fixture_name}"
+    insert_text = _INSERT_TEXTS[test_number - 1]
+
+    try:
+        async with runner.run_with_workspace(fixture_path, open_delay=3.0) as (
+            workspace,
+            fixture,
+        ):
+            # 执行插入
+            print(f"\n📝 执行: 插入文本 (location=End)...")
+            print(f"   文本预览: '{insert_text[:60]}{'...' if len(insert_text) > 60 else ''}'")
+            start_time = time.time()
+
+            action = OfficeAction(
+                category="word",
+                action_name="insert:text",
+                params={
+                    "document_uri": fixture.document_uri,
+                    "text": insert_text,
+                    "location": "End",
+                },
+            )
+
+            result = await workspace.execute(action)
+            elapsed_ms = (time.time() - start_time) * 1000
+
+            print(f"\n⏱️  执行时间: {elapsed_ms:.1f}ms")
+
+            if not result.success:
+                print(f"❌ 插入失败: {result.error}")
+                return False
+
+            print("✅ 协议返回成功")
+            data = result.data or {}
+
+            # ContentValidator 双重验证
+            print("\n📊 验证结果:")
+            passed = True
+
+            if test_case.validator:
+                reader = DocumentReader(fixture.working_path)
+                # 等待 Word 保存
+                await asyncio.sleep(1.0)
+                if not _call_validator(test_case.validator, data, reader):
+                    passed = False
+
+            print("\n" + "=" * 70)
+            if passed:
+                print(f"✅ 测试 {test_number} 通过")
+            else:
+                print(f"❌ 测试 {test_number} 失败")
+            print("=" * 70)
+            return passed
+
+    except Exception as e:
+        print(f"\n❌ 测试异常: {e}")
+        import traceback
+
+        traceback.print_exc()
+        return False
+
+
+async def run_tests(
+    test_indices: list[int],
+    auto_open: bool = True,
+    cleanup_on_success: bool = True,
+) -> bool:
+    """运行指定的测试"""
+    ensure_fixtures(FIXTURES_DIR)
+
+    runner = E2ETestRunner(
+        fixtures_dir=FIXTURES_DIR.parent,
+        auto_open=auto_open,
+        cleanup_on_success=cleanup_on_success,
+    )
+
+    results: list[bool] = []
+
+    for idx in test_indices:
+        if idx < 1 or idx > len(TEST_CASES):
+            print(f"⚠️  无效的测试编号: {idx}")
+            continue
+
+        test_case = TEST_CASES[idx - 1]
+
+        if len(test_indices) > 1 and results:
+            print("\n" + "-" * 70)
+            print("⏳ 准备下一个测试...")
+            if auto_open:
+                await asyncio.sleep(2.0)
+            else:
+                input("按回车继续...")
+
+        result = await run_single_test(runner, test_case, idx)
+        results.append(result)
+
+    if len(results) > 1:
+        print("\n" + "=" * 70)
+        print(f"📈 总体结果: {sum(results)}/{len(results)} 测试通过")
+        print("=" * 70)
+
+    return all(results)
 
 
 # ==============================================================================
-# 主程序入口
+# 命令行入口
 # ==============================================================================
 
-# 测试映射表：用于命令行参数路由
-TEST_MAPPING = {
-    "1": test_simple_text_insert,
-    "2": test_multiline_text_insert,
-    "3": test_special_characters_insert,
-    "4": test_long_text_insert,
-    "all": run_all_tests,
-}
 
-
-if __name__ == "__main__":
+def main() -> None:
+    """命令行入口"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Basic Insert Text E2E Tests")
+    parser = argparse.ArgumentParser(
+        description="Basic Insert Text E2E Tests (自动化版本)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
     parser.add_argument(
         "--test",
-        choices=["1", "2", "3", "4", "all"],
+        choices=[str(i) for i in range(1, len(TEST_CASES) + 1)] + ["all"],
         default="1",
-        help="Test to run: 1=simple, 2=multiline, 3=special, 4=long, all=all tests",
+        help="要运行的测试: 1=简单, 2=多行, 3=特殊字符, 4=长文本, all=全部",
     )
+    parser.add_argument("--no-auto-open", action="store_true", help="不自动打开文档")
+    parser.add_argument("--always-cleanup", action="store_true", help="无论成功失败都清理")
+    parser.add_argument("--list", action="store_true", help="列出所有测试用例")
 
     args = parser.parse_args()
 
+    if args.list:
+        print("\n📋 可用测试用例:\n")
+        for i, tc in enumerate(TEST_CASES, 1):
+            print(f"  {i}. {tc.name}")
+            print(f"     夹具: {tc.fixture_name}")
+            print(f"     描述: {tc.description}")
+            print(f"     标签: {', '.join(tc.tags)}")
+            print()
+        return
+
+    if args.test == "all":
+        test_indices = list(range(1, len(TEST_CASES) + 1))
+    else:
+        test_indices = [int(args.test)]
+
     try:
-        test_func = TEST_MAPPING[args.test]
-        success = asyncio.run(test_func())
+        success = asyncio.run(
+            run_tests(
+                test_indices=test_indices,
+                auto_open=not args.no_auto_open,
+                cleanup_on_success=not args.always_cleanup or True,
+            )
+        )
         sys.exit(0 if success else 1)
 
     except KeyboardInterrupt:
         print("\n\n⏸️  测试被用户中断")
         sys.exit(130)
+
+
+if __name__ == "__main__":
+    main()

@@ -135,6 +135,66 @@ class DocumentReader:
             return self.doc.paragraphs[index].text
         return None
 
+    def not_contains(self, text: str) -> bool:
+        """检查文档不包含指定文本（replace 验证用）"""
+        return text not in self.text
+
+    def paragraph_starts_with(self, index: int, text: str) -> bool:
+        """
+        检查段落是否以指定文本开头（location=Start 验证用）
+
+        Args:
+            index: 段落索引（0-based）
+            text: 要检查的前缀文本
+
+        Returns:
+            如果段落存在且以指定文本开头返回 True，否则返回 False
+        """
+        if 0 <= index < len(self.doc.paragraphs):
+            return self.doc.paragraphs[index].text.startswith(text)
+        return False
+
+    def run_has_format(
+        self,
+        text: str,
+        *,
+        bold: bool | None = None,
+        italic: bool | None = None,
+        font_name: str | None = None,
+        font_size: float | None = None,
+    ) -> bool:
+        """
+        检查包含指定文本的 run 是否具有指定格式
+
+        在文档所有段落的所有 run 中搜索包含 text 的 run，
+        验证其格式属性是否匹配。仅检查非 None 的参数。
+
+        Args:
+            text: 要搜索的文本
+            bold: 是否粗体
+            italic: 是否斜体
+            font_name: 字体名称
+            font_size: 字号（pt）
+
+        Returns:
+            如果找到匹配的 run 且格式匹配返回 True
+        """
+        from docx.shared import Pt
+
+        for paragraph in self.doc.paragraphs:
+            for run in paragraph.runs:
+                if text in run.text:
+                    if bold is not None and run.bold != bold:
+                        continue
+                    if italic is not None and run.italic != italic:
+                        continue
+                    if font_name is not None and run.font.name != font_name:
+                        continue
+                    if font_size is not None and run.font.size != Pt(font_size):
+                        continue
+                    return True
+        return False
+
 
 @dataclass
 class DocumentFixture:
