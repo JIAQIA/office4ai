@@ -8,7 +8,6 @@ Supports both HTTP and HTTPS.
 
 import asyncio
 import logging
-import ssl
 from pathlib import Path
 from typing import Any
 
@@ -71,6 +70,7 @@ async def start_server(
     port: int = 3000,
     use_https: bool = True,
     config: SocketIOConfig = default_config,
+    cert_dir: Path | None = None,
 ) -> None:
     """
     Start Socket.IO server with optional HTTPS support.
@@ -80,6 +80,7 @@ async def start_server(
         port: HTTP port to bind to (default: 3000)
         use_https: Enable HTTPS on port+1443 (default: True)
         config: Server configuration
+        cert_dir: Certificate directory (default: uses certs.get_cert_dir())
 
     Example:
         >>> import asyncio
@@ -121,29 +122,16 @@ async def start_server(
 
     # Start HTTPS server if enabled
     if use_https:
-        # Get certificate paths (relative to project root)
-        project_root = Path(__file__).parent.parent.parent.parent.parent
-        cert_path = project_root / "certs" / "cert.pem"
-        key_path = project_root / "certs" / "key.pem"
+        from office4ai.certs.paths import create_ssl_context
 
-        if not cert_path.exists() or not key_path.exists():
-            logger.warning("⚠️  SSL certificates not found, skipping HTTPS")
-            logger.warning(f"   Expected: {cert_path}")
-            logger.warning(f"   Expected: {key_path}")
-            logger.warning(
-                "   Run: openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes"
-            )
-        else:
-            # Create SSL context
-            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ssl_context.load_cert_chain(cert_path, key_path)
-
-            # Start HTTPS site on port + 1443 (3000 + 1443 = 4443)
+        try:
+            ssl_context = create_ssl_context(cert_dir)
             https_port = port + 1443
             site_https = web.TCPSite(runner, host, https_port, ssl_context=ssl_context)
             await site_https.start()
-
             logger.info(f"HTTPS: https://{host}:{https_port}")
+        except FileNotFoundError as e:
+            logger.warning(f"SSL certificates not found, skipping HTTPS: {e}")
 
     logger.info("=" * 60)
     logger.info(f"Health check: http://{host}:{port}/health")

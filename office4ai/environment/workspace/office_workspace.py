@@ -6,6 +6,7 @@ Office Workspace Implementation
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Any
 
 import socketio  # type: ignore[import-untyped]
@@ -36,6 +37,7 @@ class OfficeWorkspace(BaseWorkspace):
         port: int = 3000,
         config: SocketIOConfig = default_config,
         use_https: bool = True,
+        cert_dir: Path | None = None,
     ):
         """
         初始化 Office Workspace
@@ -45,11 +47,13 @@ class OfficeWorkspace(BaseWorkspace):
             port: 绑定端口 (默认 3000)
             config: Socket.IO 配置
             use_https: 是否启用 HTTPS (默认 True)
+            cert_dir: 证书目录 (默认使用 certs.get_cert_dir())
         """
         self.host = host
         self.port = port
         self.config = config
         self.use_https = use_https
+        self.cert_dir = cert_dir
 
         # Socket.IO 服务器和应用
         self.sio_server: socketio.AsyncServer | None = None
@@ -123,29 +127,16 @@ class OfficeWorkspace(BaseWorkspace):
 
             # 启动 HTTPS 站点（如果启用）
             if self.use_https:
-                import ssl
-                from pathlib import Path
+                from office4ai.certs.paths import create_ssl_context
 
-                # 获取证书路径（相对于项目根目录）
-                project_root = Path(__file__).parent.parent.parent.parent
-                cert_path = project_root / "certs" / "cert.pem"
-                key_path = project_root / "certs" / "key.pem"
-
-                if not cert_path.exists() or not key_path.exists():
-                    logger.warning("⚠️  SSL certificates not found, skipping HTTPS")
-                    logger.warning(f"   Expected: {cert_path}")
-                    logger.warning(f"   Expected: {key_path}")
-                else:
-                    # 创建 SSL 上下文
-                    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-                    ssl_context.load_cert_chain(cert_path, key_path)
-
-                    # 启动 HTTPS 站点（端口 = HTTP 端口 + 1443）
+                try:
+                    ssl_context = create_ssl_context(self.cert_dir)
                     https_port = self.port + 1443  # 3000 + 1443 = 4443
                     self._https_site = web.TCPSite(self.runner, self.host, https_port, ssl_context=ssl_context)
                     await self._https_site.start()
-
                     logger.info(f"HTTPS: https://{self.host}:{https_port}")
+                except FileNotFoundError as e:
+                    logger.warning(f"SSL certificates not found, skipping HTTPS: {e}")
 
             logger.info("=" * 60)
             logger.info(f"Health check: http://{self.host}:{self.port}/health")

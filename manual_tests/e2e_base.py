@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
 if TYPE_CHECKING:
-    from docx import Document as DocxDocument
+    from docx.document import Document as DocxDocument
 
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 
@@ -779,7 +779,7 @@ class E2ETestRunner:
             async with runner.run_with_workspace("simple.docx") as (workspace, fixture):
                 result = await workspace.execute(action)
         """
-        async with self.prepare_document(fixture_name, open_delay) as fixture:
+        async with self.prepare_document(fixture_name, open_delay) as fixture:  # pyright: ignore[reportGeneralTypeIssues]
             workspace = OfficeWorkspace(host=self.host, port=self.port)
             try:
                 await workspace.start()

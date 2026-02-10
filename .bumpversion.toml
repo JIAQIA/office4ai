@@ -1,24 +1,30 @@
 [tool.bumpversion]
 current_version = "0.1.0"
 parse = """(?x)
+    ^
     (?P<major>0|[1-9]\\d*)\\.
     (?P<minor>0|[1-9]\\d*)\\.
     (?P<patch>0|[1-9]\\d*)
     (?:
-        -
-        (?P<pre_l>[a-zA-Z-]+)
+        (?P<pre_l>a|b|rc)
         (?P<pre_n>0|[1-9]\\d*)
     )?
+    (?:
+        (?P<dev>.dev)
+        (?P<dev_n>0|[1-9]\\d*)
+    )?
+    (?:
+        (?P<post>.post)
+        (?P<post_n>0|[1-9]\\d*)
+    )?
+    $
 """
 serialize = [
-    "{major}.{minor}.{patch}-{pre_l}{pre_n}",
+    "{major}.{minor}.{patch}{pre_l}{pre_n}",
+    "{major}.{minor}.{patch}{dev}{dev_n}",
+    "{major}.{minor}.{patch}{post}{post_n}",
     "{major}.{minor}.{patch}",
 ]
-search = "{current_version}"
-replace = "{new_version}"
-regex = false
-ignore_missing_version = false
-ignore_missing_files = false
 tag = true
 sign_tags = false
 tag_name = "v{new_version}"
@@ -28,10 +34,29 @@ commit = true
 message = "Bump version: {current_version} → {new_version}"
 commit_args = ""
 
-
 [tool.bumpversion.parts.pre_l]
-values = ["dev", "rc", "final"]
-optional_value = "final"
+# PEP 440: 预发布版本标签，空字符串表示正式版本
+# PEP 440: Pre-release labels, empty string represents final release
+values = ["a", "b", "rc", ""]
+optional_value = ""
+
+[tool.bumpversion.parts.pre_n]
+# PEP 440: 预发布版本号，空字符串表示无预发布号
+# PEP 440: Pre-release number, empty string means no pre-release number
+first_value = 1
+optional_value = ""
+
+[tool.bumpversion.parts.dev]
+values = [".dev"]
+
+[tool.bumpversion.parts.dev_n]
+first_value = 1
+
+[tool.bumpversion.parts.post]
+values = [".post"]
+
+[tool.bumpversion.parts.post_n]
+first_value = 1
 
 [[tool.bumpversion.files]]
 filename = "office4ai/__init__.py"
