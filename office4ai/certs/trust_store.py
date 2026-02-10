@@ -84,10 +84,7 @@ class MacOSTrustStore(TrustStore):
         return result.returncode == 0
 
     def get_manual_install_command(self, ca_cert_path: Path) -> str:
-        return (
-            f"sudo security add-trusted-cert -d -r trustRoot "
-            f"-k {self._KEYCHAIN} {ca_cert_path}"
-        )
+        return f"sudo security add-trusted-cert -d -r trustRoot -k {self._KEYCHAIN} {ca_cert_path}"
 
     def get_manual_uninstall_command(self, ca_cert_path: Path) -> str:
         return f"sudo security remove-trusted-cert -d {ca_cert_path}"
