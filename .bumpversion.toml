@@ -60,8 +60,8 @@ first_value = 1
 
 [[tool.bumpversion.files]]
 filename = "office4ai/__init__.py"
-search = "__version__ = \"{current_version}\""
-replace = "__version__ = \"{new_version}\""
+search = "__version__: str = \"{current_version}\""
+replace = "__version__: str = \"{new_version}\""
 
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"
