@@ -147,7 +147,7 @@ _REPLACE_CONTENTS: list[dict[str, Any]] = [
     # Test 3: fontName + fontSize + bold
     {"text": "Formatted Text", "format": {"fontName": "Arial", "fontSize": 16, "bold": True}},
     # Test 4: color + underline + bold
-    {"text": "Colorful Underlined Text", "format": {"color": "#FF0000", "underline": "single", "bold": True}},
+    {"text": "Colorful Underlined Text", "format": {"color": "#FF0000", "underline": "Single", "bold": True}},
 ]
 
 
