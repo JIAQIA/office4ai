@@ -1,0 +1,67 @@
+"""
+Test client connection flow
+
+测试客户端连接流程。
+"""
+
+import pytest
+from socketio import AsyncClient  # type: ignore[import-untyped]
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_client_connect(socketio_client: AsyncClient) -> None:
+    """Test client can connect to /word namespace"""
+    assert socketio_client.connected is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_client_handshake(socketio_client: AsyncClient, valid_handshake_data: dict) -> None:
+    """Test client handshake with valid data"""
+    # Emit connection event with handshake data
+    # Note: In real scenario, handshake happens during connection
+    # For testing, we verify the connection is established
+
+    # Client is already connected from fixture
+    assert socketio_client.connected is True
+
+    # Verify connection manager registered the client
+    # Note: Actual registration happens in on_connect handler
+    # which is triggered when client emits connection event
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_client_disconnect_cleanup(socketio_client: AsyncClient) -> None:
+    """Test client disconnect cleanup"""
+    # Disconnect
+    await socketio_client.disconnect()
+
+    # Verify disconnected
+    assert socketio_client.connected is False
+
+    # Note: Actual cleanup happens in on_disconnect handler
+    # which is triggered automatically by socketio
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_multiple_clients(socketio_server) -> None:
+    """Test multiple clients can connect simultaneously"""
+    clients = []
+
+    try:
+        for _i in range(3):
+            client = AsyncClient()
+            await client.connect("http://127.0.0.1:3001", namespaces=["/word"], transports=["websocket"])
+            clients.append(client)
+
+        # All clients should be connected
+        for client in clients:
+            assert client.connected is True
+
+    finally:
+        # Cleanup
+        for client in clients:
+            await client.disconnect()

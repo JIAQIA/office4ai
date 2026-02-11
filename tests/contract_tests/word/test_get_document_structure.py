@@ -1,0 +1,274 @@
+"""
+Contract Tests for word:get:documentStructure
+
+测试 word:get:documentStructure 事件的完整请求-响应流程。
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+import pytest
+
+from office4ai.environment.workspace.base import OfficeAction
+from office4ai.environment.workspace.office_workspace import OfficeWorkspace
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
+async def test_get_document_structure_success(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+    word_factory,
+):
+    """
+    测试成功获取文档结构的完整流程。
+
+    测试步骤：
+    1. 创建 Mock Add-In 客户端
+    2. 注册响应
+    3. 连接到 Workspace
+    4. Workspace 发送 word:get:documentStructure 命令
+    5. 验证返回的响应数据符合协议
+    """
+    # Arrange: 创建并配置 Mock 客户端
+    expected_structure = {
+        "paragraphCount": 15,
+        "tableCount": 3,
+        "imageCount": 2,
+        "sectionCount": 1,
+    }
+
+    def document_structure_response(request: dict) -> dict:
+        """动态响应工厂，验证请求数据并返回响应"""
+        # 验证请求数据
+        assert "requestId" in request
+        assert "documentUri" in request
+
+        return {
+            "requestId": request["requestId"],
+            "success": True,
+            "data": word_factory.document_structure_response(
+                paragraph_count=expected_structure["paragraphCount"],
+                table_count=expected_structure["tableCount"],
+                image_count=expected_structure["imageCount"],
+                section_count=expected_structure["sectionCount"],
+            ),
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        }
+
+    # 创建客户端
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/contract_test.docx",
+    )
+
+    # 在连接之前注册响应
+    client.register_response("word:get:documentStructure", document_structure_response)
+
+    # 连接到服务器
+    await client.connect()
+
+    try:
+        # Act: 执行动作
+        action = OfficeAction(
+            category="word",
+            action_name="get:documentStructure",
+            params={"document_uri": client.document_uri},
+        )
+        result = await workspace.execute(action)
+
+        # Assert: 验证结果
+        assert result.success is True, f"Expected success, got error: {result.error}"
+        assert result.data["paragraphCount"] == expected_structure["paragraphCount"]
+        assert result.data["tableCount"] == expected_structure["tableCount"]
+        assert result.data["imageCount"] == expected_structure["imageCount"]
+        assert result.data["sectionCount"] == expected_structure["sectionCount"]
+
+        # 验证 Mock 客户端接收到了请求
+        assert len(client.received_events) == 1
+        event_name, event_data = client.received_events[0]
+        assert event_name == "word:get:documentStructure"
+        assert "requestId" in event_data
+    finally:
+        await client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
+async def test_get_document_structure_empty_document(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+    word_factory,
+):
+    """
+    测试空文档的结构信息。
+
+    测试步骤：
+    1. 创建 Mock Add-In 客户端
+    2. 注册空文档响应
+    3. 连接到 Workspace
+    4. Workspace 发送命令
+    5. 验证空文档的正确计数
+    """
+    # Arrange: 创建并配置 Mock 客户端
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/empty_test.docx",
+    )
+
+    client.register_static_response(
+        "word:get:documentStructure",
+        {
+            "requestId": "test_req_001",
+            "success": True,
+            "data": word_factory.document_structure_response(
+                paragraph_count=0,
+                table_count=0,
+                image_count=0,
+                section_count=1,
+            ),
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        },
+    )
+
+    await client.connect()
+
+    try:
+        # Act
+        action = OfficeAction(
+            category="word",
+            action_name="get:documentStructure",
+            params={"document_uri": client.document_uri},
+        )
+        result = await workspace.execute(action)
+
+        # Assert
+        assert result.success is True
+        assert result.data["paragraphCount"] == 0
+        assert result.data["tableCount"] == 0
+        assert result.data["imageCount"] == 0
+        assert result.data["sectionCount"] == 1  # 空文档仍有1个节
+    finally:
+        await client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
+async def test_get_document_structure_complex_document(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+    word_factory,
+):
+    """
+    测试复杂文档的结构信息。
+
+    测试步骤：
+    1. 创建 Mock Add-In 客户端
+    2. 注册复杂文档响应
+    3. 连接到 Workspace
+    4. Workspace 发送命令
+    5. 验证复杂文档的正确计数
+    """
+    # Arrange: 创建并配置 Mock 客户端
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/complex_test.docx",
+    )
+
+    client.register_static_response(
+        "word:get:documentStructure",
+        {
+            "requestId": "test_req_002",
+            "success": True,
+            "data": word_factory.document_structure_response(
+                paragraph_count=150,
+                table_count=10,
+                image_count=25,
+                section_count=5,
+            ),
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        },
+    )
+
+    await client.connect()
+
+    try:
+        # Act
+        action = OfficeAction(
+            category="word",
+            action_name="get:documentStructure",
+            params={"document_uri": client.document_uri},
+        )
+        result = await workspace.execute(action)
+
+        # Assert
+        assert result.success is True
+        assert result.data["paragraphCount"] == 150
+        assert result.data["tableCount"] == 10
+        assert result.data["imageCount"] == 25
+        assert result.data["sectionCount"] == 5
+    finally:
+        await client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
+async def test_get_document_structure_document_not_found(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+):
+    """
+    测试文档未找到的错误处理。
+
+    测试步骤：
+    1. 创建 Mock Add-In 客户端
+    2. 注册错误响应（文档未找到）
+    3. 连接到 Workspace
+    4. Workspace 发送命令
+    5. 验证错误信息正确返回
+    """
+
+    # Arrange: 创建并配置 Mock 客户端
+    def error_response(request: dict) -> dict:
+        """错误响应工厂"""
+        return {
+            "requestId": request["requestId"],
+            "success": False,
+            "error": {
+                "code": "3001",
+                "message": "Document not found",
+            },
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        }
+
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/nonexistent.docx",
+    )
+
+    client.register_response("word:get:documentStructure", error_response)
+    await client.connect()
+
+    try:
+        # Act
+        action = OfficeAction(
+            category="word",
+            action_name="get:documentStructure",
+            params={"document_uri": client.document_uri},
+        )
+        result = await workspace.execute(action)
+
+        # Assert
+        assert result.success is False
+        assert "3001" in str(result.error) or "not found" in str(result.error).lower()
+    finally:
+        await client.disconnect()

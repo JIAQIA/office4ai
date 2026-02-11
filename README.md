@@ -2,321 +2,128 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.1.1rc1-green.svg)](https://github.com/JQQ/office4ai)
 
-**Office4AI** 是一个专为 AI Agent 设计的强大 Office 文档管理环境，提供对 Word (docx)、Excel (xlsx)、PowerPoint (pptx) 文档的智能编辑和管理功能。
+**Office4AI** 是一个 MCP Server，让 AI Agent 通过 Office Add-In 实时读写 Office 文档。
 
-## ✨ 特性
+> **当前状态：** Word（9 个工具）已实现，PowerPoint 和 Excel 开发中。
 
-- 📄 **Word 文档管理** - 创建、编辑、格式化 Word 文档（.docx）
-- 📊 **Excel 表格处理** - 数据读写、公式计算、图表生成（.xlsx）
-- 📽️ **PowerPoint 演示文稿** - 幻灯片创建、内容编辑、样式设置（.pptx）
-- 🔧 **LibreOffice 集成** - 完整的 LibreOffice API 支持
-- 🖥️ **终端环境** - 本地和 Docker 容器内的命令执行
-- 📁 **工作区管理** - 文件系统操作、目录树浏览
-- 🎯 **为 AI 优化** - 专门设计的接口，方便 AI Agent 理解和操作文档
+## 支持平台
 
-## 🎯 设计目标
+| 平台        | 状态   | 工具数 |
+|-------------|--------|--------|
+| Word        | 已就绪 | 9      |
+| PowerPoint  | 规划中 | —      |
+| Excel       | 规划中 | —      |
 
-Office4AI 的核心设计理念是为 AI Agent 提供一个**高内聚、低耦合**的文档操作环境：
+## 快速开始
 
-- **高内聚**：所有 Office 功能（编辑、格式化、转换）都集中在统一的接口中
-- **低耦合**：独立于任何特定的 AI 框架，可以轻松集成到不同的 Agent 系统
-- **Gymnasium 兼容**：实现了 Gymnasium Env 接口，可作为强化学习环境使用
+### 1. 安装证书（仅首次）
 
-## 📦 安装
-
-### ⚠️ 系统依赖要求
-
-**在安装 Office4AI 之前，请先安装 LibreOffice：**
-
-<details>
-<summary><b>📥 LibreOffice 安装指南（点击展开）</b></summary>
-
-#### macOS
-```bash
-brew install --cask libreoffice
-```
-
-#### Ubuntu/Debian
-```bash
-sudo apt-get update
-sudo apt-get install libreoffice libreoffice-script-provider-python
-```
-
-#### Fedora/RHEL
-```bash
-sudo dnf install libreoffice libreoffice-pyuno
-```
-
-#### Arch Linux
-```bash
-sudo pacman -S libreoffice-fresh
-```
-
-#### Windows
-从 [LibreOffice 官网](https://www.libreoffice.org/download/download/) 下载并安装
-
-</details>
-
-### 使用 uv（推荐）
+Office4AI 使用 HTTPS 与 Office Add-In 通信。运行 `setup` 生成并安装本地 CA 证书：
 
 ```bash
-# 克隆仓库
-git clone https://github.com/JQQ/office4ai.git
-cd office4ai
-
-# 安装依赖
-uv sync
-
-# 开发模式安装
-uv sync --all-extras
+uvx office4ai-mcp setup
 ```
 
-### 使用 pip
+将生成本地 CA 和服务器证书，并将 CA 安装到系统信任存储（需要管理员权限）。
+
+### 2. 启动服务
 
 ```bash
-pip install office4ai
+uvx office4ai-mcp serve
 ```
 
-## 🚀 快速开始
+### 3. 配置 MCP 客户端
 
-### 基础使用
+#### Claude Code（推荐）
 
-```python
-from office4ai import OfficeEnv, OfficeAction
+```bash
+claude mcp add office4ai -- uvx office4ai-mcp serve
+```
 
-# 创建 Office 环境实例
-env = OfficeEnv(
-    root_dir="/path/to/your/documents",
-    project_name="my_documents",
-    libreoffice_path="/Applications/LibreOffice.app/Contents/MacOS/soffice"
-)
+#### Claude Desktop / Cursor 等 MCP 客户端
 
-# 打开 Word 文档
-action = OfficeAction(
-    category="document",
-    action_name="open_docx",
-    action_args={"file_path": "document.docx"}
-)
-obs, reward, done, truncated, info = env.step(action.model_dump())
+在 MCP 配置文件中添加：
 
-# 编辑文档内容
-edit_action = OfficeAction(
-    category="document",
-    action_name="edit_docx",
-    action_args={
-        "file_path": "document.docx",
-        "operations": [{
-            "type": "add_paragraph",
-            "text": "Hello, AI World!",
-            "style": "Heading 1"
-        }]
+```json
+{
+  "mcpServers": {
+    "office4ai": {
+      "command": "uvx",
+      "args": ["office4ai-mcp", "serve"]
     }
-)
-obs, reward, done, truncated, info = env.step(edit_action.model_dump())
-
-# 处理 Excel 表格
-excel_action = OfficeAction(
-    category="spreadsheet",
-    action_name="edit_xlsx",
-    action_args={
-        "file_path": "data.xlsx",
-        "operations": [{
-            "type": "set_cell",
-            "sheet": "Sheet1",
-            "cell": "A1",
-            "value": "Hello Excel"
-        }]
-    }
-)
-obs, reward, done, truncated, info = env.step(excel_action.model_dump())
+  }
+}
 ```
 
-## 📚 核心概念
+### 4. 安装 Office Add-In
 
-### Office Actions
+Office Add-In 通过 Socket.IO 连接 Microsoft Office 与 MCP Server。
 
-Office4AI 支持三类操作：
+> Add-In 安装说明将另行提供，敬请关注。
 
-1. **Document Actions** - Word 文档操作
-   - `open_docx` - 打开文档
-   - `edit_docx` - 编辑文档
-   - `save_docx` - 保存文档
-   - `format_docx` - 格式化文档
-   - `convert_docx` - 转换文档格式
+## 可用工具
 
-2. **Spreadsheet Actions** - Excel 表格操作
-   - `open_xlsx` - 打开表格
-   - `edit_xlsx` - 编辑表格
-   - `save_xlsx` - 保存表格
-   - `calculate_xlsx` - 计算公式
-   - `chart_xlsx` - 创建图表
+### Word 工具（9 个）
 
-3. **Presentation Actions** - PowerPoint 演示文稿操作
-   - `open_pptx` - 打开演示文稿
-   - `edit_pptx` - 编辑演示文稿
-   - `save_pptx` - 保存演示文稿
-   - `add_slide_pptx` - 添加幻灯片
+| 工具 | 说明 |
+|------|------|
+| `word_get_selected_content` | 获取当前选中内容——文本、元素及元数据 |
+| `word_get_visible_content` | 获取当前视口中可见的内容 |
+| `word_insert_text` | 在光标处插入文本，支持格式（粗体、斜体、字体、颜色、样式） |
+| `word_append_text` | 在文档开头或末尾追加文本 |
+| `word_replace_text` | 查找并替换文本（等同 Ctrl+H），支持大小写敏感和全词匹配 |
+| `word_insert_image` | 插入 base64 编码的图片，支持尺寸和替代文字 |
+| `word_insert_table` | 插入表格，指定行列数、数据和样式 |
+| `word_insert_equation` | 插入 LaTeX 公式（默认为行内公式） |
+| `word_insert_toc` | 插入目录（可配置标题级别） |
 
-### LibreOffice 集成
+所有工具均需要 `document_uri` 参数来标识目标文档。
 
-- **UNO API** - 完整的 LibreOffice UNO API 支持
-- **文档转换** - 支持多种格式之间的转换
-- **批处理** - 批量处理多个文档
-
-## 🛠️ 开发
-
-### 环境设置
-
-```bash
-# 安装开发依赖
-uv sync
-
-# 或使用 poe 任务
-poe install-dev
-```
-
-### 常用命令
-
-项目使用 [poethepoet](https://github.com/nat-n/poethepoet) 管理开发任务：
-
-```bash
-# 代码检查
-poe lint              # 运行 ruff 检查
-poe lint-fix          # 自动修复 lint 问题
-poe format            # 格式化代码
-poe format-check      # 检查代码格式
-
-# 类型检查
-poe typecheck         # 运行 mypy 类型检查
-
-# 测试
-poe test              # 运行所有测试
-poe test-unit         # 仅运行单元测试
-poe test-integration  # 仅运行集成测试
-poe test-cov          # 运行测试并生成覆盖率报告
-poe test-verbose      # 详细模式运行测试
-
-# 组合任务
-poe check             # 运行所有检查（lint + format-check + typecheck）
-poe fix               # 自动修复问题（lint-fix + format）
-poe pre-commit        # 提交前检查（format + lint-fix + typecheck + test）
-
-# 清理
-poe clean             # 清理缓存和临时文件
-poe clean-pyc         # 清理 Python 缓存
-poe clean-cov         # 清理覆盖率报告
-```
-
-### 运行测试
-
-```bash
-# 运行所有测试
-poe test
-
-# 运行特定测试
-pytest tests/test_docx.py -v
-
-# 生成覆盖率报告
-poe test-cov
-```
-
-### 代码规范
-
-项目使用以下工具确保代码质量：
-
-- **Ruff** - 快速的 Python linter 和 formatter
-- **MyPy** - 静态类型检查
-- **Pytest** - 测试框架
-
-提交代码前请运行：
-
-```bash
-poe pre-commit
-```
-
-## 🏗️ 架构设计
+## CLI 命令参考
 
 ```
-office4ai/
-├── base.py                 # Office 环境基类
-├── schema.py              # 数据模型定义
-├── exceptions.py          # 异常类
-├── utils.py              # 工具函数
-├── dtos/                 # 数据传输对象
-│   ├── base_protocol.py
-│   ├── commands.py
-│   └── documents.py
-├── environment/          # 环境实现
-│   ├── terminal/        # 终端环境
-│   │   ├── base.py
-│   │   └── local_terminal_env.py
-│   └── workspace/       # 工作区
-│       ├── base.py
-│       └── utils.py
-├── office/              # Office 实现
-│   ├── docx_handler.py  # Word 文档处理
-│   ├── xlsx_handler.py  # Excel 表格处理
-│   ├── pptx_handler.py  # PowerPoint 处理
-│   ├── libreoffice.py   # LibreOffice 集成
-│   └── mcp/            # MCP 服务器
-│       └── server.py
-└── py.typed
+office4ai-mcp <command>
 ```
 
-## 🔌 MCP 服务器
+| 命令      | 说明 |
+|-----------|------|
+| `serve`   | 启动 MCP Server（未指定命令时的默认行为） |
+| `setup`   | 生成证书并将 CA 安装到系统信任存储 |
+| `cleanup` | 从信任存储移除 CA 并删除证书文件 |
 
-Office4AI 提供了 MCP (Model Context Protocol) 服务器，可以轻松集成到支持 MCP 的 AI 应用中：
+### 服务器选项
 
-```bash
-# 启动 MCP 服务器
-office4ai-mcp --root-dir /path/to/documents
-```
+可通过 CLI 参数或环境变量设置：
 
-## 📖 文档
+| 选项 | 环境变量 | 默认值 | 说明 |
+|------|---------|--------|------|
+| `--transport` | `TRANSPORT` | `stdio` | MCP 传输方式：`stdio`、`sse` 或 `streamable-http` |
+| `--host` | `HOST` | `127.0.0.1` | 服务器绑定地址 |
+| `--port` | `PORT` | `8000` | MCP HTTP 端口（用于 `sse`/`streamable-http`） |
+| `--socketio-port` | `SOCKETIO_PORT` | `3000` | Socket.IO 端口（Add-In 连接） |
 
-- [API 文档](docs/api.md)（待完善）
-- [架构设计](docs/architecture.md)（待完善）
-- [LibreOffice 集成指南](docs/libreoffice.md)（待完善）
+### 证书位置
 
-## 🤝 贡献
+证书默认存储在 `~/.office4ai/certs/`，可通过 `OFFICE4AI_CERT_DIR` 环境变量覆盖。
 
-欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md)（待创建）了解详情。
+## 系统要求
 
-### 贡献流程
+- Python 3.10+
+- macOS 或 Windows
+- 支持 Add-In 的 Microsoft Office（Word 桌面版或 Word Online）
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 开启 Pull Request
+## 开发
 
-## 📄 许可证
+开发环境配置、常用命令、代码规范和贡献指南请参考 [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)。
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+## 许可证
 
-## 🙏 致谢
+MIT 许可证 - 详见 [LICENSE](LICENSE)。
 
-- 基于 [Gymnasium](https://gymnasium.farama.org/) 环境接口
-- LibreOffice UNO API 支持
-- 灵感来源于 [IDE4AI](https://github.com/JQQ/ide4ai)
-
-## 📮 联系方式
+## 联系方式
 
 - 作者：JQQ
-- Email：jqq1716@gmail.com
+- 邮箱：jqq1716@gmail.com
 - GitHub：[@JQQ](https://github.com/JQQ)
-
-## 🗺️ 路线图
-
-- [ ] 完善文档和示例
-- [ ] 支持更多文档格式（PDF、ODF 等）
-- [ ] 添加文档模板系统
-- [ ] 提供 Web UI 界面
-- [ ] 性能优化和大型文档支持
-- [ ] 更多 AI 框架集成示例
-- [ ] 文档智能分析功能
-
----
-
-**如果这个项目对你有帮助，请给个 ⭐️ Star！**

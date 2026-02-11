@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__atlassian__getConfluencePage",
+      "Bash(poe lint:*)",
+      "Bash(poe typecheck:*)",
+      "Bash(poe test-unit:*)",
+      "Skill(test-checklist)",
+      "Bash(poe test-contract:*)",
+      "Skill(update-socketio-event)",
+      "mcp__atlassian__search",
+      "Bash(uv run pytest:*)",
+      "Bash(poe lint-fix:*)",
+      "Bash(find:*)",
+      "Bash(python:*)",
+      "Bash(uv run python:*)"
+    ]
+  }
+}
