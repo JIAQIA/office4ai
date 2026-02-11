@@ -38,19 +38,36 @@ class TestOfficeMCPServer:
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            # 9 个 Word 工具 | 9 Word tools
-            assert len(server.tools) == 9
+            # 21 个 Word 工具 | 21 Word tools
+            assert len(server.tools) == 21
 
             expected_tools = [
+                # Get tools
                 "word_get_selected_content",
                 "word_get_visible_content",
+                "word_get_selection",
+                "word_get_document_structure",
+                "word_get_document_stats",
+                "word_get_styles",
+                # Text operation tools
                 "word_insert_text",
                 "word_append_text",
                 "word_replace_text",
+                "word_replace_selection",
+                "word_select_text",
+                # Multimedia tools
                 "word_insert_image",
                 "word_insert_table",
                 "word_insert_equation",
                 "word_insert_toc",
+                # Export tool
+                "word_export_content",
+                # Comment tools
+                "word_get_comments",
+                "word_insert_comment",
+                "word_delete_comment",
+                "word_reply_comment",
+                "word_resolve_comment",
             ]
             for tool_name in expected_tools:
                 assert tool_name in server.tools, f"Tool {tool_name} not registered"

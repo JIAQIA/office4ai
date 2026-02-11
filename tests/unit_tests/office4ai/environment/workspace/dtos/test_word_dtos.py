@@ -11,10 +11,15 @@ from pydantic import ValidationError
 
 from office4ai.environment.workspace.dtos.word import (
     AnyContentElement,
+    CommentData,
+    CommentReplyData,
     ContentMetadata,
     DocumentStats,
+    GetCommentsOptions,
     GetContentOptions,
     GetStylesOptions,
+    InsertCommentSearchOptions,
+    InsertCommentTarget,
     ReplaceContent,
     SelectionInfo,
     SelectTextResult,
@@ -22,6 +27,9 @@ from office4ai.environment.workspace.dtos.word import (
     StyleInfo,
     StylesResult,
     TextFormat,
+    WordDeleteCommentRequest,
+    WordGetCommentsRequest,
+    WordGetCommentsResponse,
     WordGetDocumentStatsRequest,
     WordGetDocumentStatsResponse,
     WordGetSelectedContentRequest,
@@ -31,9 +39,12 @@ from office4ai.environment.workspace.dtos.word import (
     WordGetStylesRequest,
     WordGetVisibleContentRequest,
     WordGetVisibleContentResponse,
+    WordInsertCommentRequest,
     WordInsertTextRequest,
     WordReplaceSelectionRequest,
     WordReplaceSelectionResponse,
+    WordReplyCommentRequest,
+    WordResolveCommentRequest,
     WordSelectTextRequest,
     WordSelectTextResponse,
 )
@@ -2274,3 +2285,568 @@ class TestWordSelectTextResponse:
             )
 
         assert "timestamp" in str(exc_info.value)
+
+
+# ============================================================================
+# Comment DTO Tests
+# ============================================================================
+
+
+class TestGetCommentsOptions:
+    """Test GetCommentsOptions DTO"""
+
+    def test_default_options(self) -> None:
+        """Test creating options with default values"""
+        options = GetCommentsOptions()
+
+        assert options.include_resolved is False
+        assert options.include_replies is True
+        assert options.include_associated_text is False
+        assert options.detailed_metadata is False
+        assert options.max_text_length is None
+
+    def test_custom_options(self) -> None:
+        """Test creating options with custom values"""
+        options = GetCommentsOptions(
+            includeResolved=True,
+            includeReplies=False,
+            includeAssociatedText=True,
+            detailedMetadata=True,
+            maxTextLength=500,
+        )
+
+        assert options.include_resolved is True
+        assert options.include_replies is False
+        assert options.include_associated_text is True
+        assert options.detailed_metadata is True
+        assert options.max_text_length == 500
+
+    def test_options_serialization(self) -> None:
+        """Test options can be serialized to dict with correct aliases"""
+        options = GetCommentsOptions(
+            includeResolved=True,
+            includeAssociatedText=True,
+        )
+
+        data = options.model_dump(by_alias=True)
+
+        assert data["includeResolved"] is True
+        assert data["includeReplies"] is True  # default
+        assert data["includeAssociatedText"] is True
+
+    def test_options_from_dict(self) -> None:
+        """Test creating options from dict with aliases"""
+        options = GetCommentsOptions(
+            **{
+                "includeResolved": True,
+                "includeReplies": False,
+                "maxTextLength": 200,
+            }
+        )
+
+        assert options.include_resolved is True
+        assert options.include_replies is False
+        assert options.max_text_length == 200
+
+
+class TestCommentReplyData:
+    """Test CommentReplyData DTO"""
+
+    def test_valid_reply(self) -> None:
+        """Test creating valid comment reply"""
+        reply = CommentReplyData(
+            id="reply_001",
+            content="I agree with this change",
+            authorName="Bob",
+            authorEmail="bob@example.com",
+            creationDate="2026-01-15T10:30:00Z",
+        )
+
+        assert reply.id == "reply_001"
+        assert reply.content == "I agree with this change"
+        assert reply.author_name == "Bob"
+        assert reply.author_email == "bob@example.com"
+        assert reply.creation_date == "2026-01-15T10:30:00Z"
+
+    def test_minimal_reply(self) -> None:
+        """Test creating reply with only required fields"""
+        reply = CommentReplyData(
+            id="reply_002",
+            content="OK",
+        )
+
+        assert reply.id == "reply_002"
+        assert reply.content == "OK"
+        assert reply.author_name is None
+        assert reply.author_email is None
+        assert reply.creation_date is None
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            CommentReplyData(content="Hello")
+
+        assert "id" in str(exc_info.value)
+
+        with pytest.raises(ValidationError) as exc_info:
+            CommentReplyData(id="reply_001")
+
+        assert "content" in str(exc_info.value)
+
+    def test_reply_serialization(self) -> None:
+        """Test reply can be serialized to dict with correct aliases"""
+        reply = CommentReplyData(
+            id="r1",
+            content="Test reply",
+            authorName="Alice",
+        )
+
+        data = reply.model_dump(by_alias=True)
+
+        assert data["id"] == "r1"
+        assert data["content"] == "Test reply"
+        assert data["authorName"] == "Alice"
+
+
+class TestCommentData:
+    """Test CommentData DTO"""
+
+    def test_valid_comment(self) -> None:
+        """Test creating valid comment"""
+        comment = CommentData(
+            id="comment_001",
+            content="Please fix this typo",
+            authorName="Alice",
+            authorEmail="alice@example.com",
+            creationDate="2026-01-10T08:00:00Z",
+            resolved=False,
+            associatedText="teh",
+        )
+
+        assert comment.id == "comment_001"
+        assert comment.content == "Please fix this typo"
+        assert comment.author_name == "Alice"
+        assert comment.resolved is False
+        assert comment.associated_text == "teh"
+        assert comment.replies is None
+
+    def test_comment_with_replies(self) -> None:
+        """Test creating comment with replies"""
+        replies = [
+            CommentReplyData(id="r1", content="Fixed!"),
+            CommentReplyData(id="r2", content="Thanks"),
+        ]
+
+        comment = CommentData(
+            id="comment_002",
+            content="Review this section",
+            resolved=True,
+            replies=replies,
+        )
+
+        assert comment.resolved is True
+        assert comment.replies is not None
+        assert len(comment.replies) == 2
+        assert comment.replies[0].content == "Fixed!"
+
+    def test_minimal_comment(self) -> None:
+        """Test creating comment with only required fields"""
+        comment = CommentData(
+            id="c1",
+            content="Note",
+        )
+
+        assert comment.id == "c1"
+        assert comment.content == "Note"
+        assert comment.author_name is None
+        assert comment.resolved is False  # default
+        assert comment.replies is None
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            CommentData(content="Hello")
+
+        assert "id" in str(exc_info.value)
+
+        with pytest.raises(ValidationError) as exc_info:
+            CommentData(id="c1")
+
+        assert "content" in str(exc_info.value)
+
+    def test_comment_serialization(self) -> None:
+        """Test comment can be serialized to dict with correct aliases"""
+        comment = CommentData(
+            id="c1",
+            content="Test comment",
+            authorName="Bob",
+            resolved=True,
+            associatedText="some text",
+        )
+
+        data = comment.model_dump(by_alias=True)
+
+        assert data["id"] == "c1"
+        assert data["content"] == "Test comment"
+        assert data["authorName"] == "Bob"
+        assert data["resolved"] is True
+        assert data["associatedText"] == "some text"
+
+    def test_comment_from_dict(self) -> None:
+        """Test creating comment from dict"""
+        data = {
+            "id": "c1",
+            "content": "From dict",
+            "authorName": "Alice",
+            "resolved": False,
+            "replies": [
+                {"id": "r1", "content": "Reply from dict"},
+            ],
+        }
+
+        comment = CommentData(**data)
+
+        assert comment.id == "c1"
+        assert comment.author_name == "Alice"
+        assert comment.replies is not None
+        assert len(comment.replies) == 1
+        assert comment.replies[0].id == "r1"
+
+
+class TestInsertCommentSearchOptions:
+    """Test InsertCommentSearchOptions DTO"""
+
+    def test_default_options(self) -> None:
+        """Test creating options with default values"""
+        options = InsertCommentSearchOptions()
+
+        assert options.match_case is False
+        assert options.match_whole_word is False
+
+    def test_custom_options(self) -> None:
+        """Test creating options with custom values"""
+        options = InsertCommentSearchOptions(
+            matchCase=True,
+            matchWholeWord=True,
+        )
+
+        assert options.match_case is True
+        assert options.match_whole_word is True
+
+    def test_options_serialization(self) -> None:
+        """Test options can be serialized to dict with correct aliases"""
+        options = InsertCommentSearchOptions(matchCase=True)
+
+        data = options.model_dump(by_alias=True)
+
+        assert data["matchCase"] is True
+        assert data["matchWholeWord"] is False
+
+
+class TestInsertCommentTarget:
+    """Test InsertCommentTarget DTO"""
+
+    def test_selection_target(self) -> None:
+        """Test creating selection target"""
+        target = InsertCommentTarget(type="selection")
+
+        assert target.type == "selection"
+        assert target.search_text is None
+        assert target.search_options is None
+
+    def test_search_text_target(self) -> None:
+        """Test creating searchText target"""
+        target = InsertCommentTarget(
+            type="searchText",
+            searchText="important text",
+            searchOptions={"matchCase": True},
+        )
+
+        assert target.type == "searchText"
+        assert target.search_text == "important text"
+        assert target.search_options is not None
+        assert target.search_options.match_case is True
+
+    def test_invalid_target_type(self) -> None:
+        """Test validation fails with invalid target type"""
+        with pytest.raises(ValidationError) as exc_info:
+            InsertCommentTarget(type="invalid")
+
+        assert "type" in str(exc_info.value).lower()
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            InsertCommentTarget()
+
+        assert "type" in str(exc_info.value)
+
+    def test_target_serialization(self) -> None:
+        """Test target can be serialized to dict with correct aliases"""
+        target = InsertCommentTarget(
+            type="searchText",
+            searchText="test",
+        )
+
+        data = target.model_dump(by_alias=True)
+
+        assert data["type"] == "searchText"
+        assert data["searchText"] == "test"
+
+
+class TestWordGetCommentsRequest:
+    """Test WordGetCommentsRequest DTO"""
+
+    def test_valid_request_with_defaults(self) -> None:
+        """Test creating valid request with default values"""
+        request = WordGetCommentsRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+        )
+
+        assert request.request_id == "req_001"
+        assert request.document_uri == "file:///test.docx"
+        assert request.options is None
+
+    def test_valid_request_with_options(self) -> None:
+        """Test creating valid request with options"""
+        options = GetCommentsOptions(
+            includeResolved=True,
+            includeReplies=True,
+        )
+
+        request = WordGetCommentsRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            options=options,
+        )
+
+        assert request.options is not None
+        assert request.options.include_resolved is True
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordGetCommentsRequest.event_name == "word:get:comments"
+
+
+class TestWordGetCommentsResponse:
+    """Test WordGetCommentsResponse DTO"""
+
+    def test_valid_response_with_comments(self) -> None:
+        """Test creating valid response with comments"""
+        comments = [
+            CommentData(id="c1", content="Fix typo", authorName="Alice"),
+            CommentData(id="c2", content="Good", resolved=True),
+        ]
+        response = WordGetCommentsResponse(comments=comments)
+
+        assert len(response.comments) == 2
+        assert response.comments[0].id == "c1"
+        assert response.comments[1].resolved is True
+
+    def test_empty_response(self) -> None:
+        """Test creating response with no comments"""
+        response = WordGetCommentsResponse()
+
+        assert len(response.comments) == 0
+
+    def test_response_from_dict(self) -> None:
+        """Test creating response from dict"""
+        data = {
+            "comments": [
+                {"id": "c1", "content": "Test", "resolved": False},
+            ]
+        }
+
+        response = WordGetCommentsResponse(**data)
+
+        assert len(response.comments) == 1
+        assert response.comments[0].id == "c1"
+
+    def test_response_serialization(self) -> None:
+        """Test response can be serialized to dict with correct aliases"""
+        comments = [CommentData(id="c1", content="Test")]
+        response = WordGetCommentsResponse(comments=comments)
+
+        data = response.model_dump(by_alias=True)
+
+        assert "comments" in data
+        assert len(data["comments"]) == 1
+        assert data["comments"][0]["id"] == "c1"
+
+
+class TestWordInsertCommentRequest:
+    """Test WordInsertCommentRequest DTO"""
+
+    def test_valid_request_minimal(self) -> None:
+        """Test creating valid request with only required fields"""
+        request = WordInsertCommentRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            text="Please review",
+        )
+
+        assert request.text == "Please review"
+        assert request.target is None
+
+    def test_valid_request_with_target(self) -> None:
+        """Test creating valid request with target"""
+        target = InsertCommentTarget(type="searchText", searchText="important")
+
+        request = WordInsertCommentRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            text="Review needed",
+            target=target,
+        )
+
+        assert request.target is not None
+        assert request.target.type == "searchText"
+        assert request.target.search_text == "important"
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            WordInsertCommentRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+            )
+
+        assert "text" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordInsertCommentRequest.event_name == "word:insert:comment"
+
+
+class TestWordDeleteCommentRequest:
+    """Test WordDeleteCommentRequest DTO"""
+
+    def test_valid_request(self) -> None:
+        """Test creating valid request"""
+        request = WordDeleteCommentRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            commentId="comment_123",
+        )
+
+        assert request.comment_id == "comment_123"
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            WordDeleteCommentRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+            )
+
+        assert "commentId" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordDeleteCommentRequest.event_name == "word:delete:comment"
+
+
+class TestWordReplyCommentRequest:
+    """Test WordReplyCommentRequest DTO"""
+
+    def test_valid_request(self) -> None:
+        """Test creating valid request"""
+        request = WordReplyCommentRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            commentId="comment_123",
+            text="Done",
+        )
+
+        assert request.comment_id == "comment_123"
+        assert request.text == "Done"
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            WordReplyCommentRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+                text="Reply",
+            )
+
+        assert "commentId" in str(exc_info.value)
+
+        with pytest.raises(ValidationError) as exc_info:
+            WordReplyCommentRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+                commentId="c1",
+            )
+
+        assert "text" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordReplyCommentRequest.event_name == "word:reply:comment"
+
+
+class TestWordResolveCommentRequest:
+    """Test WordResolveCommentRequest DTO"""
+
+    def test_valid_request_resolve(self) -> None:
+        """Test creating valid request to resolve"""
+        request = WordResolveCommentRequest(
+            requestId="req_001",
+            documentUri="file:///test.docx",
+            commentId="comment_123",
+            resolved=True,
+        )
+
+        assert request.comment_id == "comment_123"
+        assert request.resolved is True
+
+    def test_valid_request_unresolve(self) -> None:
+        """Test creating valid request to unresolve"""
+        request = WordResolveCommentRequest(
+            requestId="req_002",
+            documentUri="file:///test.docx",
+            commentId="comment_123",
+            resolved=False,
+        )
+
+        assert request.resolved is False
+
+    def test_default_resolved(self) -> None:
+        """Test resolved defaults to True"""
+        request = WordResolveCommentRequest(
+            requestId="req_003",
+            documentUri="file:///test.docx",
+            commentId="comment_123",
+        )
+
+        assert request.resolved is True
+
+    def test_missing_required_fields(self) -> None:
+        """Test validation fails without required fields"""
+        with pytest.raises(ValidationError) as exc_info:
+            WordResolveCommentRequest(
+                requestId="req_001",
+                documentUri="file:///test.docx",
+            )
+
+        assert "commentId" in str(exc_info.value)
+
+    def test_event_name_attribute(self) -> None:
+        """Test event name class variable"""
+        assert WordResolveCommentRequest.event_name == "word:resolve:comment"
+
+    def test_to_payload_camel_case(self) -> None:
+        """Test serialization to camelCase payload"""
+        request = WordResolveCommentRequest(
+            requestId="req_004",
+            documentUri="file:///test.docx",
+            commentId="c1",
+            resolved=True,
+        )
+
+        payload = request.to_payload()
+
+        assert payload["commentId"] == "c1"
+        assert payload["resolved"] is True

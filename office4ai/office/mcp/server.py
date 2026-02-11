@@ -42,26 +42,55 @@ class OfficeMCPServer(BaseMCPServer):
         """注册所有平台的工具 | Register all platform tools"""
         from office4ai.a2c_smcp.tools.word import (
             WordAppendTextTool,
+            WordDeleteCommentTool,
+            WordExportContentTool,
+            WordGetCommentsTool,
+            WordGetDocumentStatsTool,
+            WordGetDocumentStructureTool,
             WordGetSelectedContentTool,
+            WordGetSelectionTool,
+            WordGetStylesTool,
             WordGetVisibleContentTool,
+            WordInsertCommentTool,
             WordInsertEquationTool,
             WordInsertImageTool,
             WordInsertTableTool,
             WordInsertTextTool,
             WordInsertTOCTool,
+            WordReplaceSelectionTool,
             WordReplaceTextTool,
+            WordReplyCommentTool,
+            WordResolveCommentTool,
+            WordSelectTextTool,
         )
 
         word_tools = [
+            # Get tools
             WordGetSelectedContentTool(self.workspace),
             WordGetVisibleContentTool(self.workspace),
+            WordGetSelectionTool(self.workspace),
+            WordGetDocumentStructureTool(self.workspace),
+            WordGetDocumentStatsTool(self.workspace),
+            WordGetStylesTool(self.workspace),
+            # Text operation tools
             WordInsertTextTool(self.workspace),
             WordAppendTextTool(self.workspace),
             WordReplaceTextTool(self.workspace),
+            WordReplaceSelectionTool(self.workspace),
+            WordSelectTextTool(self.workspace),
+            # Multimedia tools
             WordInsertImageTool(self.workspace),
             WordInsertTableTool(self.workspace),
             WordInsertEquationTool(self.workspace),
             WordInsertTOCTool(self.workspace),
+            # Export tool
+            WordExportContentTool(self.workspace),
+            # Comment tools
+            WordGetCommentsTool(self.workspace),
+            WordInsertCommentTool(self.workspace),
+            WordDeleteCommentTool(self.workspace),
+            WordReplyCommentTool(self.workspace),
+            WordResolveCommentTool(self.workspace),
         ]
 
         for tool in word_tools:

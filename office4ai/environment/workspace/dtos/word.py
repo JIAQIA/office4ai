@@ -1026,7 +1026,263 @@ class StylesResult(SocketIOBaseModel):
     )
 
 
+# ============================================================================
+# Comment DTOs
+# ============================================================================
+
+
+class GetCommentsOptions(SocketIOBaseModel):
+    """
+    Options for retrieving comments from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    include_resolved: bool = Field(
+        default=False,
+        alias="includeResolved",
+        description="Include resolved comments",
+    )
+    include_replies: bool = Field(
+        default=True,
+        alias="includeReplies",
+        description="Include reply threads",
+    )
+    include_associated_text: bool = Field(
+        default=False,
+        alias="includeAssociatedText",
+        description="Include the text associated with each comment",
+    )
+    detailed_metadata: bool = Field(
+        default=False,
+        alias="detailedMetadata",
+        description="Include detailed metadata (author email, creation date)",
+    )
+    max_text_length: int | None = Field(
+        default=None,
+        alias="maxTextLength",
+        description="Maximum length of associated text to return",
+    )
+
+
+class CommentReplyData(SocketIOBaseModel):
+    """
+    Data for a comment reply.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    id: str = Field(..., alias="id", description="Reply ID")
+    content: str = Field(..., alias="content", description="Reply text content")
+    author_name: str | None = Field(
+        default=None,
+        alias="authorName",
+        description="Reply author name",
+    )
+    author_email: str | None = Field(
+        default=None,
+        alias="authorEmail",
+        description="Reply author email",
+    )
+    creation_date: str | None = Field(
+        default=None,
+        alias="creationDate",
+        description="Reply creation date (ISO 8601 format)",
+    )
+
+
+class CommentData(SocketIOBaseModel):
+    """
+    Data for a document comment.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    id: str = Field(..., alias="id", description="Comment ID")
+    content: str = Field(..., alias="content", description="Comment text content")
+    author_name: str | None = Field(
+        default=None,
+        alias="authorName",
+        description="Comment author name",
+    )
+    author_email: str | None = Field(
+        default=None,
+        alias="authorEmail",
+        description="Comment author email",
+    )
+    creation_date: str | None = Field(
+        default=None,
+        alias="creationDate",
+        description="Comment creation date (ISO 8601 format)",
+    )
+    resolved: bool = Field(
+        default=False,
+        alias="resolved",
+        description="Whether the comment is resolved",
+    )
+    associated_text: str | None = Field(
+        default=None,
+        alias="associatedText",
+        description="Text associated with the comment",
+    )
+    replies: list["CommentReplyData"] | None = Field(
+        default=None,
+        alias="replies",
+        description="Reply threads for this comment",
+    )
+
+
+class InsertCommentSearchOptions(SocketIOBaseModel):
+    """
+    Search options for targeting comment insertion by text search.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    match_case: bool = Field(
+        default=False,
+        alias="matchCase",
+        description="Match case (case-sensitive search)",
+    )
+    match_whole_word: bool = Field(
+        default=False,
+        alias="matchWholeWord",
+        description="Match whole word only",
+    )
+
+
+class InsertCommentTarget(SocketIOBaseModel):
+    """
+    Target location for inserting a comment.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    type: Literal["selection", "searchText"] = Field(
+        ...,
+        alias="type",
+        description="Target type: 'selection' (current selection) or 'searchText' (find text first)",
+    )
+    search_text: str | None = Field(
+        default=None,
+        alias="searchText",
+        description="Text to search for (required when type is 'searchText')",
+    )
+    search_options: InsertCommentSearchOptions | None = Field(
+        default=None,
+        alias="searchOptions",
+        description="Search options (only used when type is 'searchText')",
+    )
+
+
+class WordGetCommentsRequest(BaseRequest):
+    """
+    Request to get comments from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    event_name: ClassVar[str] = "word:get:comments"
+
+    options: Optional["GetCommentsOptions"] = Field(
+        default=None,
+        alias="options",
+        description="Comment retrieval options",
+    )
+
+
+class WordGetCommentsResponse(SocketIOBaseModel):
+    """
+    Response for word:get:comments operation.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    comments: list[CommentData] = Field(
+        default_factory=list,
+        alias="comments",
+        description="List of comments in the document",
+    )
+
+
+class WordInsertCommentRequest(BaseRequest):
+    """
+    Request to insert a comment into Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    event_name: ClassVar[str] = "word:insert:comment"
+
+    text: str = Field(..., alias="text", description="Comment text content")
+    target: Optional["InsertCommentTarget"] = Field(
+        default=None,
+        alias="target",
+        description="Target location (defaults to current selection)",
+    )
+
+
+class WordDeleteCommentRequest(BaseRequest):
+    """
+    Request to delete a comment from Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    event_name: ClassVar[str] = "word:delete:comment"
+
+    comment_id: str = Field(
+        ...,
+        alias="commentId",
+        description="ID of the comment to delete",
+    )
+
+
+class WordReplyCommentRequest(BaseRequest):
+    """
+    Request to reply to a comment in Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    event_name: ClassVar[str] = "word:reply:comment"
+
+    comment_id: str = Field(
+        ...,
+        alias="commentId",
+        description="ID of the comment to reply to",
+    )
+    text: str = Field(..., alias="text", description="Reply text content")
+
+
+class WordResolveCommentRequest(BaseRequest):
+    """
+    Request to resolve or unresolve a comment in Word document.
+
+    Uses Pydantic aliases for protocol compliance.
+    """
+
+    event_name: ClassVar[str] = "word:resolve:comment"
+
+    comment_id: str = Field(
+        ...,
+        alias="commentId",
+        description="ID of the comment to resolve/unresolve",
+    )
+    resolved: bool = Field(
+        default=True,
+        alias="resolved",
+        description="True to resolve, False to unresolve",
+    )
+
+
 # Resolve forward references
+GetCommentsOptions.model_rebuild()
+CommentReplyData.model_rebuild()
+CommentData.model_rebuild()
+InsertCommentSearchOptions.model_rebuild()
+InsertCommentTarget.model_rebuild()
+WordGetCommentsResponse.model_rebuild()
 SelectionInfo.model_rebuild()
 WordGetSelectionResponse.model_rebuild()
 GetContentOptions.model_rebuild()

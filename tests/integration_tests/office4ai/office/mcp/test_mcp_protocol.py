@@ -54,7 +54,7 @@ class TestMCPProtocol:
 
                 # 获取工具列表 | Get tools list
                 tools_result = await session.list_tools()
-                assert len(tools_result.tools) == 9  # 9 个 Word 工具
+                assert len(tools_result.tools) == 21  # 21 个 Word 工具
 
                 # 验证工具名称前缀 | Verify tool name prefix
                 tool_names = {t.name for t in tools_result.tools}

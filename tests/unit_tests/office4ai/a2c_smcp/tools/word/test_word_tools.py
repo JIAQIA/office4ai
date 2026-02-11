@@ -14,14 +14,26 @@ import pytest
 
 from office4ai.a2c_smcp.tools.word import (
     WordAppendTextTool,
+    WordDeleteCommentTool,
+    WordExportContentTool,
+    WordGetCommentsTool,
+    WordGetDocumentStatsTool,
+    WordGetDocumentStructureTool,
     WordGetSelectedContentTool,
+    WordGetSelectionTool,
+    WordGetStylesTool,
     WordGetVisibleContentTool,
+    WordInsertCommentTool,
     WordInsertEquationTool,
     WordInsertImageTool,
     WordInsertTableTool,
     WordInsertTextTool,
     WordInsertTOCTool,
+    WordReplaceSelectionTool,
     WordReplaceTextTool,
+    WordReplyCommentTool,
+    WordResolveCommentTool,
+    WordSelectTextTool,
 )
 from office4ai.environment.workspace.base import OfficeObs
 
@@ -43,6 +55,7 @@ class TestToolMetadata:
     """测试所有工具的元数据声明"""
 
     TOOL_SPECS = [
+        # Original 9 MVP tools
         (WordGetSelectedContentTool, "word_get_selected_content", "word", "get:selectedContent"),
         (WordGetVisibleContentTool, "word_get_visible_content", "word", "get:visibleContent"),
         (WordInsertTextTool, "word_insert_text", "word", "insert:text"),
@@ -52,6 +65,20 @@ class TestToolMetadata:
         (WordInsertTableTool, "word_insert_table", "word", "insert:table"),
         (WordInsertEquationTool, "word_insert_equation", "word", "insert:equation"),
         (WordInsertTOCTool, "word_insert_toc", "word", "insert:toc"),
+        # Phase 1: 7 new tools (DTO already exists)
+        (WordGetSelectionTool, "word_get_selection", "word", "get:selection"),
+        (WordGetDocumentStructureTool, "word_get_document_structure", "word", "get:documentStructure"),
+        (WordGetDocumentStatsTool, "word_get_document_stats", "word", "get:documentStats"),
+        (WordGetStylesTool, "word_get_styles", "word", "get:styles"),
+        (WordReplaceSelectionTool, "word_replace_selection", "word", "replace:selection"),
+        (WordSelectTextTool, "word_select_text", "word", "select:text"),
+        (WordExportContentTool, "word_export_content", "word", "export:content"),
+        # Phase 2: 5 comment tools
+        (WordGetCommentsTool, "word_get_comments", "word", "get:comments"),
+        (WordInsertCommentTool, "word_insert_comment", "word", "insert:comment"),
+        (WordDeleteCommentTool, "word_delete_comment", "word", "delete:comment"),
+        (WordReplyCommentTool, "word_reply_comment", "word", "reply:comment"),
+        (WordResolveCommentTool, "word_resolve_comment", "word", "resolve:comment"),
     ]
 
     @pytest.mark.parametrize("tool_cls,expected_name,expected_category,expected_event", TOOL_SPECS)
@@ -239,6 +266,263 @@ class TestExecuteFlow:
         assert action.action_name == "insert:toc"
         assert action.params["options"]["max_level"] == 2
 
+    # ── Phase 1 execute flow tests ──
+
+    @pytest.mark.asyncio
+    async def test_get_selection_builds_correct_action(self, mock_workspace):
+        """验证 get_selection 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"type": "Normal", "start": 10, "end": 20, "text": "hello"},
+        )
+
+        tool = WordGetSelectionTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "get:selection"
+        assert action.params["document_uri"] == "file:///test.docx"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_get_document_structure_builds_correct_action(self, mock_workspace):
+        """验证 get_document_structure 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"sectionCount": 4, "paragraphCount": 25, "tableCount": 3, "imageCount": 5},
+        )
+
+        tool = WordGetDocumentStructureTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "get:documentStructure"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_get_document_stats_builds_correct_action(self, mock_workspace):
+        """验证 get_document_stats 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"wordCount": 1500, "characterCount": 8500, "paragraphCount": 25},
+        )
+
+        tool = WordGetDocumentStatsTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "get:documentStats"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_get_styles_builds_correct_action(self, mock_workspace):
+        """验证 get_styles 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"styles": [{"name": "Normal"}, {"name": "Heading 1"}]},
+        )
+
+        tool = WordGetStylesTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "options": {"include_built_in": True, "include_unused": False},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "get:styles"
+        assert action.params["options"]["include_built_in"] is True
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_replace_selection_builds_correct_action(self, mock_workspace):
+        """验证 replace_selection 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"replaced": True, "characterCount": 10},
+        )
+
+        tool = WordReplaceSelectionTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "content": {"text": "Replacement text", "format": {"bold": True}},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "replace:selection"
+        assert action.params["content"]["text"] == "Replacement text"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_select_text_builds_correct_action(self, mock_workspace):
+        """验证 select_text 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"matchCount": 3, "selectedIndex": 1, "selectedText": "Hello"},
+        )
+
+        tool = WordSelectTextTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "search_text": "Hello",
+                "search_options": {"match_case": True},
+                "selection_mode": "select",
+                "select_index": 2,
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "select:text"
+        assert action.params["search_text"] == "Hello"
+        assert action.params["search_options"]["match_case"] is True
+        assert action.params["selection_mode"] == "select"
+        assert action.params["select_index"] == 2
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_export_content_builds_correct_action(self, mock_workspace):
+        """验证 export_content 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"content": "# Document Title\n\nParagraph text..."},
+        )
+
+        tool = WordExportContentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "format": "markdown",
+                "options": {"include_images": False, "include_tables": True},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "export:content"
+        assert action.params["format"] == "markdown"
+        assert action.params["options"]["include_images"] is False
+        assert result["success"] is True
+
+    # ── Phase 2 comment execute flow tests ──
+
+    @pytest.mark.asyncio
+    async def test_get_comments_builds_correct_action(self, mock_workspace):
+        """验证 get_comments 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={
+                "comments": [
+                    {"id": "c1", "content": "Fix this", "authorName": "Alice", "resolved": False},
+                ]
+            },
+        )
+
+        tool = WordGetCommentsTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "options": {"include_resolved": True},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "get:comments"
+        assert action.params["options"]["include_resolved"] is True
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_insert_comment_builds_correct_action(self, mock_workspace):
+        """验证 insert_comment 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={})
+
+        tool = WordInsertCommentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "text": "Please review this section",
+                "target": {"type": "searchText", "search_text": "important"},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "insert:comment"
+        assert action.params["text"] == "Please review this section"
+        assert action.params["target"]["type"] == "searchText"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_delete_comment_builds_correct_action(self, mock_workspace):
+        """验证 delete_comment 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={})
+
+        tool = WordDeleteCommentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "comment_id": "comment_123",
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "delete:comment"
+        assert action.params["comment_id"] == "comment_123"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_reply_comment_builds_correct_action(self, mock_workspace):
+        """验证 reply_comment 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={})
+
+        tool = WordReplyCommentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "comment_id": "comment_123",
+                "text": "Done, fixed it",
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "reply:comment"
+        assert action.params["comment_id"] == "comment_123"
+        assert action.params["text"] == "Done, fixed it"
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_resolve_comment_builds_correct_action(self, mock_workspace):
+        """验证 resolve_comment 构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={})
+
+        tool = WordResolveCommentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "comment_id": "comment_123",
+                "resolved": True,
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "resolve:comment"
+        assert action.params["comment_id"] == "comment_123"
+        assert action.params["resolved"] is True
+        assert result["success"] is True
+
 
 # ============================================================================
 # Input Validation Tests
@@ -279,6 +563,52 @@ class TestInputValidation:
                 "replace_text": "b",
             }
         )
+
+        assert result["success"] is False
+        mock_workspace.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_select_text_search_too_long(self, mock_workspace):
+        """测试 select_text 搜索文本超过 255 字符"""
+        tool = WordSelectTextTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "search_text": "a" * 256,
+            }
+        )
+
+        assert result["success"] is False
+        mock_workspace.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_export_content_invalid_format(self, mock_workspace):
+        """测试 export_content 无效的导出格式"""
+        tool = WordExportContentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "format": "pdf",  # not in Literal["text", "html", "markdown"]
+            }
+        )
+
+        assert result["success"] is False
+        mock_workspace.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_delete_comment_missing_comment_id(self, mock_workspace):
+        """测试 delete_comment 缺少 comment_id"""
+        tool = WordDeleteCommentTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is False
+        mock_workspace.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_replace_selection_missing_content(self, mock_workspace):
+        """测试 replace_selection 缺少 content"""
+        tool = WordReplaceSelectionTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
 
         assert result["success"] is False
         mock_workspace.execute.assert_not_called()
@@ -383,3 +713,223 @@ class TestFormatResult:
 
         assert result["success"] is False
         assert "timed out" in result["error"]
+
+    # ── Phase 1 format_result tests ──
+
+    @pytest.mark.asyncio
+    async def test_get_selection_format(self, mock_workspace):
+        """get_selection 返回选区摘要"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"type": "Normal", "start": 10, "end": 20, "text": "hello"},
+        )
+
+        tool = WordGetSelectionTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "Normal" in result["content"]
+        assert "10" in result["content"]
+        assert "20" in result["content"]
+        assert "hello" in result["content"]
+        assert "data" in result
+
+    @pytest.mark.asyncio
+    async def test_get_document_structure_format(self, mock_workspace):
+        """get_document_structure 返回结构摘要"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"sectionCount": 4, "paragraphCount": 25, "tableCount": 3, "imageCount": 5},
+        )
+
+        tool = WordGetDocumentStructureTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "4 sections" in result["content"]
+        assert "25 paragraphs" in result["content"]
+        assert "3 tables" in result["content"]
+        assert "5 images" in result["content"]
+        assert "data" in result
+
+    @pytest.mark.asyncio
+    async def test_get_document_stats_format(self, mock_workspace):
+        """get_document_stats 返回统计摘要"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"wordCount": 1500, "characterCount": 8500, "paragraphCount": 25},
+        )
+
+        tool = WordGetDocumentStatsTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "1500 words" in result["content"]
+        assert "8500 characters" in result["content"]
+        assert "25 paragraphs" in result["content"]
+        assert "data" in result
+
+    @pytest.mark.asyncio
+    async def test_get_styles_format(self, mock_workspace):
+        """get_styles 返回样式名列表"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"styles": [{"name": "Normal"}, {"name": "Heading 1"}, {"name": "Title"}]},
+        )
+
+        tool = WordGetStylesTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "Normal" in result["content"]
+        assert "Heading 1" in result["content"]
+        assert "Title" in result["content"]
+        assert "data" in result
+
+    @pytest.mark.asyncio
+    async def test_get_styles_empty_format(self, mock_workspace):
+        """get_styles 空样式列表"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"styles": []},
+        )
+
+        tool = WordGetStylesTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "No styles found" in result["content"]
+
+    @pytest.mark.asyncio
+    async def test_replace_selection_default_format(self, mock_workspace):
+        """replace_selection 使用默认 format_result"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"replaced": True, "characterCount": 15},
+        )
+
+        tool = WordReplaceSelectionTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "content": {"text": "new text"},
+            }
+        )
+
+        assert result["success"] is True
+        assert result["data"]["replaced"] is True
+
+    @pytest.mark.asyncio
+    async def test_select_text_default_format(self, mock_workspace):
+        """select_text 使用默认 format_result"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"matchCount": 3, "selectedIndex": 1, "selectedText": "Hello"},
+        )
+
+        tool = WordSelectTextTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "search_text": "Hello",
+            }
+        )
+
+        assert result["success"] is True
+        assert result["data"]["matchCount"] == 3
+
+    @pytest.mark.asyncio
+    async def test_export_content_format(self, mock_workspace):
+        """export_content 返回导出内容"""
+        exported = "# Title\n\nThis is the document content."
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"content": exported},
+        )
+
+        tool = WordExportContentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "format": "markdown",
+            }
+        )
+
+        assert result["success"] is True
+        assert result["content"] == exported
+        assert "data" in result
+
+    # ── Phase 2 comment format_result tests ──
+
+    @pytest.mark.asyncio
+    async def test_get_comments_format_with_comments(self, mock_workspace):
+        """get_comments 返回批注摘要"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={
+                "comments": [
+                    {"id": "c1", "content": "Fix typo", "authorName": "Alice", "resolved": False},
+                    {"id": "c2", "content": "Good point", "authorName": "Bob", "resolved": True},
+                ]
+            },
+        )
+
+        tool = WordGetCommentsTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "2 comment(s)" in result["content"]
+        assert "Alice" in result["content"]
+        assert "Fix typo" in result["content"]
+        assert "[resolved]" in result["content"]
+        assert "data" in result
+
+    @pytest.mark.asyncio
+    async def test_get_comments_format_empty(self, mock_workspace):
+        """get_comments 空批注列表"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"comments": []},
+        )
+
+        tool = WordGetCommentsTool(mock_workspace)
+        result = await tool.execute({"document_uri": "file:///test.docx"})
+
+        assert result["success"] is True
+        assert "No comments found" in result["content"]
+
+    @pytest.mark.asyncio
+    async def test_insert_comment_default_format(self, mock_workspace):
+        """insert_comment 使用默认 format_result"""
+        mock_workspace.execute.return_value = OfficeObs(
+            success=True,
+            data={"commentId": "new_comment_123"},
+        )
+
+        tool = WordInsertCommentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "text": "Review needed",
+            }
+        )
+
+        assert result["success"] is True
+        assert result["data"]["commentId"] == "new_comment_123"
+
+    @pytest.mark.asyncio
+    async def test_resolve_comment_default_format(self, mock_workspace):
+        """resolve_comment 使用默认 format_result 且 resolved 默认为 True"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={})
+
+        tool = WordResolveCommentTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "comment_id": "c1",
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.params["resolved"] is True  # default value
+        assert result["success"] is True
