@@ -61,6 +61,9 @@ class DocumentReader:
     提供对测试文档内容的只读访问，用于双重验证。
     通过 python-docx 读取修改后的文档，验证实际内容。
 
+    当 auto_save=True 时，reload() 会先通过 AppleScript 强制 Word 保存文档，
+    确保磁盘文件与 Word 内存中的内容一致。
+
     Example:
         reader = DocumentReader(fixture.working_path)
         assert reader.contains("预期文本")
@@ -68,6 +71,7 @@ class DocumentReader:
     """
 
     path: Path
+    auto_save: bool = True
     _doc: "DocxDocument | None" = field(default=None, repr=False)
 
     @property
@@ -83,8 +87,11 @@ class DocumentReader:
         """
         重新加载文档
 
-        当文档被修改后，调用此方法刷新缓存的 Document 对象。
+        当 auto_save=True 时，先通过 AppleScript 强制 Word 保存文档到磁盘，
+        再重新加载。这解决了 Add-In 修改文档后内存与磁盘不同步的问题。
         """
+        if self.auto_save:
+            save_document(self.path)
         self._doc = None
 
     @property
@@ -407,6 +414,61 @@ def open_document(path: Path) -> subprocess.Popen[bytes] | None:
     except Exception as e:
         print(f"❌ 打开文档失败: {e}")
         return None
+
+
+def save_document(path: Path) -> bool:
+    """
+    强制 Word 保存文档（通过 AppleScript）
+
+    在用 python-docx 读取磁盘文件验证内容之前调用，
+    确保 Word 内存中的修改已写入磁盘。
+
+    Args:
+        path: 文档路径
+
+    Returns:
+        是否成功
+    """
+    system = platform.system()
+
+    if system != "Darwin":
+        print("⚠️  自动保存仅支持 macOS")
+        return False
+
+    try:
+        doc_name = path.name
+        doc_stem = path.stem
+        script = f'''
+        tell application "Microsoft Word"
+            -- 优先精确匹配
+            set targetDocs to (every document whose name is "{doc_name}")
+            if (count of targetDocs) is 0 then
+                set targetDocs to (every document whose name starts with "{doc_stem}")
+            end if
+            repeat with d in targetDocs
+                save d
+            end repeat
+            return count of targetDocs
+        end tell
+        '''
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            saved_count = result.stdout.decode().strip()
+            if saved_count != "0":
+                return True
+            else:
+                print("⚠️  未找到匹配的文档进行保存")
+                return False
+        else:
+            print(f"⚠️  AppleScript 保存错误: {result.stderr.decode()}")
+            return False
+    except Exception as e:
+        print(f"⚠️  保存文档失败: {e}")
+        return False
 
 
 def close_document(path: Path) -> bool:

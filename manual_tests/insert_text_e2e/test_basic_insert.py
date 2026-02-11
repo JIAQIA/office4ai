@@ -201,9 +201,9 @@ async def run_single_test(
             passed = True
 
             if test_case.validator:
+                # DocumentReader 的 reload() 会自动通过 AppleScript 保存文档
+                await asyncio.sleep(0.5)
                 reader = DocumentReader(fixture.working_path)
-                # 等待 Word 保存
-                await asyncio.sleep(1.0)
                 if not _call_validator(test_case.validator, data, reader):
                     passed = False
 
