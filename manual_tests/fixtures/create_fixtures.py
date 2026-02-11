@@ -218,6 +218,93 @@ def create_select_text_fixtures() -> None:
 
 
 # ==============================================================================
+# export_content_e2e fixtures
+# ==============================================================================
+
+
+def create_export_content_fixtures() -> None:
+    """创建 export_content_e2e 所需的 fixture 文件
+
+    复用 get_visible_content_e2e 的文档结构: empty, simple, complex, large。
+    """
+    fixture_dir = FIXTURES_ROOT / "export_content_e2e"
+    fixture_dir.mkdir(parents=True, exist_ok=True)
+
+    # empty.docx
+    doc = Document()
+    doc.save(str(fixture_dir / "empty.docx"))
+
+    # simple.docx — 纯文本 3 段
+    doc = Document()
+    doc.add_paragraph("这是第一段简单文本。用于测试文档导出功能。")
+    doc.add_paragraph("第二段文本在这里。包含一些中文和English混合内容。")
+    doc.add_paragraph("最后一段文本。测试结束。")
+    doc.save(str(fixture_dir / "simple.docx"))
+
+    # complex.docx — 文本 + 表格 + 格式化
+    doc = Document()
+    doc.add_heading("复杂测试文档", level=1)
+    doc.add_paragraph("这是一个包含多种元素的复杂文档。")
+    doc.add_heading("表格示例", level=2)
+
+    table = doc.add_table(rows=3, cols=3)
+    table.style = "Table Grid"
+    for i, row in enumerate(table.rows):
+        for j, cell in enumerate(row.cells):
+            cell.text = f"单元格 {i + 1}-{j + 1}"
+
+    doc.add_heading("格式化文本", level=2)
+    p = doc.add_paragraph()
+    run = p.add_run("粗体文本")
+    run.bold = True
+    p.add_run(" 和 ")
+    run = p.add_run("斜体文本")
+    run.italic = True
+
+    doc.add_paragraph("这是文档的结尾。")
+    doc.save(str(fixture_dir / "complex.docx"))
+
+    # large.docx — 10 页重复内容
+    doc = Document()
+    doc.add_heading("大型测试文档", level=1)
+    para_text = (
+        "这是一段用于填充大型文档的文本。"
+        "我们需要足够多的内容来测试文档导出功能的性能。"
+        "Word 文档可能包含大量的文字、段落和其他元素。"
+        "这个测试旨在验证系统在处理大型文档时的表现。"
+    ) * 5
+    for i in range(30):  # ~10 pages
+        doc.add_paragraph(f"第 {i + 1} 段：{para_text}")
+    doc.save(str(fixture_dir / "large.docx"))
+
+    print(f"  ✅ export_content_e2e: 4 files")
+
+
+# ==============================================================================
+# comment_e2e fixtures
+# ==============================================================================
+
+
+def create_comment_fixtures() -> None:
+    """创建 comment_e2e 所需的 fixture 文件"""
+    fixture_dir = FIXTURES_ROOT / "comment_e2e"
+    fixture_dir.mkdir(parents=True, exist_ok=True)
+
+    # simple.docx — 3 段已知文本（用于搜索定位批注）
+    doc = Document()
+    doc.add_paragraph("这是第一段测试文本。用于批注功能的端到端测试。")
+    doc.add_paragraph("第二段文本包含一些关键词。测试批注定位功能。")
+    doc.add_paragraph("最后一段文本。批注测试结束。")
+    doc.save(str(fixture_dir / "simple.docx"))
+
+    # empty.docx — 空文档
+    doc = Document()
+    doc.save(str(fixture_dir / "empty.docx"))
+
+    print(f"  ✅ comment_e2e: 2 files")
+
+
+# ==============================================================================
 # Main
 # ==============================================================================
 
@@ -246,6 +333,8 @@ def main() -> None:
     create_replace_selection_fixtures()
     create_get_visible_content_fixtures()
     create_select_text_fixtures()
+    create_export_content_fixtures()
+    create_comment_fixtures()
 
     print("\n✅ 全部完成")
 
