@@ -622,7 +622,7 @@ class TestTextFormat:
             fontSize=16,
             fontName="Times New Roman",
             color="#0000FF",
-            underline="single",
+            underline="Single",
             styleName="Heading 1",
         )
 
@@ -631,7 +631,7 @@ class TestTextFormat:
         assert format_options.font_size == 16
         assert format_options.font_name == "Times New Roman"
         assert format_options.color == "#0000FF"
-        assert format_options.underline == "single"
+        assert format_options.underline == "Single"
         assert format_options.style_name == "Heading 1"
 
     def test_partial_format(self) -> None:
@@ -646,16 +646,16 @@ class TestTextFormat:
     def test_format_with_underline_types(self) -> None:
         """Test different underline types"""
         # Single underline
-        format_single = TextFormat(underline="single")
-        assert format_single.underline == "single"
+        format_single = TextFormat(underline="Single")
+        assert format_single.underline == "Single"
 
         # Double underline
-        format_double = TextFormat(underline="double")
-        assert format_double.underline == "double"
+        format_double = TextFormat(underline="Double")
+        assert format_double.underline == "Double"
 
         # Dotted underline
-        format_dotted = TextFormat(underline="dotted")
-        assert format_dotted.underline == "dotted"
+        format_dotted = TextFormat(underline="Dotted")
+        assert format_dotted.underline == "Dotted"
 
     def test_format_with_style_name_only(self) -> None:
         """Test format with only style name (recommended approach)"""
@@ -691,7 +691,7 @@ class TestTextFormat:
             italic=False,
             fontSize=12,
             fontName="Arial",
-            underline="single",
+            underline="Single",
         )
 
         # Convert to dict (as it would be sent over Socket.IO)
@@ -701,7 +701,7 @@ class TestTextFormat:
         assert data["italic"] is False
         assert data["fontSize"] == 12
         assert data["fontName"] == "Arial"
-        assert data["underline"] == "single"
+        assert data["underline"] == "Single"
         # None values should be excluded with exclude_none=True
         assert "color" not in data
         assert "styleName" not in data
@@ -714,7 +714,7 @@ class TestTextFormat:
                 "italic": True,
                 "fontSize": 14,
                 "color": "#FF0000",
-                "underline": "double",
+                "underline": "Double",
                 "styleName": "Normal",
             }
         )
@@ -723,7 +723,7 @@ class TestTextFormat:
         assert format_options.italic is True
         assert format_options.font_size == 14
         assert format_options.color == "#FF0000"
-        assert format_options.underline == "double"
+        assert format_options.underline == "Double"
         assert format_options.style_name == "Normal"
 
 

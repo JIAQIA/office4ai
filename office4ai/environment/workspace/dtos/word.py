@@ -633,10 +633,15 @@ class TextFormat(SocketIOBaseModel):
         alias="color",
         description="Font color (hex)",
     )
-    underline: str | None = Field(
+    underline: Literal[
+        "Mixed", "None", "Hidden", "DotLine", "Single", "Word", "Double",
+        "Thick", "Dotted", "DottedHeavy", "DashLine", "DashLineHeavy",
+        "DashLineLong", "DashLineLongHeavy", "DotDashLine", "DotDashLineHeavy",
+        "TwoDotDashLine", "TwoDotDashLineHeavy", "Wave", "WaveHeavy", "WaveDouble",
+    ] | None = Field(
         default=None,
         alias="underline",
-        description="Underline type (e.g., 'single', 'double', 'dotted')",
+        description="Underline type (Word.UnderlineType)",
     )
     style_name: str | None = Field(
         default=None,
