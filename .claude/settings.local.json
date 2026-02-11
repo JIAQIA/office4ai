@@ -12,7 +12,8 @@
       "Bash(uv run pytest:*)",
       "Bash(poe lint-fix:*)",
       "Bash(find:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(uv run python:*)"
     ]
   }
 }
