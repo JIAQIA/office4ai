@@ -427,10 +427,22 @@ def close_document(path: Path) -> bool:
     try:
         if system == "Darwin":  # macOS
             # 使用文档名称匹配（而非路径，因为 Word 返回 HFS 格式路径）
+            # 先尝试精确匹配完整文件名，失败则用 stem 做 contains 匹配
+            # （兼容 Word 可能省略扩展名或追加 [Compatibility Mode] 等后缀的情况）
             doc_name = path.name
+            doc_stem = path.stem
             script = f'''
             tell application "Microsoft Word"
-                close (every document whose name is "{doc_name}") saving no
+                -- 优先精确匹配
+                set targetDocs to (every document whose name is "{doc_name}")
+                if (count of targetDocs) is 0 then
+                    -- 降级: stem 前缀匹配 (无扩展名场景)
+                    set targetDocs to (every document whose name starts with "{doc_stem}")
+                end if
+                repeat with d in targetDocs
+                    close d saving no
+                end repeat
+                return count of targetDocs
             end tell
             '''
             result = subprocess.run(
@@ -439,7 +451,8 @@ def close_document(path: Path) -> bool:
                 timeout=5,
             )
             if result.returncode == 0:
-                print(f"📕 已关闭文档: {doc_name}")
+                closed_count = result.stdout.decode().strip()
+                print(f"📕 已关闭文档: {doc_name} ({closed_count} matched)")
                 return True
             else:
                 print(f"⚠️  AppleScript 返回错误: {result.stderr.decode()}")
@@ -538,12 +551,13 @@ tell application "System Events"
         end if
 
         -- 使用 entire contents 扁平搜索「加载项」按钮
+        -- 使用 contains 匹配以兼容不同语言 (中文「加载项」/ English "Add-ins"/"Add-Ins")
         set allElems to entire contents of tg
         repeat with elem in allElems
             try
                 if role of elem is "AXButton" then
                     set eName to name of elem
-                    if eName is "加载项" or eName is "Add-ins" then
+                    if eName contains "加载项" or eName contains "Add-in" then
                         click elem
                         return "ok"
                     end if

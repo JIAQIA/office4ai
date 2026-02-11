@@ -33,6 +33,8 @@ class SocketIOConfig(BaseModel):
         "https://127.0.0.1:3003",
         # Capacitor/Electron
         "capacitor://localhost",
+        # 线上部署的 Add-In taskpane (连接本地 Socket.IO 服务器)
+        "https://office4ai.turingfocus.cn",
     ]
 
     # Engine.IO settings
