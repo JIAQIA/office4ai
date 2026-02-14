@@ -80,8 +80,8 @@ class OfficeWorkspace(BaseWorkspace):
             self.sio_server = socketio.AsyncServer(
                 async_mode="aiohttp",
                 cors_allowed_origins=self.config.cors_allowed_origins,
-                ping_timeout=self.config.ping_timeout,
-                ping_interval=self.config.ping_interval,
+                ping_timeout=self.config.ping_timeout // 1000,
+                ping_interval=self.config.ping_interval // 1000,
                 max_http_buffer_size=self.config.max_http_buffer_size,
                 logger=self.config.logger,
                 engineio_logger=self.config.engineio_logger,
@@ -317,7 +317,7 @@ class OfficeWorkspace(BaseWorkspace):
         # 使用 Socket.IO 的 .call() 方法（自动处理 callback）
         try:
             response: dict[str, Any] = await self.sio_server.call(
-                event, wrapped_data, to=socket_id, namespace=client_info.namespace, timeout=10.0
+                event, wrapped_data, to=socket_id, namespace=client_info.namespace, timeout=self.config.request_timeout // 1000
             )
             logger.info(f"Received response from {socket_id}")
             return response

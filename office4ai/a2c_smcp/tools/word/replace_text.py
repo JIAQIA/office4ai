@@ -7,7 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from office4ai.a2c_smcp.tools.base import BaseTool
-from office4ai.environment.workspace.dtos.word import ReplaceOptions
+from office4ai.environment.workspace.dtos.word import ReplaceOptions, TextFormat
 
 
 class WordReplaceTextInput(BaseModel):
@@ -24,6 +24,10 @@ class WordReplaceTextInput(BaseModel):
         None,
         description="Replace options (matchCase, matchWholeWord, replaceAll)",
     )
+    format: TextFormat | None = Field(
+        None,
+        description="Text formatting to apply to the replaced text (bold, italic, fontSize, etc.)",
+    )
 
 
 class WordReplaceTextTool(BaseTool):
@@ -39,7 +43,9 @@ class WordReplaceTextTool(BaseTool):
             "Find and replace text in a Word document (equivalent to Ctrl+H). "
             "Searches for the specified text and replaces it with the replacement text. "
             "Supports options for case sensitivity, whole word matching, and replacing all occurrences. "
-            "Search text is limited to 255 characters by the Word.js API."
+            "Search text is limited to 255 characters by the Word.js API. "
+            "To apply formatting to existing text, use this tool with the same text for both searchText and replaceText, "
+            "and provide the desired format options."
         )
 
     @property

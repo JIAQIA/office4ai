@@ -229,6 +229,204 @@ async def test_replace_text_with_options(
 
 @pytest.mark.asyncio
 @pytest.mark.contract
+async def test_replace_text_with_format(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+    word_factory,
+):
+    """
+    测试带格式信息的文本替换（为已有文本添加格式）。
+
+    测试步骤：
+    1. 创建 Mock Add-In 客户端
+    2. 注册响应并验证 format 字段正确传递
+    3. 连接到 Workspace
+    4. Workspace 发送带 format 的 word:replace:text 命令
+    5. 验证 format 数据正确传递到 Mock 客户端
+    """
+    # Arrange
+    expected_format = {
+        "bold": True,
+        "color": "#FF0000",
+        "fontSize": 16,
+    }
+
+    def response_with_format_validation(request: dict) -> dict:
+        """验证 format 字段的响应工厂"""
+        # 验证 format 正确传递
+        assert "format" in request, "format field should be present in request"
+        actual_format = request["format"]
+        assert actual_format["bold"] is True
+        assert actual_format["color"] == "#FF0000"
+        assert actual_format["fontSize"] == 16
+
+        return {
+            "requestId": request["requestId"],
+            "success": True,
+            "data": word_factory.replace_text_response(replace_count=3),
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        }
+
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/contract_test.docx",
+    )
+
+    client.register_response("word:replace:text", response_with_format_validation)
+    await client.connect()
+
+    try:
+        # Act: 使用相同文本 + format 实现"为已有文本添加格式"
+        action = OfficeAction(
+            category="word",
+            action_name="replace:text",
+            params={
+                "document_uri": client.document_uri,
+                "searchText": "important",
+                "replaceText": "important",
+                "format": expected_format,
+                "options": {"replaceAll": True},
+            },
+        )
+        result = await workspace.execute(action)
+
+        # Assert
+        assert result.success is True, f"Expected success, got error: {result.error}"
+        assert result.data["replaceCount"] == 3
+
+        # 验证 Mock 客户端接收到了带 format 的请求
+        assert len(client.received_events) == 1
+        event_name, event_data = client.received_events[0]
+        assert event_name == "word:replace:text"
+        assert event_data["searchText"] == "important"
+        assert event_data["replaceText"] == "important"
+        assert event_data["format"]["bold"] is True
+        assert event_data["format"]["color"] == "#FF0000"
+    finally:
+        await client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
+async def test_replace_text_with_style_name_format(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+    word_factory,
+):
+    """
+    测试使用 styleName 格式化文本。
+
+    测试步骤：
+    1. 创建 Mock Add-In 客户端
+    2. 注册响应并验证 styleName 正确传递
+    3. 连接到 Workspace
+    4. 验证 styleName 数据正确传递
+    """
+    # Arrange
+    def response_with_style_validation(request: dict) -> dict:
+        """验证 styleName 的响应工厂"""
+        assert "format" in request
+        assert request["format"]["styleName"] == "Heading 1"
+
+        return {
+            "requestId": request["requestId"],
+            "success": True,
+            "data": word_factory.replace_text_response(replace_count=1),
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        }
+
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/contract_test.docx",
+    )
+
+    client.register_response("word:replace:text", response_with_style_validation)
+    await client.connect()
+
+    try:
+        # Act
+        action = OfficeAction(
+            category="word",
+            action_name="replace:text",
+            params={
+                "document_uri": client.document_uri,
+                "searchText": "Chapter Title",
+                "replaceText": "Chapter Title",
+                "format": {"styleName": "Heading 1"},
+            },
+        )
+        result = await workspace.execute(action)
+
+        # Assert
+        assert result.success is True
+        assert result.data["replaceCount"] == 1
+    finally:
+        await client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
+async def test_replace_text_without_format(
+    workspace: OfficeWorkspace,
+    mock_word_client_factory,
+    word_factory,
+):
+    """
+    测试不带 format 字段的替换（向后兼容）。
+
+    验证 format 字段为可选，不提供时不影响原有功能。
+    """
+    # Arrange
+    def response_without_format(request: dict) -> dict:
+        """验证无 format 字段的响应工厂"""
+        # format 应该不存在或为 None
+        fmt = request.get("format")
+        assert fmt is None, f"Expected format to be None, got {fmt}"
+
+        return {
+            "requestId": request["requestId"],
+            "success": True,
+            "data": word_factory.replace_text_response(replace_count=2),
+            "timestamp": int(asyncio.get_event_loop().time() * 1000),
+        }
+
+    client = mock_word_client_factory(
+        server_url="http://127.0.0.1:3003",
+        namespace="/word",
+        client_id="contract_test_word_client",
+        document_uri="file:///tmp/contract_test.docx",
+    )
+
+    client.register_response("word:replace:text", response_without_format)
+    await client.connect()
+
+    try:
+        # Act: 不提供 format
+        action = OfficeAction(
+            category="word",
+            action_name="replace:text",
+            params={
+                "document_uri": client.document_uri,
+                "searchText": "old",
+                "replaceText": "new",
+                "options": {"replaceAll": True},
+            },
+        )
+        result = await workspace.execute(action)
+
+        # Assert
+        assert result.success is True
+        assert result.data["replaceCount"] == 2
+    finally:
+        await client.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.contract
 async def test_replace_text_missing_param_error(
     workspace: OfficeWorkspace,
     mock_word_client_factory,

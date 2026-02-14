@@ -442,6 +442,11 @@ class WordReplaceTextRequest(BaseRequest):
         alias="options",
         description="Replace options",
     )
+    format: Optional["TextFormat"] = Field(
+        default=None,
+        alias="format",
+        description="Text formatting to apply to the replaced text",
+    )
 
 
 class WordSelectTextRequest(BaseRequest):

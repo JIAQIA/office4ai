@@ -79,7 +79,33 @@ def create_replace_text_fixtures() -> None:
 
     doc.save(str(fixture_dir / "replace_targets.docx"))
 
-    print(f"  ✅ replace_text_e2e: 1 file")
+    # format_targets.docx — 用于格式化替换测试
+    doc = Document()
+    doc.add_heading("Format Replace Test Document", level=1)
+
+    # 用于测试粗体格式化
+    for i in range(3):
+        doc.add_paragraph(f"Mark this important text as bold ({i + 1}).")
+
+    # 用于测试斜体格式化
+    for i in range(3):
+        doc.add_paragraph(f"This emphasis text should be italic ({i + 1}).")
+
+    # 用于测试颜色格式化
+    for i in range(3):
+        doc.add_paragraph(f"Warning: this alert text needs color ({i + 1}).")
+
+    # 用于测试 styleName 格式化
+    doc.add_paragraph("Chapter One Introduction")
+    doc.add_paragraph("Chapter Two Methods")
+
+    # 用于测试组合格式
+    for i in range(2):
+        doc.add_paragraph(f"Critical notice requiring combined formatting ({i + 1}).")
+
+    doc.save(str(fixture_dir / "format_targets.docx"))
+
+    print(f"  ✅ replace_text_e2e: 2 files")
 
 
 # ==============================================================================

@@ -881,7 +881,8 @@ class E2ETestRunner:
             finally:
                 # 先关闭文档，让 Add-In 断开连接
                 # 这样 workspace.stop() 就不用等待连接超时
-                if self.auto_open and not fixture.document_closed:
+                # 如果 cleanup_on_success=False，保留文档供人工检查
+                if self.auto_open and not fixture.document_closed and fixture.cleanup_on_success:
                     close_document(fixture.working_path)
                     fixture.document_closed = True
                     await asyncio.sleep(0.5)  # 等待 Add-In 断开
