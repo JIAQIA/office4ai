@@ -6,6 +6,8 @@ Office Workspace Implementation
 
 import asyncio
 import logging
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -15,9 +17,22 @@ from aiohttp import web
 from .base import BaseWorkspace, DocumentStatus, OfficeAction, OfficeObs
 from .socketio.config import SocketIOConfig, default_config
 from .socketio.namespaces.word import WordNamespace
-from .socketio.services.connection_manager import connection_manager
+from .socketio.services.connection_manager import connection_manager, normalize_document_uri
 
 logger = logging.getLogger(__name__)
+
+# Tool names whose results populate the caches
+_VISIBLE_CONTENT_TOOLS = {"word_get_visible_content"}
+_STRUCTURE_TOOLS = {"word_get_document_structure"}
+
+
+@dataclass
+class LastActivity:
+    """Records the most recent tool activity on a document."""
+
+    document_uri: str
+    tool_name: str
+    timestamp: float = field(default_factory=time.time)
 
 
 class OfficeWorkspace(BaseWorkspace):
@@ -65,6 +80,50 @@ class OfficeWorkspace(BaseWorkspace):
         # 运行状态
         self._running = False
 
+        # 活动追踪 | Activity tracking
+        self._last_activity: LastActivity | None = None
+        self._content_cache: dict[str, str] = {}  # document_uri → visible content
+        self._structure_cache: dict[str, str] = {}  # document_uri → document structure
+
+    # ── 活动追踪 API | Activity tracking API ──
+
+    def update_last_activity(self, document_uri: str, tool_name: str, result_data: dict[str, Any]) -> None:
+        """
+        Record the latest tool activity and optionally cache content/structure.
+
+        Called by BaseTool after a successful workspace.execute().
+        """
+        document_uri = normalize_document_uri(document_uri)
+        self._last_activity = LastActivity(document_uri=document_uri, tool_name=tool_name)
+
+        # Extract text content from result_data for caching
+        content_text = result_data.get("content") if isinstance(result_data, dict) else None
+
+        if tool_name in _VISIBLE_CONTENT_TOOLS and isinstance(content_text, str):
+            self._content_cache[document_uri] = content_text
+
+        if tool_name in _STRUCTURE_TOOLS and isinstance(content_text, str):
+            self._structure_cache[document_uri] = content_text
+
+    def get_last_activity(self) -> LastActivity | None:
+        """Return the most recent activity, or None."""
+        return self._last_activity
+
+    def get_cached_content(self, document_uri: str) -> str | None:
+        """Return cached visible content for a document, or None."""
+        return self._content_cache.get(normalize_document_uri(document_uri))
+
+    def get_cached_structure(self, document_uri: str) -> str | None:
+        """Return cached document structure for a document, or None."""
+        return self._structure_cache.get(normalize_document_uri(document_uri))
+
+    def _clear_document_cache(self, document_uri: str) -> None:
+        """Remove all cached data for a disconnected document."""
+        self._content_cache.pop(document_uri, None)
+        self._structure_cache.pop(document_uri, None)
+        if self._last_activity and self._last_activity.document_uri == document_uri:
+            self._last_activity = None
+
     async def start(self) -> None:
         """
         启动 Workspace Socket.IO 服务器
@@ -76,6 +135,9 @@ class OfficeWorkspace(BaseWorkspace):
             return
 
         try:
+            # 注册断连回调清理缓存 | Register disconnect callback to clear caches
+            connection_manager.register_disconnect_callback(self._clear_document_cache)
+
             # 创建 Socket.IO 服务器
             self.sio_server = socketio.AsyncServer(
                 async_mode="aiohttp",

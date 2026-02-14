@@ -7,7 +7,9 @@
 """MCP 资源集合 | MCP resources."""
 
 from office4ai.a2c_smcp.resources.base import BaseResource
+from office4ai.a2c_smcp.resources.window import WindowResource
 
 __all__ = [
     "BaseResource",
+    "WindowResource",
 ]

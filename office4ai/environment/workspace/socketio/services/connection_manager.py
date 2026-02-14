@@ -8,6 +8,7 @@ This is the core routing component for Workspace → Add-In communication.
 import logging
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from urllib.parse import unquote, urlparse
 
@@ -97,7 +98,14 @@ class ConnectionManager:
         # client_id → socket_id (for tracking unique clients)
         self._client_id_to_socket: dict[str, str] = {}
 
+        # Disconnect callbacks: called with (document_uri,) when a document has no more connections
+        self._on_document_disconnect: list[Callable[[str], None]] = []
+
         logger.info("ConnectionManager initialized")
+
+    def register_disconnect_callback(self, callback: Callable[[str], None]) -> None:
+        """Register a callback invoked when a document loses all connections."""
+        self._on_document_disconnect.append(callback)
 
     def register_client(
         self,
@@ -170,6 +178,12 @@ class ConnectionManager:
             if not self._document_to_sockets[client_info.document_uri]:
                 # No more connections for this document
                 del self._document_to_sockets[client_info.document_uri]
+                # Notify listeners that this document is fully disconnected
+                for cb in self._on_document_disconnect:
+                    try:
+                        cb(client_info.document_uri)
+                    except Exception:
+                        logger.exception("Error in disconnect callback")
 
         logger.info(f"Client unregistered: {client_info.client_id} ({socket_id}) for {client_info.document_uri}")
 
