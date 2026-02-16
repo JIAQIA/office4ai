@@ -16,6 +16,7 @@ from socketio import AsyncServer  # type: ignore[import-untyped]
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
 from office4ai.environment.workspace.socketio.config import SocketIOConfig
 from office4ai.environment.workspace.socketio.server import create_socketio_server
+from tests.contract_tests.factories.ppt_factories import PptDataFactory
 from tests.contract_tests.factories.word_factories import WordDataFactory
 from tests.contract_tests.mock_addin.client import MockAddInClient
 
@@ -70,6 +71,12 @@ async def mock_word_client_factory() -> type[MockAddInClient]:
 def word_factory() -> WordDataFactory:
     """Word 数据工厂。"""
     return WordDataFactory()
+
+
+@pytest.fixture
+def ppt_factory() -> PptDataFactory:
+    """PPT 数据工厂。"""
+    return PptDataFactory()
 
 
 @pytest_asyncio.fixture
