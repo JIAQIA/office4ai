@@ -13,7 +13,11 @@
       "Bash(poe lint-fix:*)",
       "Bash(find:*)",
       "Bash(python:*)",
-      "Bash(uv run python:*)"
+      "Bash(uv run python:*)",
+      "Bash(poe test:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/jqq/A2C-SMCP/oasp-protocol"
     ]
   }
 }

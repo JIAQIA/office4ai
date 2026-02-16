@@ -54,11 +54,11 @@ class TestMCPProtocol:
 
                 # 获取工具列表 | Get tools list
                 tools_result = await session.list_tools()
-                assert len(tools_result.tools) == 21  # 21 个 Word 工具
+                assert len(tools_result.tools) == 42  # 21 Word + 21 PPT
 
                 # 验证工具名称前缀 | Verify tool name prefix
                 tool_names = {t.name for t in tools_result.tools}
-                assert all(name.startswith("word_") for name in tool_names)
+                assert all(name.startswith(("word_", "ppt_")) for name in tool_names)
 
     async def test_list_resources(self):
         """测试 list_resources 返回已注册资源 | Test list_resources returns registered resources"""
@@ -74,10 +74,12 @@ class TestMCPProtocol:
 
                 # 获取资源列表 | Get resources list
                 resources_result = await session.list_resources()
-                assert len(resources_result.resources) == 1  # ConnectedDocuments
+                assert len(resources_result.resources) == 2  # ConnectedDocuments + WindowResource
 
-                # 验证资源 URI | Verify resource URI
-                assert resources_result.resources[0].uri == AnyUrl("office://workspace/documents")
+                # 验证资源 URI | Verify resource URIs
+                resource_uris = {str(r.uri) for r in resources_result.resources}
+                assert "office://workspace/documents" in resource_uris
+                assert any(uri.startswith("window://office4ai") for uri in resource_uris)
 
     async def test_call_tool_not_found(self):
         """测试调用不存在的工具 | Test calling non-existent tool"""

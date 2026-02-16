@@ -49,9 +49,7 @@ class TestWindowResourceRead:
 
     @pytest.mark.asyncio
     async def test_read_no_documents(self, resource: WindowResource) -> None:
-        with patch(
-            "office4ai.a2c_smcp.resources.window.connection_manager"
-        ) as mock_cm:
+        with patch("office4ai.a2c_smcp.resources.window.connection_manager") as mock_cm:
             mock_cm.get_all_clients.return_value = []
             content = await resource.read()
 
@@ -76,9 +74,7 @@ class TestWindowResourceRead:
                 connected_at=time.time(),
             ),
         ]
-        with patch(
-            "office4ai.a2c_smcp.resources.window.connection_manager"
-        ) as mock_cm:
+        with patch("office4ai.a2c_smcp.resources.window.connection_manager") as mock_cm:
             mock_cm.get_all_clients.return_value = clients
             content = await resource.read()
 
@@ -107,9 +103,7 @@ class TestWindowResourceRead:
                 connected_at=time.time(),
             ),
         ]
-        with patch(
-            "office4ai.a2c_smcp.resources.window.connection_manager"
-        ) as mock_cm:
+        with patch("office4ai.a2c_smcp.resources.window.connection_manager") as mock_cm:
             mock_cm.get_all_clients.return_value = clients
             content = await resource.read()
 

@@ -98,7 +98,64 @@ class OfficeMCPServer(BaseMCPServer):
 
         logger.info(f"已注册 {len(word_tools)} 个 Word 工具 | Registered {len(word_tools)} Word tools")
 
-        # PPT 工具 (未来) | PPT tools (future)
+        from office4ai.a2c_smcp.tools.ppt import (
+            PptAddSlideTool,
+            PptDeleteElementTool,
+            PptDeleteSlideTool,
+            PptGetCurrentSlideElementsTool,
+            PptGetSlideElementsTool,
+            PptGetSlideInfoTool,
+            PptGetSlideLayoutsTool,
+            PptGetSlideScreenshotTool,
+            PptGotoSlideTool,
+            PptInsertImageTool,
+            PptInsertShapeTool,
+            PptInsertTableTool,
+            PptInsertTextTool,
+            PptMoveSlideTool,
+            PptReorderElementTool,
+            PptUpdateElementTool,
+            PptUpdateImageTool,
+            PptUpdateTableCellTool,
+            PptUpdateTableFormatTool,
+            PptUpdateTableRowColumnTool,
+            PptUpdateTextBoxTool,
+        )
+
+        ppt_tools = [
+            # Content retrieval tools
+            PptGetCurrentSlideElementsTool(self.workspace),
+            PptGetSlideElementsTool(self.workspace),
+            PptGetSlideScreenshotTool(self.workspace),
+            PptGetSlideInfoTool(self.workspace),
+            PptGetSlideLayoutsTool(self.workspace),
+            # Content insertion tools
+            PptInsertTextTool(self.workspace),
+            PptInsertImageTool(self.workspace),
+            PptInsertTableTool(self.workspace),
+            PptInsertShapeTool(self.workspace),
+            # Update operation tools
+            PptUpdateTextBoxTool(self.workspace),
+            PptUpdateImageTool(self.workspace),
+            PptUpdateTableCellTool(self.workspace),
+            PptUpdateTableRowColumnTool(self.workspace),
+            PptUpdateTableFormatTool(self.workspace),
+            PptUpdateElementTool(self.workspace),
+            # Delete & layout tools
+            PptDeleteElementTool(self.workspace),
+            PptReorderElementTool(self.workspace),
+            # Slide management tools
+            PptAddSlideTool(self.workspace),
+            PptDeleteSlideTool(self.workspace),
+            PptMoveSlideTool(self.workspace),
+            PptGotoSlideTool(self.workspace),
+        ]
+
+        for tool in ppt_tools:
+            self.tools[tool.name] = tool
+
+        logger.info(f"已注册 {len(ppt_tools)} 个 PPT 工具 | Registered {len(ppt_tools)} PPT tools")
+
         # Excel 工具 (未来) | Excel tools (future)
 
     def _register_resources(self) -> None:

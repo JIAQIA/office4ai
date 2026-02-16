@@ -324,6 +324,7 @@ async def test_replace_text_with_style_name_format(
     3. 连接到 Workspace
     4. 验证 styleName 数据正确传递
     """
+
     # Arrange
     def response_with_style_validation(request: dict) -> dict:
         """验证 styleName 的响应工厂"""
@@ -380,6 +381,7 @@ async def test_replace_text_without_format(
 
     验证 format 字段为可选，不提供时不影响原有功能。
     """
+
     # Arrange
     def response_without_format(request: dict) -> dict:
         """验证无 format 字段的响应工厂"""

@@ -55,10 +55,12 @@ class WindowResource(BaseResource):
 
     @property
     def uri(self) -> str:
-        query = urlencode({
-            "priority": str(self._priority),
-            "fullscreen": "true" if self._fullscreen else "false",
-        })
+        query = urlencode(
+            {
+                "priority": str(self._priority),
+                "fullscreen": "true" if self._fullscreen else "false",
+            }
+        )
         return f"window://office4ai?{query}"
 
     @property

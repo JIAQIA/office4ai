@@ -250,6 +250,239 @@ class TextBoxUpdates(BaseModel):
     italic: bool | None = Field(default=None, description="Italic text")
 
 
+class PptGetSlideInfoRequest(BaseRequest):
+    """
+    Request to get presentation/slide basic info.
+    """
+
+    event_name: ClassVar[str] = "ppt:get:slideInfo"
+
+    slideIndex: int | None = Field(default=None, description="Slide index (0-based), optional", ge=0)
+
+
+class SlideLayoutsOptions(BaseModel):
+    """
+    Options for slide layouts retrieval.
+    """
+
+    includePlaceholders: bool = Field(default=True, description="Include placeholder details")
+
+
+class PptGetSlideLayoutsRequest(BaseRequest):
+    """
+    Request to get available slide layout templates.
+    """
+
+    event_name: ClassVar[str] = "ppt:get:slideLayouts"
+
+    options: Optional["SlideLayoutsOptions"] = Field(default=None, description="Layouts retrieval options")
+
+
+class ImageUpdateOptions(BaseModel):
+    """
+    Options for image update.
+    """
+
+    keepDimensions: bool = Field(default=True, description="Keep original dimensions")
+    width: float | None = Field(default=None, description="New width (points)")
+    height: float | None = Field(default=None, description="New height (points)")
+
+
+class PptUpdateImageRequest(BaseRequest):
+    """
+    Request to replace image content in PowerPoint slide.
+    """
+
+    event_name: ClassVar[str] = "ppt:update:image"
+
+    elementId: str = Field(..., description="Image element ID to update")
+    image: "SlideImageData" = Field(..., description="New image data")
+    options: Optional["ImageUpdateOptions"] = Field(default=None, description="Update options")
+
+
+class TableCellUpdate(BaseModel):
+    """
+    Single table cell update.
+    """
+
+    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
+    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    text: str = Field(..., description="New text content")
+
+
+class PptUpdateTableCellRequest(BaseRequest):
+    """
+    Request to update specific table cells.
+    """
+
+    event_name: ClassVar[str] = "ppt:update:tableCell"
+
+    elementId: str = Field(..., description="Table element ID")
+    cells: list["TableCellUpdate"] = Field(..., description="Cells to update", min_length=1)
+
+
+class RowUpdate(BaseModel):
+    """
+    Row-level batch update.
+    """
+
+    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
+    values: list[str] = Field(..., description="Values for each column in the row")
+
+
+class ColumnUpdate(BaseModel):
+    """
+    Column-level batch update.
+    """
+
+    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    values: list[str] = Field(..., description="Values for each row in the column")
+
+
+class PptUpdateTableRowColumnRequest(BaseRequest):
+    """
+    Request to batch update table by row or column.
+    """
+
+    event_name: ClassVar[str] = "ppt:update:tableRowColumn"
+
+    elementId: str = Field(..., description="Table element ID")
+    rows: list["RowUpdate"] | None = Field(default=None, description="Row updates")
+    columns: list["ColumnUpdate"] | None = Field(default=None, description="Column updates")
+
+
+class CellFormat(BaseModel):
+    """
+    Format for a specific table cell.
+    """
+
+    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
+    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    backgroundColor: str | None = Field(default=None, description="Background color (hex)")
+    fontSize: int | None = Field(default=None, description="Font size")
+    fontColor: str | None = Field(default=None, description="Font color (hex)")
+    bold: bool | None = Field(default=None, description="Bold text")
+    italic: bool | None = Field(default=None, description="Italic text")
+    horizontalAlignment: Literal["Left", "Center", "Right"] | None = Field(
+        default=None, description="Horizontal alignment"
+    )
+    verticalAlignment: Literal["Top", "Middle", "Bottom"] | None = Field(default=None, description="Vertical alignment")
+
+
+class RowFormat(BaseModel):
+    """
+    Format for a table row.
+    """
+
+    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
+    height: float | None = Field(default=None, description="Row height (points)")
+    backgroundColor: str | None = Field(default=None, description="Background color (hex)")
+    fontSize: int | None = Field(default=None, description="Font size")
+
+
+class ColumnFormat(BaseModel):
+    """
+    Format for a table column.
+    """
+
+    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    width: float | None = Field(default=None, description="Column width (points)")
+    backgroundColor: str | None = Field(default=None, description="Background color (hex)")
+    fontSize: int | None = Field(default=None, description="Font size")
+
+
+class PptUpdateTableFormatRequest(BaseRequest):
+    """
+    Request to update table formatting.
+    """
+
+    event_name: ClassVar[str] = "ppt:update:tableFormat"
+
+    elementId: str = Field(..., description="Table element ID")
+    cellFormats: list["CellFormat"] | None = Field(default=None, description="Cell-level formats")
+    rowFormats: list["RowFormat"] | None = Field(default=None, description="Row-level formats")
+    columnFormats: list["ColumnFormat"] | None = Field(default=None, description="Column-level formats")
+
+
+class ElementUpdates(BaseModel):
+    """
+    Geometric property updates for an element.
+    """
+
+    left: float | None = Field(default=None, description="New X position (points)")
+    top: float | None = Field(default=None, description="New Y position (points)")
+    width: float | None = Field(default=None, description="New width (points)")
+    height: float | None = Field(default=None, description="New height (points)")
+    rotation: float | None = Field(default=None, description="New rotation angle (degrees, 0-360)")
+
+
+class PptUpdateElementRequest(BaseRequest):
+    """
+    Request to update element position/size/rotation.
+    """
+
+    event_name: ClassVar[str] = "ppt:update:element"
+
+    elementId: str = Field(..., description="Element ID to update")
+    slideIndex: int | None = Field(default=None, description="Slide index (0-based)", ge=0)
+    updates: "ElementUpdates" = Field(..., description="Geometric updates")
+
+
+class PptDeleteElementRequest(BaseRequest):
+    """
+    Request to delete element(s) from a slide.
+    """
+
+    event_name: ClassVar[str] = "ppt:delete:element"
+
+    elementId: str | None = Field(default=None, description="Single element ID to delete")
+    elementIds: list[str] | None = Field(default=None, description="Batch element IDs to delete")
+    slideIndex: int | None = Field(default=None, description="Slide index (0-based)", ge=0)
+
+
+class PptReorderElementRequest(BaseRequest):
+    """
+    Request to adjust element z-order.
+    """
+
+    event_name: ClassVar[str] = "ppt:reorder:element"
+
+    elementId: str = Field(..., description="Element ID to reorder")
+    slideIndex: int | None = Field(default=None, description="Slide index (0-based)", ge=0)
+    action: Literal["bringToFront", "sendToBack", "bringForward", "sendBackward"] = Field(
+        ..., description="Reorder action"
+    )
+
+
+class AddSlideOptions(BaseModel):
+    """
+    Options for adding a new slide.
+    """
+
+    insertIndex: int | None = Field(default=None, description="Insert position index (0-based)", ge=0)
+    layout: str | None = Field(default=None, description="Layout name (e.g. 'Title Slide', 'Blank')")
+
+
+class PptAddSlideRequest(BaseRequest):
+    """
+    Request to add a new slide.
+    """
+
+    event_name: ClassVar[str] = "ppt:add:slide"
+
+    options: Optional["AddSlideOptions"] = Field(default=None, description="Slide options")
+
+
+class PptGotoSlideRequest(BaseRequest):
+    """
+    Request to jump to a specific slide.
+    """
+
+    event_name: ClassVar[str] = "ppt:goto:slide"
+
+    slideIndex: int = Field(..., description="Target slide index (0-based)", ge=0)
+
+
 # Resolve forward references
 SlideElementsOptions.model_rebuild()
 ScreenshotOptions.model_rebuild()
@@ -259,3 +492,13 @@ ElementInsertOptions.model_rebuild()
 SlideTableInsertOptions.model_rebuild()
 ShapeInsertOptions.model_rebuild()
 TextBoxUpdates.model_rebuild()
+SlideLayoutsOptions.model_rebuild()
+ImageUpdateOptions.model_rebuild()
+TableCellUpdate.model_rebuild()
+RowUpdate.model_rebuild()
+ColumnUpdate.model_rebuild()
+CellFormat.model_rebuild()
+RowFormat.model_rebuild()
+ColumnFormat.model_rebuild()
+ElementUpdates.model_rebuild()
+AddSlideOptions.model_rebuild()

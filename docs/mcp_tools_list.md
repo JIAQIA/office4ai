@@ -50,37 +50,53 @@
 
 ---
 
-## PowerPoint Tools (10 个)
+## PowerPoint Tools (21 个)
 
-### 内容获取类 (3 个)
+### 内容获取类 (5 个)
 
 | MCP 工具名称 | Socket.IO 事件 | 功能描述 |
 |-------------|---------------|----------|
 | `ppt_get_current_slide_elements` | `ppt:get:currentSlideElements` | 获取当前页元素 |
 | `ppt_get_slide_elements` | `ppt:get:slideElements` | 获取指定页元素 |
 | `ppt_get_slide_screenshot` | `ppt:get:slideScreenshot` | 获取幻灯片截图 |
+| `ppt_get_slide_info` | `ppt:get:slideInfo` | 获取演示文稿/幻灯片基本信息 |
+| `ppt_get_slide_layouts` | `ppt:get:slideLayouts` | 获取可用幻灯片版式列表 |
 
 ### 内容插入类 (4 个)
 
 | MCP 工具名称 | Socket.IO 事件 | 功能描述 |
 |-------------|---------------|----------|
-| `ppt_insert_text` | `ppt:insert:text` | 插入文本 |
+| `ppt_insert_text` | `ppt:insert:text` | 插入文本框 |
 | `ppt_insert_image` | `ppt:insert:image` | 插入图片 |
 | `ppt_insert_table` | `ppt:insert:table` | 插入表格 |
 | `ppt_insert_shape` | `ppt:insert:shape` | 插入形状 |
 
-### 幻灯片管理类 (2 个)
+### 更新操作类 (6 个)
 
 | MCP 工具名称 | Socket.IO 事件 | 功能描述 |
 |-------------|---------------|----------|
+| `ppt_update_text_box` | `ppt:update:textBox` | 更新文本框内容/样式 |
+| `ppt_update_image` | `ppt:update:image` | 替换图片内容 |
+| `ppt_update_table_cell` | `ppt:update:tableCell` | 更新表格单元格 |
+| `ppt_update_table_row_column` | `ppt:update:tableRowColumn` | 按行/列批量更新表格 |
+| `ppt_update_table_format` | `ppt:update:tableFormat` | 更新表格样式格式 |
+| `ppt_update_element` | `ppt:update:element` | 更新元素位置/尺寸/旋转 |
+
+### 删除与布局类 (2 个)
+
+| MCP 工具名称 | Socket.IO 事件 | 功能描述 |
+|-------------|---------------|----------|
+| `ppt_delete_element` | `ppt:delete:element` | 删除元素 |
+| `ppt_reorder_element` | `ppt:reorder:element` | 调整元素层叠顺序 |
+
+### 幻灯片管理类 (4 个)
+
+| MCP 工具名称 | Socket.IO 事件 | 功能描述 |
+|-------------|---------------|----------|
+| `ppt_add_slide` | `ppt:add:slide` | 添加幻灯片 |
 | `ppt_delete_slide` | `ppt:delete:slide` | 删除幻灯片 |
 | `ppt_move_slide` | `ppt:move:slide` | 移动幻灯片 |
-
-### 更新操作类 (1 个)
-
-| MCP 工具名称 | Socket.IO 事件 | 功能描述 |
-|-------------|---------------|----------|
-| `ppt_update_text_box` | `ppt:update:textBox` | 更新文本框 |
+| `ppt_goto_slide` | `ppt:goto:slide` | 跳转到幻灯片 |
 
 ---
 
@@ -100,9 +116,9 @@
 | 类别 | 工具数量 | 对应 TypeScript 文件 |
 |------|---------|---------------------|
 | Word | 13 | `word-editor4ai/src/word-tools/` |
-| PowerPoint | 10 | `ppt-editor4ai/` (待确认路径) |
+| PowerPoint | 21 | `ppt-editor4ai/` (待确认路径) |
 | Excel | 4 | `excel-editor4ai/` (待确认路径) |
-| **总计** | **27** | |
+| **总计** | **38** | |
 
 ---
 
@@ -120,7 +136,7 @@ office4ai/a2c_smcp/tools/
 ├── ppt/
 │   ├── get_current_slide_elements.py  # ppt_get_current_slide_elements
 │   ├── insert_text.py                  # ppt_insert_text
-│   └── ... (其余 8 个)
+│   └── ... (其余 19 个)
 └── excel/
     ├── get_selected_range.py       # excel_get_selected_range
     ├── set_cell_value.py           # excel_set_cell_value

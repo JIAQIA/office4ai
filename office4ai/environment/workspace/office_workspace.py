@@ -379,7 +379,11 @@ class OfficeWorkspace(BaseWorkspace):
         # 使用 Socket.IO 的 .call() 方法（自动处理 callback）
         try:
             response: dict[str, Any] = await self.sio_server.call(
-                event, wrapped_data, to=socket_id, namespace=client_info.namespace, timeout=self.config.request_timeout // 1000
+                event,
+                wrapped_data,
+                to=socket_id,
+                namespace=client_info.namespace,
+                timeout=self.config.request_timeout // 1000,
             )
             logger.info(f"Received response from {socket_id}")
             return response
