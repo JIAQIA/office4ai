@@ -362,6 +362,11 @@ def main() -> None:
     create_export_content_fixtures()
     create_comment_fixtures()
 
+    # PPT fixtures
+    from manual_tests.fixtures.create_ppt_fixtures import create_all_ppt_fixtures
+
+    create_all_ppt_fixtures()
+
     print("\n✅ 全部完成")
 
 
