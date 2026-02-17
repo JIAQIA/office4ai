@@ -2,13 +2,19 @@
 PowerPoint Socket.IO DTOs
 
 Defines data structures for PowerPoint-specific Socket.IO events.
+
+Field naming convention (aligned with Word DTOs):
+- Python field names: snake_case (PEP 8)
+- Wire format aliases: camelCase (OASP protocol)
+- populate_by_name=True: accept both snake_case and camelCase on input
+- model_dump(by_alias=True): always output camelCase for Socket.IO transmission
 """
 
 from typing import ClassVar, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from .common import BaseRequest
+from .common import BaseRequest, SocketIOBaseModel
 
 # ============================================================================
 # Content Retrieval DTOs
@@ -32,7 +38,7 @@ class PptGetSlideElementsRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:get:slideElements"
 
-    slideIndex: int = Field(..., description="Slide index (0-based)", ge=0)
+    slide_index: int = Field(..., alias="slideIndex", description="Slide index (0-based)", ge=0)
     options: Optional["SlideElementsOptions"] = Field(default=None, description="Elements retrieval options")
 
 
@@ -43,23 +49,23 @@ class PptGetSlideScreenshotRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:get:slideScreenshot"
 
-    slideIndex: int = Field(..., description="Slide index (0-based)", ge=0)
+    slide_index: int = Field(..., alias="slideIndex", description="Slide index (0-based)", ge=0)
     options: Optional["ScreenshotOptions"] = Field(default=None, description="Screenshot options")
 
 
-class SlideElementsOptions(BaseModel):
+class SlideElementsOptions(SocketIOBaseModel):
     """
     Options for slide elements retrieval.
     """
 
-    includeText: bool = Field(default=True, description="Include text elements")
-    includeImages: bool = Field(default=True, description="Include image elements")
-    includeShapes: bool = Field(default=True, description="Include shape elements")
-    includeTables: bool = Field(default=True, description="Include table elements")
-    includeCharts: bool = Field(default=True, description="Include chart elements")
+    include_text: bool = Field(default=True, alias="includeText", description="Include text elements")
+    include_images: bool = Field(default=True, alias="includeImages", description="Include image elements")
+    include_shapes: bool = Field(default=True, alias="includeShapes", description="Include shape elements")
+    include_tables: bool = Field(default=True, alias="includeTables", description="Include table elements")
+    include_charts: bool = Field(default=True, alias="includeCharts", description="Include chart elements")
 
 
-class ScreenshotOptions(BaseModel):
+class ScreenshotOptions(SocketIOBaseModel):
     """
     Screenshot generation options.
     """
@@ -112,7 +118,7 @@ class PptInsertShapeRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:insert:shape"
 
-    shapeType: Literal[
+    shape_type: Literal[
         "Rectangle",
         "RoundedRectangle",
         "Circle",
@@ -125,27 +131,27 @@ class PptInsertShapeRequest(BaseRequest):
         "Arrow",
         "Star",
         "TextBox",
-    ] = Field(..., description="Shape type")
+    ] = Field(..., alias="shapeType", description="Shape type")
     options: Optional["ShapeInsertOptions"] = Field(default=None, description="Insertion options")
 
 
-class TextInsertOptions(BaseModel):
+class TextInsertOptions(SocketIOBaseModel):
     """
     Text insertion options.
     """
 
-    slideIndex: int | None = Field(default=None, description="Slide index (default: current)")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (default: current)")
     left: float | None = Field(default=None, description="Left position (points)")
     top: float | None = Field(default=None, description="Top position (points)")
     width: float | None = Field(default=None, description="Width (points)")
     height: float | None = Field(default=None, description="Height (points)")
-    fontSize: int | None = Field(default=None, description="Font size")
-    fontName: str | None = Field(default=None, description="Font name")
+    font_size: int | None = Field(default=None, alias="fontSize", description="Font size")
+    font_name: str | None = Field(default=None, alias="fontName", description="Font name")
     color: str | None = Field(default=None, description="Font color (hex)")
-    fillColor: str | None = Field(default=None, description="Fill color (hex)")
+    fill_color: str | None = Field(default=None, alias="fillColor", description="Fill color (hex)")
 
 
-class SlideImageData(BaseModel):
+class SlideImageData(SocketIOBaseModel):
     """
     Image data for slide insertion.
     """
@@ -153,44 +159,44 @@ class SlideImageData(BaseModel):
     base64: str = Field(..., description="Base64 encoded image")
 
 
-class ElementInsertOptions(BaseModel):
+class ElementInsertOptions(SocketIOBaseModel):
     """
     Common element insertion options.
     """
 
-    slideIndex: int | None = Field(default=None, description="Slide index (default: current)")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (default: current)")
     left: float | None = Field(default=None, description="Left position (points)")
     top: float | None = Field(default=None, description="Top position (points)")
     width: float | None = Field(default=None, description="Width (points)")
     height: float | None = Field(default=None, description="Height (points)")
 
 
-class SlideTableInsertOptions(BaseModel):
+class SlideTableInsertOptions(SocketIOBaseModel):
     """
     Table insertion options for slides.
     """
 
     rows: int = Field(..., description="Number of rows", ge=1)
     columns: int = Field(..., description="Number of columns", ge=1)
-    slideIndex: int | None = Field(default=None, description="Slide index (default: current)")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (default: current)")
     left: float | None = Field(default=None, description="Left position (points)")
     top: float | None = Field(default=None, description="Top position (points)")
     data: list[list[str]] | None = Field(default=None, description="Table data")
 
 
-class ShapeInsertOptions(BaseModel):
+class ShapeInsertOptions(SocketIOBaseModel):
     """
     Shape insertion options.
     """
 
-    slideIndex: int | None = Field(default=None, description="Slide index (default: current)")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (default: current)")
     left: float | None = Field(default=None, description="Left position (points)")
     top: float | None = Field(default=None, description="Top position (points)")
     width: float | None = Field(default=None, description="Width (points)")
     height: float | None = Field(default=None, description="Height (points)")
-    fillColor: str | None = Field(default=None, description="Fill color (hex)")
-    borderColor: str | None = Field(default=None, description="Border color (hex)")
-    borderWidth: float | None = Field(default=None, description="Border width (points)")
+    fill_color: str | None = Field(default=None, alias="fillColor", description="Fill color (hex)")
+    border_color: str | None = Field(default=None, alias="borderColor", description="Border color (hex)")
+    border_width: float | None = Field(default=None, alias="borderWidth", description="Border width (points)")
     text: str | None = Field(default=None, description="Shape text")
 
 
@@ -206,7 +212,7 @@ class PptDeleteSlideRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:delete:slide"
 
-    slideIndex: int = Field(..., description="Slide index (0-based)", ge=0)
+    slide_index: int = Field(..., alias="slideIndex", description="Slide index (0-based)", ge=0)
 
 
 class PptMoveSlideRequest(BaseRequest):
@@ -216,8 +222,8 @@ class PptMoveSlideRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:move:slide"
 
-    fromIndex: int = Field(..., description="Current slide index (0-based)", ge=0)
-    toIndex: int = Field(..., description="Target slide index (0-based)", ge=0)
+    from_index: int = Field(..., alias="fromIndex", description="Current slide index (0-based)", ge=0)
+    to_index: int = Field(..., alias="toIndex", description="Target slide index (0-based)", ge=0)
 
 
 # ============================================================================
@@ -232,20 +238,20 @@ class PptUpdateTextBoxRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:update:textBox"
 
-    elementId: str = Field(..., description="Element ID to update")
+    element_id: str = Field(..., alias="elementId", description="Element ID to update")
     updates: "TextBoxUpdates" = Field(..., description="Updates to apply")
 
 
-class TextBoxUpdates(BaseModel):
+class TextBoxUpdates(SocketIOBaseModel):
     """
     Text box update fields.
     """
 
     text: str | None = Field(default=None, description="New text content")
-    fontSize: int | None = Field(default=None, description="Font size")
-    fontName: str | None = Field(default=None, description="Font name")
+    font_size: int | None = Field(default=None, alias="fontSize", description="Font size")
+    font_name: str | None = Field(default=None, alias="fontName", description="Font name")
     color: str | None = Field(default=None, description="Font color (hex)")
-    fillColor: str | None = Field(default=None, description="Fill color (hex)")
+    fill_color: str | None = Field(default=None, alias="fillColor", description="Fill color (hex)")
     bold: bool | None = Field(default=None, description="Bold text")
     italic: bool | None = Field(default=None, description="Italic text")
 
@@ -257,15 +263,19 @@ class PptGetSlideInfoRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:get:slideInfo"
 
-    slideIndex: int | None = Field(default=None, description="Slide index (0-based), optional", ge=0)
+    slide_index: int | None = Field(
+        default=None, alias="slideIndex", description="Slide index (0-based), optional", ge=0
+    )
 
 
-class SlideLayoutsOptions(BaseModel):
+class SlideLayoutsOptions(SocketIOBaseModel):
     """
     Options for slide layouts retrieval.
     """
 
-    includePlaceholders: bool = Field(default=True, description="Include placeholder details")
+    include_placeholders: bool = Field(
+        default=True, alias="includePlaceholders", description="Include placeholder details"
+    )
 
 
 class PptGetSlideLayoutsRequest(BaseRequest):
@@ -278,12 +288,12 @@ class PptGetSlideLayoutsRequest(BaseRequest):
     options: Optional["SlideLayoutsOptions"] = Field(default=None, description="Layouts retrieval options")
 
 
-class ImageUpdateOptions(BaseModel):
+class ImageUpdateOptions(SocketIOBaseModel):
     """
     Options for image update.
     """
 
-    keepDimensions: bool = Field(default=True, description="Keep original dimensions")
+    keep_dimensions: bool = Field(default=True, alias="keepDimensions", description="Keep original dimensions")
     width: float | None = Field(default=None, description="New width (points)")
     height: float | None = Field(default=None, description="New height (points)")
 
@@ -295,18 +305,18 @@ class PptUpdateImageRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:update:image"
 
-    elementId: str = Field(..., description="Image element ID to update")
+    element_id: str = Field(..., alias="elementId", description="Image element ID to update")
     image: "SlideImageData" = Field(..., description="New image data")
     options: Optional["ImageUpdateOptions"] = Field(default=None, description="Update options")
 
 
-class TableCellUpdate(BaseModel):
+class TableCellUpdate(SocketIOBaseModel):
     """
     Single table cell update.
     """
 
-    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
-    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    row_index: int = Field(..., alias="rowIndex", description="Row index (0-based)", ge=0)
+    column_index: int = Field(..., alias="columnIndex", description="Column index (0-based)", ge=0)
     text: str = Field(..., description="New text content")
 
 
@@ -317,25 +327,25 @@ class PptUpdateTableCellRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:update:tableCell"
 
-    elementId: str = Field(..., description="Table element ID")
+    element_id: str = Field(..., alias="elementId", description="Table element ID")
     cells: list["TableCellUpdate"] = Field(..., description="Cells to update", min_length=1)
 
 
-class RowUpdate(BaseModel):
+class RowUpdate(SocketIOBaseModel):
     """
     Row-level batch update.
     """
 
-    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
+    row_index: int = Field(..., alias="rowIndex", description="Row index (0-based)", ge=0)
     values: list[str] = Field(..., description="Values for each column in the row")
 
 
-class ColumnUpdate(BaseModel):
+class ColumnUpdate(SocketIOBaseModel):
     """
     Column-level batch update.
     """
 
-    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    column_index: int = Field(..., alias="columnIndex", description="Column index (0-based)", ge=0)
     values: list[str] = Field(..., description="Values for each row in the column")
 
 
@@ -346,49 +356,51 @@ class PptUpdateTableRowColumnRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:update:tableRowColumn"
 
-    elementId: str = Field(..., description="Table element ID")
+    element_id: str = Field(..., alias="elementId", description="Table element ID")
     rows: list["RowUpdate"] | None = Field(default=None, description="Row updates")
     columns: list["ColumnUpdate"] | None = Field(default=None, description="Column updates")
 
 
-class CellFormat(BaseModel):
+class CellFormat(SocketIOBaseModel):
     """
     Format for a specific table cell.
     """
 
-    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
-    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
-    backgroundColor: str | None = Field(default=None, description="Background color (hex)")
-    fontSize: int | None = Field(default=None, description="Font size")
-    fontColor: str | None = Field(default=None, description="Font color (hex)")
+    row_index: int = Field(..., alias="rowIndex", description="Row index (0-based)", ge=0)
+    column_index: int = Field(..., alias="columnIndex", description="Column index (0-based)", ge=0)
+    background_color: str | None = Field(default=None, alias="backgroundColor", description="Background color (hex)")
+    font_size: int | None = Field(default=None, alias="fontSize", description="Font size")
+    font_color: str | None = Field(default=None, alias="fontColor", description="Font color (hex)")
     bold: bool | None = Field(default=None, description="Bold text")
     italic: bool | None = Field(default=None, description="Italic text")
-    horizontalAlignment: Literal["Left", "Center", "Right"] | None = Field(
-        default=None, description="Horizontal alignment"
+    horizontal_alignment: Literal["Left", "Center", "Right"] | None = Field(
+        default=None, alias="horizontalAlignment", description="Horizontal alignment"
     )
-    verticalAlignment: Literal["Top", "Middle", "Bottom"] | None = Field(default=None, description="Vertical alignment")
+    vertical_alignment: Literal["Top", "Middle", "Bottom"] | None = Field(
+        default=None, alias="verticalAlignment", description="Vertical alignment"
+    )
 
 
-class RowFormat(BaseModel):
+class RowFormat(SocketIOBaseModel):
     """
     Format for a table row.
     """
 
-    rowIndex: int = Field(..., description="Row index (0-based)", ge=0)
+    row_index: int = Field(..., alias="rowIndex", description="Row index (0-based)", ge=0)
     height: float | None = Field(default=None, description="Row height (points)")
-    backgroundColor: str | None = Field(default=None, description="Background color (hex)")
-    fontSize: int | None = Field(default=None, description="Font size")
+    background_color: str | None = Field(default=None, alias="backgroundColor", description="Background color (hex)")
+    font_size: int | None = Field(default=None, alias="fontSize", description="Font size")
 
 
-class ColumnFormat(BaseModel):
+class ColumnFormat(SocketIOBaseModel):
     """
     Format for a table column.
     """
 
-    columnIndex: int = Field(..., description="Column index (0-based)", ge=0)
+    column_index: int = Field(..., alias="columnIndex", description="Column index (0-based)", ge=0)
     width: float | None = Field(default=None, description="Column width (points)")
-    backgroundColor: str | None = Field(default=None, description="Background color (hex)")
-    fontSize: int | None = Field(default=None, description="Font size")
+    background_color: str | None = Field(default=None, alias="backgroundColor", description="Background color (hex)")
+    font_size: int | None = Field(default=None, alias="fontSize", description="Font size")
 
 
 class PptUpdateTableFormatRequest(BaseRequest):
@@ -398,13 +410,15 @@ class PptUpdateTableFormatRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:update:tableFormat"
 
-    elementId: str = Field(..., description="Table element ID")
-    cellFormats: list["CellFormat"] | None = Field(default=None, description="Cell-level formats")
-    rowFormats: list["RowFormat"] | None = Field(default=None, description="Row-level formats")
-    columnFormats: list["ColumnFormat"] | None = Field(default=None, description="Column-level formats")
+    element_id: str = Field(..., alias="elementId", description="Table element ID")
+    cell_formats: list["CellFormat"] | None = Field(default=None, alias="cellFormats", description="Cell-level formats")
+    row_formats: list["RowFormat"] | None = Field(default=None, alias="rowFormats", description="Row-level formats")
+    column_formats: list["ColumnFormat"] | None = Field(
+        default=None, alias="columnFormats", description="Column-level formats"
+    )
 
 
-class ElementUpdates(BaseModel):
+class ElementUpdates(SocketIOBaseModel):
     """
     Geometric property updates for an element.
     """
@@ -423,8 +437,8 @@ class PptUpdateElementRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:update:element"
 
-    elementId: str = Field(..., description="Element ID to update")
-    slideIndex: int | None = Field(default=None, description="Slide index (0-based)", ge=0)
+    element_id: str = Field(..., alias="elementId", description="Element ID to update")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (0-based)", ge=0)
     updates: "ElementUpdates" = Field(..., description="Geometric updates")
 
 
@@ -435,9 +449,9 @@ class PptDeleteElementRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:delete:element"
 
-    elementId: str | None = Field(default=None, description="Single element ID to delete")
-    elementIds: list[str] | None = Field(default=None, description="Batch element IDs to delete")
-    slideIndex: int | None = Field(default=None, description="Slide index (0-based)", ge=0)
+    element_id: str | None = Field(default=None, alias="elementId", description="Single element ID to delete")
+    element_ids: list[str] | None = Field(default=None, alias="elementIds", description="Batch element IDs to delete")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (0-based)", ge=0)
 
 
 class PptReorderElementRequest(BaseRequest):
@@ -447,19 +461,21 @@ class PptReorderElementRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:reorder:element"
 
-    elementId: str = Field(..., description="Element ID to reorder")
-    slideIndex: int | None = Field(default=None, description="Slide index (0-based)", ge=0)
+    element_id: str = Field(..., alias="elementId", description="Element ID to reorder")
+    slide_index: int | None = Field(default=None, alias="slideIndex", description="Slide index (0-based)", ge=0)
     action: Literal["bringToFront", "sendToBack", "bringForward", "sendBackward"] = Field(
         ..., description="Reorder action"
     )
 
 
-class AddSlideOptions(BaseModel):
+class AddSlideOptions(SocketIOBaseModel):
     """
     Options for adding a new slide.
     """
 
-    insertIndex: int | None = Field(default=None, description="Insert position index (0-based)", ge=0)
+    insert_index: int | None = Field(
+        default=None, alias="insertIndex", description="Insert position index (0-based)", ge=0
+    )
     layout: str | None = Field(default=None, description="Layout name (e.g. 'Title Slide', 'Blank')")
 
 
@@ -480,7 +496,7 @@ class PptGotoSlideRequest(BaseRequest):
 
     event_name: ClassVar[str] = "ppt:goto:slide"
 
-    slideIndex: int = Field(..., description="Target slide index (0-based)", ge=0)
+    slide_index: int = Field(..., alias="slideIndex", description="Target slide index (0-based)", ge=0)
 
 
 # Resolve forward references

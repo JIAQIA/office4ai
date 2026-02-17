@@ -53,6 +53,8 @@ uv run python test_basic_insert.py --test 4
 
 # 运行所有测试
 uv run python test_basic_insert.py --test all
+# 如果在项目根目录
+uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
 ```
 
 ---

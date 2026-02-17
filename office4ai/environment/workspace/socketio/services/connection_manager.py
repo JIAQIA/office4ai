@@ -20,46 +20,50 @@ def normalize_document_uri(uri: str) -> str:
     Normalize a document URI for consistent matching.
 
     Handles:
-    1. URL decoding (e.g., %2F → /)
-    2. Symlink resolution (e.g., /var → /private/var on macOS)
-    3. Path normalization
+    1. Plain file paths (e.g., /Users/foo/doc.docx → file:///Users/foo/doc.docx)
+    2. URL decoding (e.g., %2F → /)
+    3. Symlink resolution (e.g., /var → /private/var on macOS)
+    4. Path normalization
 
     Args:
-        uri: Document URI (e.g., file:///path/to/doc.docx)
+        uri: Document URI (e.g., file:///path/to/doc.docx) or plain path (e.g., /path/to/doc.docx)
 
     Returns:
-        Normalized URI
+        Normalized file:// URI
     """
-    if not uri.startswith("file://"):
-        return uri
-
-    try:
-        # Parse the URI
-        parsed = urlparse(uri)
-
-        # URL-decode the path
-        path = unquote(parsed.path)
-
-        # On file:// URIs, the path might have an extra leading slash on some systems
-        # e.g., file:///var/... or file:////var/... (Windows UNC paths)
-        if path.startswith("//"):
-            path = path[1:]
-
-        # Resolve symlinks and normalize the path
+    if uri.startswith("file://"):
         try:
-            # Use os.path.realpath to resolve symlinks
-            # This handles /var → /private/var on macOS
-            real_path = os.path.realpath(path)
-        except OSError:
-            # If path doesn't exist, just normalize it
-            real_path = os.path.normpath(path)
+            # Parse the URI
+            parsed = urlparse(uri)
 
-        # Reconstruct the URI
-        return f"file://{real_path}"
+            # URL-decode the path
+            path = unquote(parsed.path)
 
-    except Exception as e:
-        logger.warning(f"Failed to normalize URI '{uri}': {e}")
+            # On file:// URIs, the path might have an extra leading slash on some systems
+            # e.g., file:///var/... or file:////var/... (Windows UNC paths)
+            if path.startswith("//"):
+                path = path[1:]
+        except Exception as e:
+            logger.warning(f"Failed to parse URI '{uri}': {e}")
+            return uri
+    elif uri.startswith("/"):
+        # Plain absolute file path — normalize to file:// URI
+        path = uri
+    else:
+        # Non-file URI (http://, etc.) — return as-is
         return uri
+
+    # Resolve symlinks and normalize the path
+    try:
+        # Use os.path.realpath to resolve symlinks
+        # This handles /var → /private/var on macOS
+        real_path = os.path.realpath(path)
+    except OSError:
+        # If path doesn't exist, just normalize it
+        real_path = os.path.normpath(path)
+
+    # Reconstruct the URI
+    return f"file://{real_path}"
 
 
 @dataclass

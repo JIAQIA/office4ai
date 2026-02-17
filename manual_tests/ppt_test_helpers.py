@@ -18,22 +18,16 @@ PPT 共享测试辅助函数
         ppt_update_text_box,
         ppt_update_element,
     )
+
+NOTE: params dict keys use snake_case matching DTO field names.
+      DTOs have populate_by_name=True so both snake_case and camelCase are accepted.
+      Only "document_uri" is special-cased by wrap_request() and removed before DTO validation.
 """
 
 from typing import Any
 
 from office4ai.environment.workspace.base import OfficeAction
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
-
-# ==============================================================================
-# 日志工具
-# ==============================================================================
-
-
-def _log(emoji: str, message: str) -> None:
-    """统一的日志格式"""
-    print(f"\n{emoji} {message}")
-
 
 # ==============================================================================
 # 返回类型

@@ -16,6 +16,7 @@ from aiohttp import web
 
 from .base import BaseWorkspace, DocumentStatus, OfficeAction, OfficeObs
 from .socketio.config import SocketIOConfig, default_config
+from .socketio.namespaces.ppt import PptNamespace
 from .socketio.namespaces.word import WordNamespace
 from .socketio.services.connection_manager import connection_manager, normalize_document_uri
 
@@ -151,7 +152,9 @@ class OfficeWorkspace(BaseWorkspace):
 
             # 注册命名空间
             word_namespace = WordNamespace()
+            ppt_namespace = PptNamespace()
             self.sio_server.register_namespace(word_namespace)
+            self.sio_server.register_namespace(ppt_namespace)
 
             logger.info("Socket.IO Server created")
             logger.info(f"Namespaces: {', '.join(self.config.namespaces)}")

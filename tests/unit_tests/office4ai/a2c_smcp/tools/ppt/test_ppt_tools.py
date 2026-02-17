@@ -147,8 +147,8 @@ class TestExecuteFlow:
         assert action.category == "ppt"
         assert action.action_name == "get:slideElements"
         assert action.params["slideIndex"] == 2
-        assert action.params["options"]["includeText"] is True
-        assert action.params["options"]["includeImages"] is False
+        assert action.params["options"]["include_text"] is True
+        assert action.params["options"]["include_images"] is False
 
     @pytest.mark.asyncio
     async def test_get_slide_screenshot_action(self, mock_workspace):
@@ -210,7 +210,7 @@ class TestExecuteFlow:
         action = mock_workspace.execute.call_args[0][0]
         assert action.category == "ppt"
         assert action.action_name == "get:slideLayouts"
-        assert action.params["options"]["includePlaceholders"] is True
+        assert action.params["options"]["include_placeholders"] is True
 
     @pytest.mark.asyncio
     async def test_insert_text_action(self, mock_workspace):
@@ -230,7 +230,7 @@ class TestExecuteFlow:
         assert action.category == "ppt"
         assert action.action_name == "insert:text"
         assert action.params["text"] == "Hello PPT"
-        assert action.params["options"]["slideIndex"] == 0
+        assert action.params["options"]["slide_index"] == 0
 
     @pytest.mark.asyncio
     async def test_insert_image_action(self, mock_workspace):
@@ -293,7 +293,7 @@ class TestExecuteFlow:
         assert action.category == "ppt"
         assert action.action_name == "insert:shape"
         assert action.params["shapeType"] == "RoundedRectangle"
-        assert action.params["options"]["fillColor"] == "#4472C4"
+        assert action.params["options"]["fill_color"] == "#4472C4"
 
     @pytest.mark.asyncio
     async def test_update_text_box_action(self, mock_workspace):
@@ -336,7 +336,7 @@ class TestExecuteFlow:
         assert action.action_name == "update:image"
         assert action.params["elementId"] == "shape-025"
         assert action.params["image"]["base64"] == "newBase64Data=="
-        assert action.params["options"]["keepDimensions"] is True
+        assert action.params["options"]["keep_dimensions"] is True
 
     @pytest.mark.asyncio
     async def test_update_table_cell_action(self, mock_workspace):
@@ -503,7 +503,7 @@ class TestExecuteFlow:
         action = mock_workspace.execute.call_args[0][0]
         assert action.category == "ppt"
         assert action.action_name == "add:slide"
-        assert action.params["options"]["insertIndex"] == 2
+        assert action.params["options"]["insert_index"] == 2
         assert action.params["options"]["layout"] == "Title Slide"
 
     @pytest.mark.asyncio
