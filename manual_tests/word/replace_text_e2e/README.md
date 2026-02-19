@@ -35,17 +35,17 @@ replace_text_e2e/
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/replace_text_e2e/test_basic_replace.py --test 1
-uv run python manual_tests/replace_text_e2e/test_basic_replace.py --test 2
+uv run python manual_tests/word/replace_text_e2e/test_basic_replace.py --test 1
+uv run python manual_tests/word/replace_text_e2e/test_basic_replace.py --test 2
 # ... 其他测试
 
 # 运行所有测试
-uv run python manual_tests/replace_text_e2e/test_basic_replace.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_basic_replace.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
-cd manual_tests/replace_text_e2e
+cd manual_tests/word/replace_text_e2e
 
 # 运行单个测试
 uv run python test_basic_replace.py --test 1
@@ -73,15 +73,15 @@ uv run python test_basic_replace.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行单个测试
-uv run python manual_tests/replace_text_e2e/test_options_replace.py --test 1
+uv run python manual_tests/word/replace_text_e2e/test_options_replace.py --test 1
 
 # 运行所有测试
-uv run python manual_tests/replace_text_e2e/test_options_replace.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_options_replace.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_text_e2e
+cd manual_tests/word/replace_text_e2e
 
 # 运行单个测试
 uv run python test_options_replace.py --test 1
@@ -108,15 +108,15 @@ uv run python test_options_replace.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行单个测试
-uv run python manual_tests/replace_text_e2e/test_edge_cases.py --test 1
+uv run python manual_tests/word/replace_text_e2e/test_edge_cases.py --test 1
 
 # 运行所有测试
-uv run python manual_tests/replace_text_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_edge_cases.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_text_e2e
+cd manual_tests/word/replace_text_e2e
 
 # 运行单个测试
 uv run python test_edge_cases.py --test 1
@@ -173,18 +173,18 @@ uv run python test_edge_cases.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行基础替换测试 1
-uv run python manual_tests/replace_text_e2e/test_basic_replace.py --test 1
+uv run python manual_tests/word/replace_text_e2e/test_basic_replace.py --test 1
 
 # 运行选项参数测试 1
-uv run python manual_tests/replace_text_e2e/test_options_replace.py --test 1
+uv run python manual_tests/word/replace_text_e2e/test_options_replace.py --test 1
 
 # 运行边界情况测试 1
-uv run python manual_tests/replace_text_e2e/test_edge_cases.py --test 1
+uv run python manual_tests/word/replace_text_e2e/test_edge_cases.py --test 1
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_text_e2e
+cd manual_tests/word/replace_text_e2e
 
 # 运行基础替换测试 1
 uv run python test_basic_replace.py --test 1
@@ -201,18 +201,18 @@ uv run python test_edge_cases.py --test 1
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行所有基础替换测试（6个）
-uv run python manual_tests/replace_text_e2e/test_basic_replace.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_basic_replace.py --test all
 
 # 运行所有选项参数测试（5个）
-uv run python manual_tests/replace_text_e2e/test_options_replace.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_options_replace.py --test all
 
 # 运行所有边界情况测试（4个）
-uv run python manual_tests/replace_text_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_edge_cases.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_text_e2e
+cd manual_tests/word/replace_text_e2e
 
 # 运行所有基础替换测试
 uv run python test_basic_replace.py --test all
@@ -231,18 +231,18 @@ uv run python test_edge_cases.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 1. 基础替换
-uv run python manual_tests/replace_text_e2e/test_basic_replace.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_basic_replace.py --test all
 
 # 2. 选项参数
-uv run python manual_tests/replace_text_e2e/test_options_replace.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_options_replace.py --test all
 
 # 3. 边界情况
-uv run python manual_tests/replace_text_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/replace_text_e2e/test_edge_cases.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_text_e2e
+cd manual_tests/word/replace_text_e2e
 
 # 1. 基础替换
 uv run python test_basic_replace.py --test all

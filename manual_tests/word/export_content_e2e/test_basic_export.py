@@ -10,9 +10,9 @@ Basic Export Content E2E Tests (自动化版本)
 4. 空文档导出 — format=text, 验证 success=True, content 为空或极短
 
 运行方式:
-    uv run python manual_tests/export_content_e2e/test_basic_export.py --test 1
-    uv run python manual_tests/export_content_e2e/test_basic_export.py --test all
-    uv run python manual_tests/export_content_e2e/test_basic_export.py --list
+    uv run python manual_tests/word/export_content_e2e/test_basic_export.py --test 1
+    uv run python manual_tests/word/export_content_e2e/test_basic_export.py --test all
+    uv run python manual_tests/word/export_content_e2e/test_basic_export.py --list
 """
 
 import asyncio

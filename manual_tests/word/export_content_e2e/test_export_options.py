@@ -9,9 +9,9 @@ Export Content Options E2E Tests (自动化版本)
 3. 大文档性能 — 大文档以 text 格式导出，验证执行时间和 content 长度
 
 运行方式:
-    uv run python manual_tests/export_content_e2e/test_export_options.py --test 1
-    uv run python manual_tests/export_content_e2e/test_export_options.py --test all
-    uv run python manual_tests/export_content_e2e/test_export_options.py --list
+    uv run python manual_tests/word/export_content_e2e/test_export_options.py --test 1
+    uv run python manual_tests/word/export_content_e2e/test_export_options.py --test all
+    uv run python manual_tests/word/export_content_e2e/test_export_options.py --list
 """
 
 import asyncio

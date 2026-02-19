@@ -9,9 +9,9 @@ Comment Target E2E Tests (自动化版本)
 3. 搜索不存在文本 — target={type:"searchText", searchText:"不存在的文本"}
 
 运行方式:
-    uv run python manual_tests/comment_e2e/test_comment_target.py --test 1
-    uv run python manual_tests/comment_e2e/test_comment_target.py --test all
-    uv run python manual_tests/comment_e2e/test_comment_target.py --list
+    uv run python manual_tests/word/comment_e2e/test_comment_target.py --test 1
+    uv run python manual_tests/word/comment_e2e/test_comment_target.py --test all
+    uv run python manual_tests/word/comment_e2e/test_comment_target.py --list
 """
 
 import asyncio

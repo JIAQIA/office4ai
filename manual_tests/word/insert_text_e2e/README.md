@@ -31,19 +31,19 @@ insert_text_e2e/
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test 1
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test 2
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test 3
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test 4
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test 1
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test 2
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test 3
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test 4
 
 # 运行所有测试
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
 # 进入测试目录
-cd manual_tests/insert_text_e2e
+cd manual_tests/word/insert_text_e2e
 
 # 运行单个测试
 uv run python test_basic_insert.py --test 1
@@ -54,7 +54,7 @@ uv run python test_basic_insert.py --test 4
 # 运行所有测试
 uv run python test_basic_insert.py --test all
 # 如果在项目根目录
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test all
 ```
 
 ---
@@ -75,19 +75,19 @@ uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test 1
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test 2
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test 3
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test 4
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test 1
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test 2
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test 3
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test 4
 
 # 运行所有测试
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
 # 进入测试目录
-cd manual_tests/insert_text_e2e
+cd manual_tests/word/insert_text_e2e
 
 # 运行单个测试
 uv run python test_location_insert.py --test 1
@@ -119,21 +119,21 @@ uv run python test_location_insert.py --test all
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 1
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 2
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 3
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 4
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 5
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 6
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 1
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 2
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 3
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 4
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 5
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 6
 
 # 运行所有测试
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
 # 进入测试目录
-cd manual_tests/insert_text_e2e
+cd manual_tests/word/insert_text_e2e
 
 # 运行单个测试
 uv run python test_format_insert.py --test 1
@@ -194,19 +194,19 @@ uv run python test_format_insert.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行基本插入测试 1
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test 1
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test 1
 
 # 运行位置插入测试 2
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test 2
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test 2
 
 # 运行格式插入测试 6（组合格式）
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test 6
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test 6
 ```
 
 **或者进入测试目录后运行：**
 ```bash
 # 进入测试目录
-cd manual_tests/insert_text_e2e
+cd manual_tests/word/insert_text_e2e
 
 # 运行基本插入测试 1
 uv run python test_basic_insert.py --test 1
@@ -223,18 +223,18 @@ uv run python test_format_insert.py --test 6
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行所有基本插入测试（4个）
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test all
 
 # 运行所有位置插入测试（4个）
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test all
 
 # 运行所有格式插入测试（6个）
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/insert_text_e2e
+cd manual_tests/word/insert_text_e2e
 
 # 运行所有基本插入测试（4个）
 uv run python test_basic_insert.py --test all
@@ -253,18 +253,18 @@ uv run python test_format_insert.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 1. 基本插入
-uv run python manual_tests/insert_text_e2e/test_basic_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_basic_insert.py --test all
 
 # 2. 位置插入
-uv run python manual_tests/insert_text_e2e/test_location_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_location_insert.py --test all
 
 # 3. 格式插入
-uv run python manual_tests/insert_text_e2e/test_format_insert.py --test all
+uv run python manual_tests/word/insert_text_e2e/test_format_insert.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/insert_text_e2e
+cd manual_tests/word/insert_text_e2e
 
 # 1. 基本插入
 uv run python test_basic_insert.py --test all

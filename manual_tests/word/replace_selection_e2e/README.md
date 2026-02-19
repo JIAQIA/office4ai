@@ -31,19 +31,19 @@ replace_selection_e2e/
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test 1
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test 2
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test 3
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test 4
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test 1
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test 2
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test 3
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test 4
 
 # 运行所有测试
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
 # 进入测试目录
-cd manual_tests/replace_selection_e2e
+cd manual_tests/word/replace_selection_e2e
 
 # 运行单个测试
 uv run python test_text_replace.py --test 1
@@ -73,19 +73,19 @@ uv run python test_text_replace.py --test all
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test 1
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test 2
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test 3
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test 4
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test 1
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test 2
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test 3
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test 4
 
 # 运行所有测试
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
 # 进入测试目录
-cd manual_tests/replace_selection_e2e
+cd manual_tests/word/replace_selection_e2e
 
 # 运行单个测试
 uv run python test_format_replace.py --test 1
@@ -114,18 +114,18 @@ uv run python test_format_replace.py --test all
 **方式一：从项目根目录运行（推荐）**
 ```bash
 # 运行单个测试
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test 1
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test 2
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test 3
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test 1
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test 2
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test 3
 
 # 运行所有测试
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test all
 ```
 
 **方式二：进入测试目录后运行**
 ```bash
 # 进入测试目录
-cd manual_tests/replace_selection_e2e
+cd manual_tests/word/replace_selection_e2e
 
 # 运行单个测试
 uv run python test_edge_cases.py --test 1
@@ -184,19 +184,19 @@ uv run python test_edge_cases.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行文本替换测试 1
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test 1
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test 1
 
 # 运行格式替换测试 1
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test 1
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test 1
 
 # 运行边界情况测试 1
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test 1
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test 1
 ```
 
 **或者进入测试目录后运行：**
 ```bash
 # 进入测试目录
-cd manual_tests/replace_selection_e2e
+cd manual_tests/word/replace_selection_e2e
 
 # 运行文本替换测试 1
 uv run python test_text_replace.py --test 1
@@ -213,18 +213,18 @@ uv run python test_edge_cases.py --test 1
 **从项目根目录运行（推荐）：**
 ```bash
 # 运行所有文本替换测试（4个）
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test all
 
 # 运行所有格式替换测试（4个）
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test all
 
 # 运行所有边界情况测试（3个）
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_selection_e2e
+cd manual_tests/word/replace_selection_e2e
 
 # 运行所有文本替换测试（4个）
 uv run python test_text_replace.py --test all
@@ -243,18 +243,18 @@ uv run python test_edge_cases.py --test all
 **从项目根目录运行（推荐）：**
 ```bash
 # 1. 文本替换
-uv run python manual_tests/replace_selection_e2e/test_text_replace.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_text_replace.py --test all
 
 # 2. 格式替换
-uv run python manual_tests/replace_selection_e2e/test_format_replace.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_format_replace.py --test all
 
 # 3. 边界情况
-uv run python manual_tests/replace_selection_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/replace_selection_e2e/test_edge_cases.py --test all
 ```
 
 **或者进入测试目录后运行：**
 ```bash
-cd manual_tests/replace_selection_e2e
+cd manual_tests/word/replace_selection_e2e
 
 # 1. 文本替换
 uv run python test_text_replace.py --test all

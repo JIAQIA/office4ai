@@ -23,35 +23,35 @@
 
 ```bash
 # 测试 1: 正常选区（有高亮文本）
-uv run python manual_tests/get_selection_e2e/test_selection.py --test 1
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test 1
 
 # 测试 2: 光标位置（无高亮文本）
-uv run python manual_tests/get_selection_e2e/test_selection.py --test 2
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test 2
 
 # 测试 3: 无选区状态
-uv run python manual_tests/get_selection_e2e/test_selection.py --test 3
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test 3
 
 # 测试 4: 性能对比
-uv run python manual_tests/get_selection_e2e/test_selection.py --test 4
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test 4
 ```
 
 ### 运行所有测试
 
 ```bash
-uv run python manual_tests/get_selection_e2e/test_selection.py --test all
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test all
 ```
 
 ### 其他选项
 
 ```bash
 # 列出所有测试用例
-uv run python manual_tests/get_selection_e2e/test_selection.py --list
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --list
 
 # 手动打开文档模式（不自动打开）
-uv run python manual_tests/get_selection_e2e/test_selection.py --test 1 --no-auto-open
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test 1 --no-auto-open
 
 # 失败时也清理测试文件
-uv run python manual_tests/get_selection_e2e/test_selection.py --test 1 --always-cleanup
+uv run python manual_tests/word/get_selection_e2e/test_selection.py --test 1 --always-cleanup
 ```
 
 ## 测试流程

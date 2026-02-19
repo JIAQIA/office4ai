@@ -33,28 +33,28 @@ get_document_stats_e2e/
 
 ```bash
 # 测试 1: 空白文档
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --test 1
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --test 1
 
 # 测试 2: 简单文档
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --test 2
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --test 2
 
 # 测试 3: 复杂文档
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --test 3
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --test 3
 
 # 测试 4: 大文档
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --test 4
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --test 4
 ```
 
 ### 运行所有测试
 
 ```bash
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --test all
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --test all
 ```
 
 ### 列出所有测试
 
 ```bash
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --list
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --list
 ```
 
 ## 命令行选项
@@ -93,7 +93,7 @@ uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --list
 如果自动打开不工作，可以使用手动模式：
 
 ```bash
-uv run python manual_tests/get_document_stats_e2e/test_basic_stats.py --test 1 --no-auto-open
+uv run python manual_tests/word/get_document_stats_e2e/test_basic_stats.py --test 1 --no-auto-open
 ```
 
 在此模式下，你需要：

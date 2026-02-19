@@ -34,38 +34,38 @@ get_document_structure_e2e/
 
 ```bash
 # 运行测试 1（空白文档）
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test 1
 
 # 运行测试 2（简单文档）
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 2
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test 2
 
 # 运行测试 3（复杂文档）
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 3
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test 3
 
 # 运行测试 4（大文档）
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 4
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test 4
 ```
 
 ### 运行所有测试
 
 ```bash
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test all
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test all
 ```
 
 ### 列出所有测试
 
 ```bash
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --list
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --list
 ```
 
 ### 其他选项
 
 ```bash
 # 手动打开文档模式（不自动打开）
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1 --no-auto-open
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test 1 --no-auto-open
 
 # 失败时也清理文件
-uv run python manual_tests/get_document_structure_e2e/test_basic_structure.py --test 1 --always-cleanup
+uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.py --test 1 --always-cleanup
 ```
 
 ## 前置条件

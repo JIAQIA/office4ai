@@ -10,9 +10,9 @@ Comment CRUD E2E Tests (自动化版本)
 4. 插入+删除+获取 — insert:comment → delete:comment → get:comments, 验证批注已删除
 
 运行方式:
-    uv run python manual_tests/comment_e2e/test_comment_crud.py --test 1
-    uv run python manual_tests/comment_e2e/test_comment_crud.py --test all
-    uv run python manual_tests/comment_e2e/test_comment_crud.py --list
+    uv run python manual_tests/word/comment_e2e/test_comment_crud.py --test 1
+    uv run python manual_tests/word/comment_e2e/test_comment_crud.py --test all
+    uv run python manual_tests/word/comment_e2e/test_comment_crud.py --list
 """
 
 import asyncio

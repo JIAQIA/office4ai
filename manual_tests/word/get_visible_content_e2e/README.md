@@ -50,36 +50,36 @@
 
 ```bash
 # 基础测试
-uv run python manual_tests/get_visible_content_e2e/test_basic_get.py --test 1
-uv run python manual_tests/get_visible_content_e2e/test_basic_get.py --test 2
-uv run python manual_tests/get_visible_content_e2e/test_basic_get.py --test 3
-uv run python manual_tests/get_visible_content_e2e/test_basic_get.py --test 4
+uv run python manual_tests/word/get_visible_content_e2e/test_basic_get.py --test 1
+uv run python manual_tests/word/get_visible_content_e2e/test_basic_get.py --test 2
+uv run python manual_tests/word/get_visible_content_e2e/test_basic_get.py --test 3
+uv run python manual_tests/word/get_visible_content_e2e/test_basic_get.py --test 4
 
 # 选项测试
-uv run python manual_tests/get_visible_content_e2e/test_options_get.py --test 1
-uv run python manual_tests/get_visible_content_e2e/test_options_get.py --test 2
-uv run python manual_tests/get_visible_content_e2e/test_options_get.py --test 3
-uv run python manual_tests/get_visible_content_e2e/test_options_get.py --test 4
-uv run python manual_tests/get_visible_content_e2e/test_options_get.py --test 5
+uv run python manual_tests/word/get_visible_content_e2e/test_options_get.py --test 1
+uv run python manual_tests/word/get_visible_content_e2e/test_options_get.py --test 2
+uv run python manual_tests/word/get_visible_content_e2e/test_options_get.py --test 3
+uv run python manual_tests/word/get_visible_content_e2e/test_options_get.py --test 4
+uv run python manual_tests/word/get_visible_content_e2e/test_options_get.py --test 5
 
 # 边界测试
-uv run python manual_tests/get_visible_content_e2e/test_edge_cases.py --test 1
-uv run python manual_tests/get_visible_content_e2e/test_edge_cases.py --test 2
-uv run python manual_tests/get_visible_content_e2e/test_edge_cases.py --test 3
-uv run python manual_tests/get_visible_content_e2e/test_edge_cases.py --test 4
+uv run python manual_tests/word/get_visible_content_e2e/test_edge_cases.py --test 1
+uv run python manual_tests/word/get_visible_content_e2e/test_edge_cases.py --test 2
+uv run python manual_tests/word/get_visible_content_e2e/test_edge_cases.py --test 3
+uv run python manual_tests/word/get_visible_content_e2e/test_edge_cases.py --test 4
 ```
 
 ### 运行所有测试
 
 ```bash
 # 基础测试（4个）
-uv run python manual_tests/get_visible_content_e2e/test_basic_get.py --test all
+uv run python manual_tests/word/get_visible_content_e2e/test_basic_get.py --test all
 
 # 选项测试（5个）
-uv run python manual_tests/get_visible_content_e2e/test_options_get.py --test all
+uv run python manual_tests/word/get_visible_content_e2e/test_options_get.py --test all
 
 # 边界测试（4个）
-uv run python manual_tests/get_visible_content_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/get_visible_content_e2e/test_edge_cases.py --test all
 ```
 
 ## 验证要点

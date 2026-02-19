@@ -68,19 +68,19 @@ params = {
 
 ```bash
 # 基础选择测试（4 个）
-uv run python manual_tests/select_text_e2e/test_basic_select.py --test all
+uv run python manual_tests/word/select_text_e2e/test_basic_select.py --test all
 
 # 搜索选项测试（5 个）
-uv run python manual_tests/select_text_e2e/test_search_options.py --test all
+uv run python manual_tests/word/select_text_e2e/test_search_options.py --test all
 
 # 选择模式测试（4 个）
-uv run python manual_tests/select_text_e2e/test_selection_modes.py --test all
+uv run python manual_tests/word/select_text_e2e/test_selection_modes.py --test all
 
 # 边界情况测试（5 个）
-uv run python manual_tests/select_text_e2e/test_edge_cases.py --test all
+uv run python manual_tests/word/select_text_e2e/test_edge_cases.py --test all
 
 # 运行单个测试
-uv run python manual_tests/select_text_e2e/test_basic_select.py --test 1
+uv run python manual_tests/word/select_text_e2e/test_basic_select.py --test 1
 ```
 
 ## 测试文件说明
@@ -97,7 +97,7 @@ uv run python manual_tests/select_text_e2e/test_basic_select.py --test 1
 
 **运行：**
 ```bash
-uv run python manual_tests/select_text_e2e/test_basic_select.py --test <1-4|all>
+uv run python manual_tests/word/select_text_e2e/test_basic_select.py --test <1-4|all>
 ```
 
 ---
@@ -115,7 +115,7 @@ uv run python manual_tests/select_text_e2e/test_basic_select.py --test <1-4|all>
 
 **运行：**
 ```bash
-uv run python manual_tests/select_text_e2e/test_search_options.py --test <1-5|all>
+uv run python manual_tests/word/select_text_e2e/test_search_options.py --test <1-5|all>
 ```
 
 ---
@@ -132,7 +132,7 @@ uv run python manual_tests/select_text_e2e/test_search_options.py --test <1-5|al
 
 **运行：**
 ```bash
-uv run python manual_tests/select_text_e2e/test_selection_modes.py --test <1-4|all>
+uv run python manual_tests/word/select_text_e2e/test_selection_modes.py --test <1-4|all>
 ```
 
 ---
@@ -150,7 +150,7 @@ uv run python manual_tests/select_text_e2e/test_selection_modes.py --test <1-4|a
 
 **运行：**
 ```bash
-uv run python manual_tests/select_text_e2e/test_edge_cases.py --test <1-5|all>
+uv run python manual_tests/word/select_text_e2e/test_edge_cases.py --test <1-5|all>
 ```
 
 ## 验证要点

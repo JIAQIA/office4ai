@@ -9,9 +9,9 @@ Comment Options E2E Tests (自动化版本)
 3. 详细元数据 — detailedMetadata=true，验证 comments 含 authorName/creationDate
 
 运行方式:
-    uv run python manual_tests/comment_e2e/test_comment_options.py --test 1
-    uv run python manual_tests/comment_e2e/test_comment_options.py --test all
-    uv run python manual_tests/comment_e2e/test_comment_options.py --list
+    uv run python manual_tests/word/comment_e2e/test_comment_options.py --test 1
+    uv run python manual_tests/word/comment_e2e/test_comment_options.py --test all
+    uv run python manual_tests/word/comment_e2e/test_comment_options.py --list
 """
 
 import asyncio
