@@ -19,9 +19,18 @@ Office4AI 手动调试测试套件
 
 manual_tests/                   # 项目根目录下的手动调试测试目录
 ├── __init__.py                 # 本文件：使用说明
+├── e2e_base.py                # 共享 E2E 测试基础设施
 ├── test_workspace_startup.py  # Workspace 启动与连接测试
-├── test_word_e2e.py           # Word 端到端集成测试
-└── MANUAL_TEST.md             # 详细的手动测试指南
+├── MANUAL_TEST.md             # 详细的手动测试指南
+├── fixtures/                  # 测试文档 fixture 生成器
+├── word/                      # Word E2E 测试
+│   ├── test_helpers.py        # Word 测试辅助函数
+│   ├── test_word_e2e.py       # Word 端到端集成测试
+│   └── *_e2e/                 # 各功能 E2E 测试目录 (11 个)
+└── ppt/                       # PPT E2E 测试
+    ├── e2e_base.py            # PPT 测试基础设施
+    ├── test_helpers.py        # PPT 测试辅助函数
+    └── *_e2e/                 # 各功能 E2E 测试目录 (15 个)
 
 =====================================
 快速开始
@@ -50,8 +59,8 @@ manual_tests/                   # 项目根目录下的手动调试测试目录
 3. 带参数运行
    ----------
    # Word 端到端测试（支持 --mode 参数）
-   uv run python manual_tests/test_word_e2e.py --mode health   # 快速健康检查
-   uv run python manual_tests/test_word_e2e.py --mode e2e     # 完整端到端测试
+   uv run python manual_tests/word/test_word_e2e.py --mode health   # 快速健康检查
+   uv run python manual_tests/word/test_word_e2e.py --mode e2e     # 完整端到端测试
 
 =====================================
 测试用例说明
@@ -81,10 +90,10 @@ manual_tests/                   # 项目根目录下的手动调试测试目录
 
    启动命令:
        # 健康检查模式（快速验证 Workspace 能否启动）
-       uv run python manual_tests/test_word_e2e.py --mode health
+       uv run python manual_tests/word/test_word_e2e.py --mode health
 
        # 端到端测试模式（完整测试请求-响应流程）
-       uv run python manual_tests/test_word_e2e.py --mode e2e
+       uv run python manual_tests/word/test_word_e2e.py --mode e2e
 
    测试流程 (e2e 模式):
        1. 启动 Workspace

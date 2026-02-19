@@ -14,7 +14,8 @@
       "Bash(find:*)",
       "Bash(python:*)",
       "Bash(uv run python:*)",
-      "Bash(poe test:*)"
+      "Bash(poe test:*)",
+      "Bash(poe fix:*)"
     ],
     "additionalDirectories": [
       "/Users/jqq/A2C-SMCP/oasp-protocol"

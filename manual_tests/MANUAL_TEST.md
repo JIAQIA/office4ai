@@ -24,7 +24,7 @@
 
 ```bash
 # 方式 1: 使用健康检查模式 (推荐用于快速测试)
-uv run python manual_tests/test_word_e2e.py --mode health
+uv run python manual_tests/word/test_word_e2e.py --mode health
 
 # 方式 2: 使用交互式启动脚本
 uv run python manual_tests/test_workspace_startup.py
@@ -122,7 +122,7 @@ npm start
 
 1. **启动端到端测试**
    ```bash
-   uv run python manual_tests/test_word_e2e.py --mode e2e
+   uv run python manual_tests/word/test_word_e2e.py --mode e2e
    ```
 
 2. **按照测试提示操作**
