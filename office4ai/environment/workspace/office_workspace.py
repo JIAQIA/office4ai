@@ -217,12 +217,21 @@ class OfficeWorkspace(BaseWorkspace):
         """
         停止 Workspace Socket.IO 服务器
 
-        关闭服务器，清理所有连接
+        关闭服务器，清理所有连接。
+        先显式关闭 Socket.IO 以避免 runner cleanup 等待 ping_timeout。
         """
         if not self._running:
             return
 
         try:
+            # 先显式关闭 Socket.IO，断开所有客户端连接
+            # 避免 runner.cleanup() 触发的 on_shutdown 等待 ping_timeout (60s)
+            if self.sio_server:
+                try:
+                    await asyncio.wait_for(self.sio_server.shutdown(), timeout=3.0)
+                except asyncio.TimeoutError:
+                    logger.warning("Socket.IO shutdown timed out (3s), forcing cleanup")
+
             # 停止 HTTPS 站点
             if self._https_site:
                 await self._https_site.stop()
@@ -233,12 +242,11 @@ class OfficeWorkspace(BaseWorkspace):
                 await self._site.stop()
                 self._site = None
 
-            # 清理 runner
+            # 清理 runner (Socket.IO 已关闭，不会再阻塞)
             if self.runner:
                 await self.runner.cleanup()
                 self.runner = None
 
-            # Socket.IO 服务器会随着 runner 清理而自动关闭
             self.sio_server = None
             self._running = False
             self.app = None

@@ -93,11 +93,16 @@ def validate_style_format(data: dict[str, Any], reader: DocumentReader) -> bool:
         print("   文档中未找到 'Chapter' 文本")
         return False
     replace_count = data.get("replaceCount", 0)
-    if replace_count >= 2:
-        print(f"   协议验证通过: replaceCount={replace_count} (预期 >= 2)")
-        print("   文档内容验证通过: 'Chapter' 文本存在（样式需人工确认）")
+    if replace_count < 2:
+        print(f"   replaceCount={replace_count} 小于预期")
+        return False
+    print(f"   协议验证通过: replaceCount={replace_count} (预期 >= 2)")
+    # replace:text + styleName 将样式的字符部分以 rStyle 应用到 run 上
+    # "Heading 2" → "Heading 2 Char"(英文) / "标题 2 字符"(中文)
+    if reader.run_has_style("Chapter", "Heading 2") or reader.run_has_style("Chapter", "标题 2"):
+        print("   文档内容验证通过: 'Chapter' run 已应用 Heading 2 字符样式")
         return True
-    print(f"   replaceCount={replace_count} 小于预期")
+    print("   ⚠️  'Chapter' run 未检测到 Heading 2 字符样式")
     return False
 
 
@@ -322,6 +327,7 @@ async def run_single_test(
 async def run_tests(
     test_indices: list[int],
     auto_open: bool = True,
+    auto_close: bool = True,
     cleanup_on_success: bool = True,
 ) -> bool:
     """运行指定的测试"""
@@ -330,6 +336,7 @@ async def run_tests(
     runner = E2ETestRunner(
         fixtures_dir=FIXTURES_DIR.parent,
         auto_open=auto_open,
+        auto_close=auto_close,
         cleanup_on_success=cleanup_on_success,
     )
 
@@ -382,6 +389,7 @@ def main() -> None:
         help="Test to run: 1=bold, 2=italic, 3=color, 4=style, 5=combined, 6=replace+format, all",
     )
     parser.add_argument("--no-auto-open", action="store_true", help="Don't auto-open document")
+    parser.add_argument("--no-auto-close", action="store_true", help="Don't auto-close document (keep Word open for debugging)")
     parser.add_argument("--no-cleanup", action="store_true", help="Keep working files after test (for manual inspection)")
     parser.add_argument("--list", action="store_true", help="List all test cases")
 
@@ -407,6 +415,7 @@ def main() -> None:
             run_tests(
                 test_indices=test_indices,
                 auto_open=not args.no_auto_open,
+                auto_close=not args.no_auto_close,
                 cleanup_on_success=not args.no_cleanup,
             )
         )
