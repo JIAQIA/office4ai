@@ -19,7 +19,7 @@
 |---|------|---------|------|
 | 1 | 批量基本形状 | empty.pptx | 连续插入 Rectangle, Circle, Oval, Triangle |
 | 2 | 箭头线条 | empty.pptx | 插入 Arrow 和 Line |
-| 3 | 星形六边形 | empty.pptx | 插入 Star, Hexagon, Pentagon |
+| 3 | 星形文本框 | empty.pptx | 插入 Star, RoundedRectangle, TextBox |
 
 ## 运行
 

@@ -20,9 +20,6 @@ class PptInsertShapeInput(BaseModel):
         "Circle",
         "Oval",
         "Triangle",
-        "Diamond",
-        "Pentagon",
-        "Hexagon",
         "Line",
         "Arrow",
         "Star",
@@ -42,7 +39,7 @@ class PptInsertShapeTool(BaseTool):
     def description(self) -> str:
         return (
             "Insert a geometric shape on a PowerPoint slide. "
-            "Supports Rectangle, RoundedRectangle, Circle, Oval, Triangle, Diamond, Pentagon, Hexagon, "
+            "Supports Rectangle, RoundedRectangle, Circle, Oval, Triangle, "
             "Line, Arrow, Star, and TextBox shape types. "
             "Supports optional position, size, fill color, border, and text settings."
         )

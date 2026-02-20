@@ -6,7 +6,7 @@ PPT Insert Shape E2E Tests — Shape Types
 测试场景:
 1. 批量基本形状 — Rectangle, Circle, Oval, Triangle
 2. 箭头线条 — Arrow, Line
-3. 星形六边形 — Star, Hexagon, Pentagon
+3. 星形文本框 — Star, RoundedRectangle, TextBox
 
 运行方式:
     uv run python manual_tests/ppt/insert_shape_e2e/test_shape_types.py --test all
@@ -50,9 +50,9 @@ TEST_CASES: list[PptTestCase] = [
         tags=["basic"],
     ),
     PptTestCase(
-        name="星形六边形",
+        name="星形文本框",
         fixture_name="empty.pptx",
-        description="插入 Star, Hexagon, Pentagon",
+        description="插入 Star, RoundedRectangle, TextBox",
         validator=validate_batch_shapes,
         tags=["advanced"],
     ),
@@ -71,8 +71,8 @@ _SHAPE_GROUPS: list[list[tuple[str, dict[str, Any]]]] = [
     ],
     [
         ("Star", {"left": 50, "top": 50, "width": 150, "height": 150}),
-        ("Hexagon", {"left": 250, "top": 50, "width": 150, "height": 150}),
-        ("Pentagon", {"left": 450, "top": 50, "width": 150, "height": 150}),
+        ("RoundedRectangle", {"left": 250, "top": 50, "width": 150, "height": 100}),
+        ("TextBox", {"left": 450, "top": 50, "width": 200, "height": 80, "text": "Hello"}),
     ],
 ]
 
