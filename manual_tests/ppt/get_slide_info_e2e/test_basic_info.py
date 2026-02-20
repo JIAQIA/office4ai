@@ -71,12 +71,14 @@ def validate_multi_slide(data: dict[str, Any], reader: PresentationReader) -> bo
 
 def validate_slide_dimensions(data: dict[str, Any]) -> bool:
     """验证幻灯片尺寸（默认 10x7.5 inches = 720x540 points）"""
-    width = data.get("width", 0)
-    height = data.get("height", 0)
+    dimensions = data.get("dimensions", {})
+    width = dimensions.get("width", 0)
+    height = dimensions.get("height", 0)
     if width <= 0 or height <= 0:
         print(f"   ❌ 尺寸无效: width={width}, height={height}")
         return False
-    print(f"   ✅ 幻灯片尺寸: width={width}, height={height}")
+    aspect = dimensions.get("aspectRatio", "unknown")
+    print(f"   ✅ 幻灯片尺寸: width={width}, height={height}, aspectRatio={aspect}")
     return True
 
 
