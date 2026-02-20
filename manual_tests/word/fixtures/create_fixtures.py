@@ -1,11 +1,11 @@
 """
-E2E 测试 Fixture 生成脚本
+Word E2E 测试 Fixture 生成脚本
 
-程序化生成所有 E2E 测试所需的 fixture .docx 文件。
+程序化生成所有 Word E2E 测试所需的 fixture .docx 文件。
 
 Usage:
-    uv run python manual_tests/fixtures/create_fixtures.py
-    uv run python manual_tests/fixtures/create_fixtures.py --clean  # 清理后重新生成
+    uv run python manual_tests/word/fixtures/create_fixtures.py
+    uv run python manual_tests/word/fixtures/create_fixtures.py --clean  # 清理后重新生成
 """
 
 from pathlib import Path
@@ -36,7 +36,7 @@ def create_insert_text_fixtures() -> None:
     doc.add_paragraph("这是第三段测试文本。")
     doc.save(str(fixture_dir / "simple.docx"))
 
-    print(f"  ✅ insert_text_e2e: 2 files")
+    print("  ✅ insert_text_e2e: 2 files")
 
 
 # ==============================================================================
@@ -105,7 +105,7 @@ def create_replace_text_fixtures() -> None:
 
     doc.save(str(fixture_dir / "format_targets.docx"))
 
-    print(f"  ✅ replace_text_e2e: 2 files")
+    print("  ✅ replace_text_e2e: 2 files")
 
 
 # ==============================================================================
@@ -130,7 +130,7 @@ def create_replace_selection_fixtures() -> None:
     doc = Document()
     doc.save(str(fixture_dir / "empty.docx"))
 
-    print(f"  ✅ replace_selection_e2e: 2 files")
+    print("  ✅ replace_selection_e2e: 2 files")
 
 
 # ==============================================================================
@@ -190,7 +190,7 @@ def create_get_visible_content_fixtures() -> None:
         doc.add_paragraph(f"第 {i + 1} 段：{para_text}")
     doc.save(str(fixture_dir / "large.docx"))
 
-    print(f"  ✅ get_visible_content_e2e: 4 files")
+    print("  ✅ get_visible_content_e2e: 4 files")
 
 
 # ==============================================================================
@@ -240,7 +240,7 @@ def create_select_text_fixtures() -> None:
     doc.add_paragraph("OutOfBounds third occurrence.")
     doc.save(str(fixture_dir / "edge_cases.docx"))
 
-    print(f"  ✅ select_text_e2e: 2 files")
+    print("  ✅ select_text_e2e: 2 files")
 
 
 # ==============================================================================
@@ -303,7 +303,7 @@ def create_export_content_fixtures() -> None:
         doc.add_paragraph(f"第 {i + 1} 段：{para_text}")
     doc.save(str(fixture_dir / "large.docx"))
 
-    print(f"  ✅ export_content_e2e: 4 files")
+    print("  ✅ export_content_e2e: 4 files")
 
 
 # ==============================================================================
@@ -327,7 +327,7 @@ def create_comment_fixtures() -> None:
     doc = Document()
     doc.save(str(fixture_dir / "empty.docx"))
 
-    print(f"  ✅ comment_e2e: 2 files")
+    print("  ✅ comment_e2e: 2 files")
 
 
 # ==============================================================================
@@ -344,15 +344,13 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.clean:
-        import shutil
-
         for subdir in FIXTURES_ROOT.iterdir():
             if subdir.is_dir() and subdir.name != "__pycache__":
                 for docx in subdir.glob("*.docx"):
                     docx.unlink()
                     print(f"  🗑️  删除: {docx.relative_to(FIXTURES_ROOT)}")
 
-    print("📝 生成 E2E 测试 fixture 文件...\n")
+    print("📝 生成 Word E2E 测试 fixture 文件...\n")
 
     create_insert_text_fixtures()
     create_replace_text_fixtures()
@@ -362,12 +360,7 @@ def main() -> None:
     create_export_content_fixtures()
     create_comment_fixtures()
 
-    # PPT fixtures
-    from manual_tests.fixtures.create_ppt_fixtures import create_all_ppt_fixtures
-
-    create_all_ppt_fixtures()
-
-    print("\n✅ 全部完成")
+    print("\n✅ Word fixture 全部完成")
 
 
 if __name__ == "__main__":

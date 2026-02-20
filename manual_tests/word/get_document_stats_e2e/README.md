@@ -117,15 +117,15 @@ uv run python manual_tests/e2e_base.py --clean-temp
 
 如果需要修改测试夹具，可以：
 
-1. 直接编辑 `fixtures/get_document_stats_e2e/` 下的 `.docx` 文件
+1. 直接编辑 `manual_tests/word/fixtures/get_document_stats_e2e/` 下的 `.docx` 文件
 2. 或重新生成夹具：
 
 ```bash
 # 删除现有夹具
-rm -rf manual_tests/fixtures/get_document_stats_e2e/*.docx
+rm -rf manual_tests/word/fixtures/get_document_stats_e2e/*.docx
 
 # 重新生成
-uv run python manual_tests/e2e_base.py --create-fixtures manual_tests/fixtures/get_document_stats_e2e
+uv run python manual_tests/e2e_base.py --create-fixtures manual_tests/word/fixtures/get_document_stats_e2e
 ```
 
 ## 预期输出示例

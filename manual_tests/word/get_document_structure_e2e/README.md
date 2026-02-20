@@ -113,7 +113,7 @@ uv run python manual_tests/word/get_document_structure_e2e/test_basic_structure.
 
 ## 测试夹具
 
-测试夹具自动创建在 `manual_tests/fixtures/get_document_structure_e2e/` 目录：
+测试夹具自动创建在 `manual_tests/word/fixtures/get_document_structure_e2e/` 目录：
 
 | 文件 | 内容 |
 |------|------|

@@ -4,8 +4,8 @@ PPT E2E 测试 Fixture 生成脚本
 使用 python-pptx 程序化生成所有 PPT E2E 测试所需的 fixture .pptx 文件。
 
 Usage:
-    uv run python manual_tests/fixtures/create_ppt_fixtures.py
-    uv run python manual_tests/fixtures/create_ppt_fixtures.py --clean
+    uv run python manual_tests/ppt/fixtures/create_ppt_fixtures.py
+    uv run python manual_tests/ppt/fixtures/create_ppt_fixtures.py --clean
 """
 
 from pathlib import Path
