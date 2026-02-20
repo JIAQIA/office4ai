@@ -71,7 +71,7 @@ class ScreenshotOptions(SocketIOBaseModel):
     """
 
     format: Literal["png", "jpeg"] = Field(default="png", description="Image format")
-    quality: int = Field(default=90, description="Image quality (1-100)", ge=1, le=100)
+    quality: int | None = Field(default=None, description="Image quality (0-100), JPEG only", ge=0, le=100)
 
 
 # ============================================================================

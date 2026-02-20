@@ -31,7 +31,7 @@ FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "ppt_e2e"
 
 def validate_png_screenshot(data: dict[str, Any]) -> bool:
     """验证 PNG 截图"""
-    image_data = data.get("image", "") or data.get("screenshot", "") or data.get("data", "")
+    image_data = data.get("base64", "") or data.get("image", "")
     if not image_data:
         print("   ❌ 未返回截图数据")
         return False
@@ -52,7 +52,7 @@ def validate_png_screenshot(data: dict[str, Any]) -> bool:
 
 def validate_jpeg_screenshot(data: dict[str, Any]) -> bool:
     """验证 JPEG 截图"""
-    image_data = data.get("image", "") or data.get("screenshot", "") or data.get("data", "")
+    image_data = data.get("base64", "") or data.get("image", "")
     if not image_data:
         print("   ❌ 未返回截图数据")
         return False
@@ -72,7 +72,7 @@ def validate_jpeg_screenshot(data: dict[str, Any]) -> bool:
 
 def validate_base64_format(data: dict[str, Any]) -> bool:
     """验证 base64 格式合法"""
-    image_data = data.get("image", "") or data.get("screenshot", "") or data.get("data", "")
+    image_data = data.get("base64", "") or data.get("image", "")
     if not image_data:
         print("   ❌ 未返回截图数据")
         return False
