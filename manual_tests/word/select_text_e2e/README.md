@@ -54,8 +54,9 @@ params = {
 | 14 | 中文字符搜索 | `{searchText: "中文"}` | ❌ 未实现 |
 | 15 | 长文本搜索 | `{searchText: "very long text..."}` | ✅ `test_edge_cases.py#5` |
 | 16 | 数字搜索 | `{searchText: "12345"}` | ❌ 未实现 |
+| 17 | 超出255字符限制 | `{searchText: "A"*256}` | ✅ `test_edge_cases.py#6` |
 
-**已实现：14/16 (87.5%)**
+**已实现：15/17 (88.2%)**
 
 ## 运行方式
 
@@ -138,19 +139,20 @@ uv run python manual_tests/word/select_text_e2e/test_selection_modes.py --test <
 ---
 
 ### `test_edge_cases.py` - 边界情况测试
-**测试数量：5 个**
+**测试数量：6 个**
 
 | 测试 | 场景 | 验证要点 |
 |-----|------|---------|
 | Test 1 | 未找到匹配 | success=false, matchCount=0 |
 | Test 2 | 空搜索文本 | 返回错误或警告 |
-| Test 3 | 超出索引范围 | success=false, 显示实际 matchCount |
+| Test 3 | 超出索引范围 | Add-In 优雅降级，返回实际 matchCount |
 | Test 4 | 特殊字符 | 正确处理 @#$%, [], {}, () |
-| Test 5 | 长文本 | 长文本不截断 |
+| Test 5 | 长文本（≤255字符） | 长文本不截断 |
+| Test 6 | 超出255字符限制 | DTO max_length=255 验证拒绝 |
 
 **运行：**
 ```bash
-uv run python manual_tests/word/select_text_e2e/test_edge_cases.py --test <1-5|all>
+uv run python manual_tests/word/select_text_e2e/test_edge_cases.py --test <1-6|all>
 ```
 
 ## 验证要点
@@ -172,7 +174,8 @@ uv run python manual_tests/word/select_text_e2e/test_edge_cases.py --test <1-5|a
 ### ✅ 错误处理验证
 - [x] 未找到匹配时 `success=false, matchCount=0`
 - [x] 空搜索文本返回错误
-- [x] 索引超出范围时操作失败
+- [x] 索引超出范围时 Add-In 优雅降级（返回实际 matchCount）
+- [x] 超出 255 字符限制时 DTO 验证拒绝
 - [x] 错误消息清晰
 
 ## 最近修复

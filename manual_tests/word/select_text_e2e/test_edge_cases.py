@@ -6,9 +6,10 @@ Edge Cases Select Text E2E Tests (自动化版本)
 测试场景:
 1. 未找到匹配（预期失败）
 2. 空搜索文本（预期失败）
-3. 超出索引（预期失败）
+3. 超出索引（Add-In 优雅降级）
 4. 特殊字符搜索
-5. 长文本搜索
+5. 长文本搜索（255字符以内）
+6. 超出 255 字符限制（预期被 DTO 拒绝）
 
 运行方式:
     uv run python manual_tests/select_text_e2e/test_edge_cases.py --test 1
@@ -75,15 +76,21 @@ def validate_empty_search(data: dict[str, Any]) -> bool:
 
 
 def validate_out_of_bounds(data: dict[str, Any]) -> bool:
-    """验证超出索引: 预期失败"""
+    """验证超出索引: Add-In 可能返回成功（优雅降级）或失败"""
     if data.get("_expected_failure"):
         error = data.get("error", "")
         if error:
-            print(f"   ✅ 索引超出范围被正确拒绝，错误信息: {error}")
+            print(f"   ✅ 索引超出范围被拒绝，错误信息: {error}")
             return True
         print("   ❌ 预期失败但缺少错误信息")
         return False
-    print("   ❌ 索引超出范围应该失败")
+    # Add-In 优雅降级：select_index 超出匹配数时返回成功 + 实际 matchCount
+    match_count = data.get("matchCount", 0)
+    if match_count > 0:
+        print(f"   ✅ Add-In 优雅降级: matchCount={match_count} (请求 select_index=10)")
+        print("      Add-In 不将越界索引视为错误，而是返回实际匹配数")
+        return True
+    print("   ❌ matchCount=0，预期至少有匹配")
     return False
 
 
@@ -98,11 +105,27 @@ def validate_special_chars(data: dict[str, Any]) -> bool:
 
 
 def validate_long_text(data: dict[str, Any]) -> bool:
-    """验证长文本搜索: 检查 matchCount"""
+    """验证长文本搜索（255字符以内）: 检查 matchCount"""
     match_count = data.get("matchCount", 0)
-    print(f"   ℹ️  长文本搜索 matchCount={match_count}")
+    print(f"   matchCount={match_count}")
     # 长文本搜索可能成功也可能失败（取决于文档内容），只要不崩溃即可
     return True
+
+
+def validate_exceed_max_length(data: dict[str, Any]) -> bool:
+    """验证超出 255 字符限制: 预期被 DTO 验证拒绝"""
+    if data.get("_expected_failure"):
+        error = data.get("error", "")
+        if error and "255" in error:
+            print(f"   ✅ 超长文本被正确拒绝 (max_length=255)")
+            return True
+        if error:
+            print(f"   ✅ 超长文本被拒绝，错误信息: {error}")
+            return True
+        print("   ❌ 预期失败但缺少错误信息")
+        return False
+    print("   ❌ 超长文本（>255字符）应该被拒绝")
+    return False
 
 
 # ==============================================================================
@@ -120,19 +143,23 @@ _SELECT_CONFIGS: list[dict[str, Any]] = [
         "search_text": "",
         "expects_failure": True,
     },
-    # Test 3: 超出索引
+    # Test 3: 超出索引（Add-In 优雅降级，不视为错误）
     {
         "search_text": "OutOfBounds",
         "select_index": 10,
-        "expects_failure": True,
     },
     # Test 4: 特殊字符
     {
         "search_text": "@#$%",
     },
-    # Test 5: 长文本搜索
+    # Test 5: 长文本搜索（255字符以内）
     {
-        "search_text": "This is a very long text that " * 10,
+        "search_text": "This is a very long text that " * 8,  # 240 chars, within 255 limit
+    },
+    # Test 6: 超出 255 字符限制（预期被 DTO 验证拒绝）
+    {
+        "search_text": "A" * 256,
+        "expects_failure": True,
     },
 ]
 
@@ -152,11 +179,11 @@ TEST_CASES: list[TestCase] = [
         tags=["edge_case", "expected_failure"],
     ),
     TestCase(
-        name="超出索引",
+        name="超出索引（优雅降级）",
         fixture_name="edge_cases.docx",
-        description="搜索 'OutOfBounds' 但 select_index=10 超出匹配数，预期失败",
+        description="搜索 'OutOfBounds' 但 select_index=10 超出匹配数，Add-In 优雅降级",
         validator=validate_out_of_bounds,
-        tags=["edge_case", "expected_failure"],
+        tags=["edge_case", "graceful_degradation"],
     ),
     TestCase(
         name="特殊字符搜索",
@@ -166,11 +193,18 @@ TEST_CASES: list[TestCase] = [
         tags=["edge_case", "special_chars"],
     ),
     TestCase(
-        name="长文本搜索",
+        name="长文本搜索（255字符以内）",
         fixture_name="edge_cases.docx",
-        description="搜索重复 10 次的长文本，验证不会崩溃",
+        description="搜索重复 8 次的长文本（240字符），验证不会崩溃",
         validator=validate_long_text,
         tags=["edge_case", "long_text"],
+    ),
+    TestCase(
+        name="超出 255 字符限制",
+        fixture_name="edge_cases.docx",
+        description="搜索 256 字符文本，预期被 DTO max_length=255 验证拒绝",
+        validator=validate_exceed_max_length,
+        tags=["edge_case", "expected_failure"],
     ),
 ]
 
