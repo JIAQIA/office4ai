@@ -59,13 +59,39 @@ def validate_html_export(data: dict[str, Any]) -> bool:
     if not content:
         print("   ❌ content 为空")
         return False
-    # HTML 输出应该包含至少一个标签
-    has_tag = "<" in content and ">" in content
-    if not has_tag:
-        print(f"   ❌ content 不包含 HTML 标签，前 200 字符: {content[:200]}")
-        return False
-    print(f"   ✅ HTML 导出成功，content 长度: {len(content)}")
-    return True
+
+    passed = True
+    lower = content.lower()
+
+    # 1) 必须包含常见 HTML 结构标签（至少命中一个）
+    structural_tags = ["<p", "<div", "<span", "<body", "<html", "<h1", "<h2", "<h3", "<section"]
+    found_tags = [t for t in structural_tags if t in lower]
+    if not found_tags:
+        print(f"   ❌ 未找到任何 HTML 结构标签 ({structural_tags})")
+        print(f"      前 300 字符: {content[:300]}")
+        passed = False
+    else:
+        print(f"   ✅ 包含 HTML 结构标签: {found_tags}")
+
+    # 2) 必须有闭合标签（排除自闭合标签的误判）
+    import re
+
+    closing_tags = re.findall(r"</\w+>", content)
+    if not closing_tags:
+        print("   ❌ 未找到任何 HTML 闭合标签 (</...>)")
+        passed = False
+    else:
+        print(f"   ✅ 包含 {len(closing_tags)} 个闭合标签")
+
+    # 3) 导出内容应包含文档中的已知文本
+    if "测试" not in content and "文本" not in content:
+        print("   ❌ HTML content 不包含预期文本（'测试' 或 '文本'）")
+        passed = False
+    else:
+        print("   ✅ HTML content 包含预期文本")
+
+    print(f"   📏 content 长度: {len(content)}")
+    return passed
 
 
 def validate_markdown_export(data: dict[str, Any]) -> bool:
@@ -74,8 +100,44 @@ def validate_markdown_export(data: dict[str, Any]) -> bool:
     if not content:
         print("   ❌ content 为空")
         return False
-    print(f"   ✅ Markdown 导出成功，content 长度: {len(content)}")
-    return True
+
+    passed = True
+
+    # 1) 不应包含 HTML 标签（区分于 HTML 格式）
+    import re
+
+    html_tags = re.findall(r"<(?:p|div|span|body|html|table|tr|td)\b", content, re.IGNORECASE)
+    if html_tags:
+        print(f"   ❌ Markdown 内容不应包含 HTML 标签，但发现: {html_tags[:5]}")
+        passed = False
+    else:
+        print("   ✅ 不包含 HTML 标签（格式正确区分）")
+
+    # 2) 应包含 Markdown 格式特征（至少命中一个）
+    md_indicators = {
+        "标题 (#)": bool(re.search(r"^#{1,6}\s", content, re.MULTILINE)),
+        "段落分隔 (双换行)": "\n\n" in content or "\r\n\r\n" in content,
+        "粗体 (**)": "**" in content,
+        "列表 (- 或 *)": bool(re.search(r"^[\-\*]\s", content, re.MULTILINE)),
+        "有序列表 (1.)": bool(re.search(r"^\d+\.\s", content, re.MULTILINE)),
+    }
+    found = {k: v for k, v in md_indicators.items() if v}
+    if not found:
+        print(f"   ⚠️  未检测到常见 Markdown 格式特征: {list(md_indicators.keys())}")
+        print(f"      前 300 字符: {content[:300]}")
+        # 不强制失败：简单文档可能没有特殊格式
+    else:
+        print(f"   ✅ 检测到 Markdown 格式特征: {list(found.keys())}")
+
+    # 3) 导出内容应包含文档中的已知文本
+    if "测试" not in content and "文本" not in content:
+        print("   ❌ Markdown content 不包含预期文本（'测试' 或 '文本'）")
+        passed = False
+    else:
+        print("   ✅ Markdown content 包含预期文本")
+
+    print(f"   📏 content 长度: {len(content)}")
+    return passed
 
 
 def validate_empty_export(data: dict[str, Any]) -> bool:

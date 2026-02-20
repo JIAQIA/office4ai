@@ -45,31 +45,77 @@ def validate_table_html(data: dict[str, Any]) -> bool:
     if not content:
         print("   ❌ content 为空")
         return False
-    # HTML 表格至少包含 <table> 或 <tr> 或 <td>
-    table_markers = ["<table", "<tr", "<td", "table"]
-    has_table = any(marker in content.lower() for marker in table_markers)
-    if not has_table:
-        print(f"   ❌ HTML content 不包含表格标记，前 300 字符: {content[:300]}")
-        return False
-    print(f"   ✅ HTML 导出包含表格标记，content 长度: {len(content)}")
-    return True
+
+    passed = True
+    lower = content.lower()
+
+    # 1) 必须包含 <table 标签
+    if "<table" not in lower:
+        print("   ❌ HTML content 不包含 <table> 标签")
+        print(f"      前 300 字符: {content[:300]}")
+        passed = False
+    else:
+        print("   ✅ 包含 <table> 标签")
+
+    # 2) 表格内部应包含行和单元格
+    has_tr = "<tr" in lower
+    has_td = "<td" in lower or "<th" in lower
+    if not has_tr or not has_td:
+        print(f"   ❌ 表格结构不完整 (<tr>: {has_tr}, <td>/<th>: {has_td})")
+        passed = False
+    else:
+        print("   ✅ 表格结构完整 (<tr> + <td>/<th>)")
+
+    # 3) 应包含闭合的 </table> 标签
+    if "</table>" not in lower:
+        print("   ❌ 缺少 </table> 闭合标签")
+        passed = False
+    else:
+        print("   ✅ 包含 </table> 闭合标签")
+
+    print(f"   📏 content 长度: {len(content)}")
+    return passed
 
 
 def validate_table_markdown(data: dict[str, Any]) -> bool:
     """验证 Markdown 导出包含表格内容"""
+    import re
+
     content = data.get("content", "")
     if not content:
         print("   ❌ content 为空")
         return False
-    # Markdown 表格通常包含 | 分隔符
-    has_table = "|" in content or "单元格" in content
-    if not has_table:
-        print(f"   ⚠️  Markdown content 可能未包含表格内容，前 300 字符: {content[:300]}")
-        # 不失败，因为 Markdown 表格格式可能因实现而异
+
+    passed = True
+
+    # 1) 不应包含 HTML 标签（确认是 Markdown 而非 HTML）
+    html_tags = re.findall(r"<(?:table|tr|td|th|p|div|span)\b", content, re.IGNORECASE)
+    if html_tags:
+        print(f"   ❌ Markdown 内容不应包含 HTML 标签，但发现: {html_tags[:5]}")
+        passed = False
     else:
-        print(f"   ✅ Markdown 导出包含表格内容")
-    print(f"   ✅ Markdown 导出成功，content 长度: {len(content)}")
-    return True
+        print("   ✅ 不包含 HTML 标签（格式正确区分）")
+
+    # 2) Markdown 表格必须包含 | 分隔符
+    pipe_lines = [line for line in content.split("\n") if "|" in line]
+    if not pipe_lines:
+        print("   ❌ Markdown content 不包含 | 分隔符（无表格）")
+        print(f"      前 300 字符: {content[:300]}")
+        passed = False
+    else:
+        print(f"   ✅ Markdown 包含 {len(pipe_lines)} 行表格内容")
+
+    # 3) Markdown 表格应包含分隔行（如 |---|---|）
+    separator_pattern = re.compile(r"\|[\s\-:]+\|")
+    has_separator = any(separator_pattern.search(line) for line in pipe_lines)
+    if pipe_lines and not has_separator:
+        print("   ⚠️  未检测到表格分隔行 (|---|---| 格式)")
+        # 不强制失败：某些 Markdown 实现可能省略分隔行
+    elif has_separator:
+        print("   ✅ 包含表格分隔行")
+
+    print(f"   📏 content 长度: {len(content)}")
+    return passed
 
 
 def validate_large_export(data: dict[str, Any]) -> bool:
