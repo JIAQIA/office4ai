@@ -521,6 +521,7 @@ class PPTTestRunner(E2ETestRunner):
         port: int = 3000,
         connection_timeout: float = 30.0,
         auto_open: bool = True,
+        auto_close: bool = True,
         auto_activate: bool = True,
         cleanup_on_success: bool = True,
     ):
@@ -530,6 +531,7 @@ class PPTTestRunner(E2ETestRunner):
             port=port,
             connection_timeout=connection_timeout,
             auto_open=auto_open,
+            auto_close=auto_close,
             auto_activate=auto_activate,
             cleanup_on_success=cleanup_on_success,
         )
@@ -567,7 +569,7 @@ class PPTTestRunner(E2ETestRunner):
                 yield workspace, fixture
 
             finally:
-                if self.auto_open and not fixture.document_closed and fixture.cleanup_on_success:
+                if self.auto_close and not fixture.document_closed and fixture.cleanup_on_success:
                     close_ppt_document(fixture.working_path)
                     fixture.document_closed = True
                     await asyncio.sleep(0.5)
