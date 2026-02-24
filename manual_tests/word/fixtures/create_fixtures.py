@@ -69,6 +69,10 @@ def create_replace_text_fixtures() -> None:
     for i in range(3):
         doc.add_paragraph(f"Visit our Café for coffee {i + 1}.")
 
+    # "line1" + "line2" 跨段落（用于 ^p 跨段落搜索测试）
+    doc.add_paragraph("line1")
+    doc.add_paragraph("line2")
+
     # 长段落
     long_text = (
         "This is a long paragraph of text that should be replaced with another "

@@ -16,10 +16,21 @@ class WordReplaceTextInput(BaseModel):
     document_uri: str = Field(..., description="Target document URI (e.g. file:///path/to/doc.docx)")
     search_text: str = Field(
         ...,
-        description="Text to search for (max 255 characters, enforced by Word.js API)",
+        description=(
+            "Text to search for (max 255 characters). "
+            "For invisible characters, use Word notation: "
+            "^p for paragraph break (Enter), ^l for line break (Shift+Enter), ^t for tab. "
+            "Do NOT use \\n or \\t — they will not match."
+        ),
         max_length=255,
     )
-    replace_text: str = Field(..., description="Replacement text")
+    replace_text: str = Field(
+        ...,
+        description=(
+            "Replacement text. Supports the same special character notation as searchText "
+            "(^p for paragraph break, ^l for line break, ^t for tab)."
+        ),
+    )
     options: ReplaceOptions | None = Field(
         None,
         description="Replace options (matchCase, matchWholeWord, replaceAll)",

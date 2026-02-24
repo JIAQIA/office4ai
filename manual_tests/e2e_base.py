@@ -384,6 +384,8 @@ class TestCase:
         validator: 自定义验证函数（可选）
             - DataValidator: (data) -> bool - 仅验证协议返回
             - ContentValidator: (data, reader) -> bool - 双重验证（协议 + 文档内容）
+        expect_failure: 预期失败（哨兵测试）— 操作失败时判定为通过，
+            若意外成功则提示能力可能已更新，需人工确认
     """
 
     name: str
@@ -392,6 +394,7 @@ class TestCase:
     expected: ExpectedStats | None = None
     validator: Validator | None = None
     tags: list[str] = field(default_factory=list)
+    expect_failure: bool = False
 
 
 # ==============================================================================

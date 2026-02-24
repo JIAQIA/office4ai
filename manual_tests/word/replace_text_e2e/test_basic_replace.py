@@ -7,7 +7,7 @@ Basic Text Replace E2E Tests (自动化版本)
 1. 简单文本替换（全部）
 2. 简单文本替换（首个）
 3. 替换为空（删除）
-4. 多行文本替换
+4. 跨段落文本替换（使用 ^p 记号）
 5. 特殊字符替换
 6. 长文本替换
 
@@ -96,6 +96,19 @@ def validate_special_chars(data: dict[str, Any], reader: DocumentReader) -> bool
     return False
 
 
+def validate_cross_paragraph(data: dict[str, Any], reader: DocumentReader) -> bool:
+    """验证跨段落替换: 'line1\\nline2' 替换为 'new\\ncontent'"""
+    reader.reload()
+    if not reader.contains("new"):
+        print("   ❌ 文档中未找到替换后的 'new'")
+        return False
+    if reader.not_contains("line1") and reader.not_contains("line2"):
+        print("   ✅ 文档内容验证通过: 'line1/line2' 已被替换为 'new/content'")
+        return True
+    print("   ⚠️  文档中仍包含 'line1' 或 'line2'")
+    return False
+
+
 def validate_long_text(data: dict[str, Any], reader: DocumentReader) -> bool:
     """验证长文本替换"""
     reader.reload()
@@ -117,8 +130,8 @@ _REPLACE_CONFIGS: list[dict[str, Any]] = [
     {"searchText": "test", "replaceText": "exam", "options": {"replaceAll": False}},
     # Test 3: delete (replace with empty)
     {"searchText": "delete", "replaceText": "", "options": {"replaceAll": True}},
-    # Test 4: multiline
-    {"searchText": "line1\nline2", "replaceText": "new\ncontent", "options": {"replaceAll": True}},
+    # Test 4: cross-paragraph (使用 Word 特殊字符记号 ^p 表示段落标记)
+    {"searchText": "line1^pline2", "replaceText": "new^pcontent", "options": {"replaceAll": True}},
     # Test 5: special chars
     {"searchText": "Café", "replaceText": "Coffee", "options": {"replaceAll": True}},
     # Test 6: long text
@@ -158,10 +171,10 @@ TEST_CASES: list[TestCase] = [
         tags=["basic", "delete"],
     ),
     TestCase(
-        name="多行文本替换",
+        name="跨段落文本替换",
         fixture_name="replace_targets.docx",
-        description="搜索多行文本 'line1\\nline2' 替换为 'new\\ncontent'",
-        validator=lambda data: True,  # 多行替换在 Word 中行为不确定，仅验证协议
+        description="使用 ^p 记号搜索跨段落文本 'line1^pline2' 替换为 'new^pcontent'",
+        validator=validate_cross_paragraph,
         tags=["advanced"],
     ),
     TestCase(
@@ -234,7 +247,21 @@ async def run_single_test(
             print(f"\n⏱️  执行时间: {elapsed_ms:.1f}ms")
 
             if not result.success:
+                if test_case.expect_failure:
+                    print(f"⚠️  操作失败（符合预期）: {result.error}")
+                    print("\n" + "=" * 70)
+                    print(f"✅ 测试 {test_number} 通过（预期失败，已确认）")
+                    print("=" * 70)
+                    return True
                 print(f"❌ 替换失败: {result.error}")
+                return False
+
+            if test_case.expect_failure:
+                print("🚨 意外成功！此测试预期失败但实际通过了。")
+                print("   Word JS API 可能已支持此能力，请检查 SENTINEL TEST 注释中的 TODO 项。")
+                print("\n" + "=" * 70)
+                print(f"⚠️  测试 {test_number} 意外通过（需人工确认）")
+                print("=" * 70)
                 return False
 
             print("✅ 协议返回成功")
