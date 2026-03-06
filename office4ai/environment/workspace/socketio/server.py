@@ -19,11 +19,6 @@ from .namespaces.ppt import PptNamespace
 from .namespaces.word import WordNamespace
 from .services.connection_manager import connection_manager
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
 
 

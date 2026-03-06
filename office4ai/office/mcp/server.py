@@ -332,6 +332,10 @@ async def async_main() -> None:
 
 
 def main() -> None:
+    from office4ai.logging import setup_logging
+
+    setup_logging()
+
     # Extract subcommand before confz sees sys.argv
     # Use simple argv inspection: first non-flag arg is the subcommand
     args = sys.argv[1:]

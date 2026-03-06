@@ -223,4 +223,7 @@ manual_tests/.test_working/
 manual_tests/word/fixtures/*/
 manual_tests/ppt/fixtures/*/
 
+# Log output directory
+logs/
+
 # End
