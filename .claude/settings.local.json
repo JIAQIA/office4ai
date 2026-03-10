@@ -15,7 +15,17 @@
       "Bash(python:*)",
       "Bash(uv run python:*)",
       "Bash(poe test:*)",
-      "Bash(poe fix:*)"
+      "Bash(poe fix:*)",
+      "Bash(git checkout:*)",
+      "Bash(gh issue:*)",
+      "Bash(uv run:*)",
+      "Bash(git add:*)",
+      "Bash(gh api:*)",
+      "Bash(find /Users/jqq/A2C-SMCP/a2c-smcp-protocol -type f \\\\\\( -name \"*.md\" -o -name \"*.ts\" -o -name \"*.json\" -o -name \"*.yaml\" -o -name \"*.yml\" \\\\\\) 2>/dev/null | grep -v node_modules | grep -v \".next\" | head -30)",
+      "Bash(grep -r \"excel.*namespace\\\\|ExcelNamespace\" /Users/jqq/PycharmProjects/office4ai/office4ai --include=\"*.py\" 2>/dev/null | head -5)",
+      "Bash(python3 -c \"import site; print\\('\\\\n'.join\\(site.getsitepackages\\(\\) + site.getusersitepackages\\(\\)\\)\")",
+      "Bash(python3 -c \"import site; print\\(site.getsitepackages\\(\\)\\)\")",
+      "Bash(poe check:*)"
     ],
     "additionalDirectories": [
       "/Users/jqq/A2C-SMCP/oasp-protocol"
