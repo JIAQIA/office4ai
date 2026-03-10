@@ -160,14 +160,17 @@ class OfficeMCPServer(BaseMCPServer):
 
     def _register_resources(self) -> None:
         """注册资源 | Register resources"""
-        from office4ai.a2c_smcp.resources.connected_documents import ConnectedDocumentsResource
+        from office4ai.a2c_smcp.resources.ppt_window import PptWindowResource
         from office4ai.a2c_smcp.resources.window import WindowResource
+        from office4ai.a2c_smcp.resources.word_window import WordWindowResource
 
-        docs_resource = ConnectedDocumentsResource(self.workspace)
-        self.resources[docs_resource.base_uri] = docs_resource
+        root = WindowResource(self.workspace, priority=0, fullscreen=False)
+        word = WordWindowResource(self.workspace, priority=50, fullscreen=True)
+        ppt = PptWindowResource(self.workspace, priority=50, fullscreen=True)
 
-        window_resource = WindowResource(self.workspace, priority=0, fullscreen=True)
-        self.resources[window_resource.base_uri] = window_resource
+        self.resources[root.base_uri] = root
+        self.resources[word.base_uri] = word
+        self.resources[ppt.base_uri] = ppt
 
     async def _async_startup(self) -> None:
         """启动 OfficeWorkspace (Socket.IO Server) | Start OfficeWorkspace"""

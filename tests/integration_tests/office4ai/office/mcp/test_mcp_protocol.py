@@ -74,12 +74,15 @@ class TestMCPProtocol:
 
                 # 获取资源列表 | Get resources list
                 resources_result = await session.list_resources()
-                assert len(resources_result.resources) == 2  # ConnectedDocuments + WindowResource
+                assert len(resources_result.resources) == 3  # root + word + ppt
 
                 # 验证资源 URI | Verify resource URIs
                 resource_uris = {str(r.uri) for r in resources_result.resources}
-                assert "office://workspace/documents" in resource_uris
-                assert any(uri.startswith("window://office4ai") for uri in resource_uris)
+                assert any("window://office4ai/word" in uri for uri in resource_uris)
+                assert any("window://office4ai/ppt" in uri for uri in resource_uris)
+                assert any(uri.startswith("window://office4ai?") for uri in resource_uris)
+                # 旧资源已删除
+                assert not any("office://workspace/documents" in uri for uri in resource_uris)
 
     async def test_call_tool_not_found(self):
         """测试调用不存在的工具 | Test calling non-existent tool"""
@@ -115,3 +118,75 @@ class TestMCPProtocol:
 
                 with pytest.raises(McpError, match="未找到资源 | Resource not found"):
                     await session.read_resource(AnyUrl("office://non/existent/resource"))
+
+
+@pytest.mark.integration
+class TestMCPResourcesPhase1:
+    """Phase 1: Window 资源 MCP 协议层集成测试"""
+
+    async def test_list_resources_includes_window_resources(self):
+        """list_resources 返回 3 个资源 (root + word + ppt)，无旧资源"""
+        server_params = StdioServerParameters(
+            command="uv",
+            args=["run", "python", "-m", "office4ai.office.mcp.server"],
+            cwd=str(project_root),
+        )
+
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                resources = await session.list_resources()
+                uris = [str(r.uri) for r in resources.resources]
+
+                assert len(resources.resources) == 3
+                assert any("window://office4ai/word" in u for u in uris)
+                assert any("window://office4ai/ppt" in u for u in uris)
+                assert any(u.startswith("window://office4ai?") for u in uris)
+                assert not any("office://workspace/documents" in u for u in uris)
+
+    async def test_read_window_root_resource(self):
+        """读取根索引：无连接时返回 '暂无文档连接'"""
+        server_params = StdioServerParameters(
+            command="uv",
+            args=["run", "python", "-m", "office4ai.office.mcp.server"],
+            cwd=str(project_root),
+        )
+
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.read_resource(AnyUrl("window://office4ai"))
+                content = result.contents[0].text
+                assert "Office 工作区" in content
+                assert "暂无文档连接" in content
+
+    async def test_read_word_window_no_connection(self):
+        """读取 Word 窗口资源（无连接）→ 空文档列表"""
+        server_params = StdioServerParameters(
+            command="uv",
+            args=["run", "python", "-m", "office4ai.office.mcp.server"],
+            cwd=str(project_root),
+        )
+
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.read_resource(AnyUrl("window://office4ai/word"))
+                content = result.contents[0].text
+                assert "Word 工作区" in content
+                assert "文档列表 (0)" in content
+
+    async def test_read_ppt_window_no_connection(self):
+        """读取 PPT 窗口资源（无连接）"""
+        server_params = StdioServerParameters(
+            command="uv",
+            args=["run", "python", "-m", "office4ai.office.mcp.server"],
+            cwd=str(project_root),
+        )
+
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.read_resource(AnyUrl("window://office4ai/ppt"))
+                content = result.contents[0].text
+                assert "PPT 工作区" in content

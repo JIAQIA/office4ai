@@ -104,9 +104,10 @@ class TestOfficeMCPServer:
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            assert len(server.resources) == 2
-            assert "office://workspace/documents" in server.resources
+            assert len(server.resources) == 3
             assert "window://office4ai" in server.resources
+            assert "window://office4ai/word" in server.resources
+            assert "window://office4ai/ppt" in server.resources
 
     @pytest.mark.parametrize("transport", ["stdio", "sse", "streamable-http"])
     def test_server_supports_all_transports(self, transport):

@@ -102,6 +102,11 @@ async def workspace(contract_test_server: AsyncServer) -> OfficeWorkspace:
     workspace.sio_server = contract_test_server
     workspace._running = True
 
+    # Activity tracking state (normally set in __init__)
+    workspace._last_activity = None
+    workspace._content_cache = {}
+    workspace._structure_cache = {}
+
     yield workspace
 
     # 不需要停止服务器，contract_test_server fixture 会处理
