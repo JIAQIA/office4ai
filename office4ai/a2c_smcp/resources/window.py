@@ -94,7 +94,11 @@ class WindowResource(BaseResource):
 
         if word_docs or ppt_docs:
             lines.append(f"- window://office4ai/word — Word 文档 ({len(word_docs)} 个已连接)")
+            for uri in sorted(word_docs):
+                lines.append(f"  - {uri}")
             lines.append(f"- window://office4ai/ppt — PPT 文档 ({len(ppt_docs)} 个已连接)")
+            for uri in sorted(ppt_docs):
+                lines.append(f"  - {uri}")
         else:
             lines.append("暂无文档连接，等待 Office Add-In 接入。")
 

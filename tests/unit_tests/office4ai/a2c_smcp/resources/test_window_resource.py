@@ -61,6 +61,8 @@ class TestWindowResourceRead:
             content = await resource.read()
 
         assert "Word 文档 (2 个已连接)" in content
+        assert "file:///tmp/a.docx" in content
+        assert "file:///tmp/b.docx" in content
         assert "PPT 文档 (0 个已连接)" in content
 
     @pytest.mark.asyncio
@@ -74,6 +76,7 @@ class TestWindowResourceRead:
 
         assert "Word 文档 (0 个已连接)" in content
         assert "PPT 文档 (1 个已连接)" in content
+        assert "file:///tmp/slides.pptx" in content
 
     @pytest.mark.asyncio
     async def test_read_mixed(self, resource: WindowResource) -> None:
@@ -86,7 +89,9 @@ class TestWindowResourceRead:
             content = await resource.read()
 
         assert "Word 文档 (1 个已连接)" in content
+        assert "file:///tmp/a.docx" in content
         assert "PPT 文档 (1 个已连接)" in content
+        assert "file:///tmp/slides.pptx" in content
 
     @pytest.mark.asyncio
     async def test_dedup_by_uri(self, resource: WindowResource) -> None:
@@ -100,6 +105,8 @@ class TestWindowResourceRead:
             content = await resource.read()
 
         assert "Word 文档 (1 个已连接)" in content
+        # URI should appear only once despite two socket connections
+        assert content.count("file:///tmp/a.docx") == 1
 
 
 class TestWindowResourceUpdateFromUri:

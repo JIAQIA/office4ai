@@ -25,7 +25,14 @@
       "Bash(grep -r \"excel.*namespace\\\\|ExcelNamespace\" /Users/jqq/PycharmProjects/office4ai/office4ai --include=\"*.py\" 2>/dev/null | head -5)",
       "Bash(python3 -c \"import site; print\\('\\\\n'.join\\(site.getsitepackages\\(\\) + site.getusersitepackages\\(\\)\\)\")",
       "Bash(python3 -c \"import site; print\\(site.getsitepackages\\(\\)\\)\")",
-      "Bash(poe check:*)"
+      "Bash(poe check:*)",
+      "mcp__plugin_github_github__issue_read",
+      "Bash(ls -la /Users/jqq/PycharmProjects/office4ai/.venv/lib/python3.11/site-packages/mcp/server/*.py)",
+      "Bash(find /Users/jqq/PycharmProjects/office4ai/.venv/lib/python3.11/site-packages/mcp/shared -name \"context.py\" | head -1 | xargs cat)",
+      "Bash(python3 -c \"from mcp.server.lowlevel.server import request_ctx; print\\('request_ctx is available from mcp.server.lowlevel.server'\\)\" 2>/dev/null && echo \"SUCCESS\" || echo \"Not directly exported\")",
+      "Bash(grep -r \"send_resource_updated\\\\|notify_\\\\|resources_list_changed\" /Users/jqq/PycharmProjects/office4ai/.venv/lib/python3.11/site-packages/mcp --include=\"*.py\" 2>/dev/null | head -20)",
+      "Bash(ls /Users/jqq/PycharmProjects/office4ai/.venv/lib/python3.11/site-packages/mcp/server/*.py)",
+      "Bash(find /Users/jqq/PycharmProjects/office4ai/.venv/lib/python3.11/site-packages/mcp -type f -name \"*.py\" | grep -E \"^[^/]*server[^/]*$|server\\\\.py$\" | grep -v test)"
     ],
     "additionalDirectories": [
       "/Users/jqq/A2C-SMCP/oasp-protocol"

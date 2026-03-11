@@ -105,11 +105,25 @@ class ConnectionManager:
         # Disconnect callbacks: called with (document_uri,) when a document has no more connections
         self._on_document_disconnect: list[Callable[[str], None]] = []
 
+        # Connect callbacks: called with (document_uri, namespace) on first connection for a document
+        self._on_document_connect: list[Callable[[str, str], None]] = []
+
+        # Namespace-aware disconnect callbacks: called with (document_uri, namespace) on full disconnect
+        self._on_document_disconnect_ns: list[Callable[[str, str], None]] = []
+
         logger.info("ConnectionManager initialized")
 
     def register_disconnect_callback(self, callback: Callable[[str], None]) -> None:
         """Register a callback invoked when a document loses all connections."""
         self._on_document_disconnect.append(callback)
+
+    def register_connect_callback(self, callback: Callable[[str, str], None]) -> None:
+        """Register a callback invoked with (document_uri, namespace) on first connection."""
+        self._on_document_connect.append(callback)
+
+    def register_disconnect_callback_ns(self, callback: Callable[[str, str], None]) -> None:
+        """Register a callback invoked with (document_uri, namespace) when document fully disconnects."""
+        self._on_document_disconnect_ns.append(callback)
 
     def register_client(
         self,
@@ -150,11 +164,20 @@ class ConnectionManager:
         self._client_id_to_socket[client_id] = socket_id
 
         # Map document_uri → socket_id (using normalized URI)
-        if normalized_uri not in self._document_to_sockets:
+        is_first_connection = normalized_uri not in self._document_to_sockets
+        if is_first_connection:
             self._document_to_sockets[normalized_uri] = set()
         self._document_to_sockets[normalized_uri].add(socket_id)
 
         logger.info(f"Client registered: {client_id} ({socket_id}) for {normalized_uri} on {namespace}")
+
+        # Fire connect callbacks on first connection for this document
+        if is_first_connection:
+            for cb in self._on_document_connect:
+                try:
+                    cb(normalized_uri, namespace)
+                except Exception:
+                    logger.exception("Error in connect callback")
 
         return client_info
 
@@ -188,6 +211,12 @@ class ConnectionManager:
                         cb(client_info.document_uri)
                     except Exception:
                         logger.exception("Error in disconnect callback")
+                # Notify namespace-aware listeners
+                for cb_ns in self._on_document_disconnect_ns:
+                    try:
+                        cb_ns(client_info.document_uri, client_info.namespace)
+                    except Exception:
+                        logger.exception("Error in disconnect_ns callback")
 
         logger.info(f"Client unregistered: {client_info.client_id} ({socket_id}) for {client_info.document_uri}")
 

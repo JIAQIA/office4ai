@@ -10,11 +10,11 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from loguru import logger
-from mcp.server import Server
+from mcp.server import NotificationOptions, Server
 from mcp.server.sse import SseServerTransport
 from mcp.server.stdio import stdio_server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
-from mcp.types import Resource, Tool
+from mcp.types import Resource, ResourcesCapability, ServerCapabilities, SubscribeRequest, Tool, UnsubscribeRequest
 from pydantic import AnyUrl
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -23,6 +23,7 @@ from starlette.routing import Mount, Route
 
 from office4ai.a2c_smcp.config import MCPServerConfig
 from office4ai.a2c_smcp.resources.base import BaseResource
+from office4ai.a2c_smcp.subscriptions import SubscriptionManager
 from office4ai.a2c_smcp.tools.base import BaseTool
 
 
@@ -33,10 +34,12 @@ class BaseMCPServer(ABC):
 
         self.tools: dict[str, BaseTool] = {}
         self.resources: dict[str, BaseResource] = {}
+        self.subscription_manager = SubscriptionManager()
 
         self._register_tools()
         self._register_resources()
         self._setup_handlers()
+        self._patch_subscribe_capability()
 
         logger.info(
             f"MCP Server 初始化完成 | MCP Server initialized: server={server_name}, transport={config.transport}",
@@ -49,6 +52,52 @@ class BaseMCPServer(ABC):
     @abstractmethod
     def _register_resources(self) -> None:
         raise NotImplementedError
+
+    def _patch_subscribe_capability(self) -> None:
+        """Patch MCP Server capabilities to declare resources.subscribe=True.
+
+        MCP SDK hardcodes subscribe=False in get_capabilities() even when
+        subscribe/unsubscribe handlers are registered. We override
+        create_initialization_options to fix this.
+        """
+        original_create = self.server.create_initialization_options
+
+        def patched_create_initialization_options(
+            notification_options: NotificationOptions | None = None,
+            experimental_capabilities: dict[str, Any] | None = None,
+        ) -> Any:
+            options = original_create(notification_options, experimental_capabilities)
+            caps = options.capabilities
+            if caps.resources and (
+                SubscribeRequest in self.server.request_handlers or UnsubscribeRequest in self.server.request_handlers
+            ):
+                options.capabilities = ServerCapabilities(
+                    prompts=caps.prompts,
+                    resources=ResourcesCapability(
+                        subscribe=True,
+                        listChanged=caps.resources.listChanged,
+                    ),
+                    tools=caps.tools,
+                    logging=caps.logging,
+                    experimental=caps.experimental,
+                    completions=caps.completions,
+                )
+                logger.info("resources.subscribe capability enabled")
+            return options
+
+        self.server.create_initialization_options = patched_create_initialization_options  # type: ignore[method-assign]
+
+    # Category → resource URI mapping for subscription notifications.
+    # Only notifies the platform-specific resource, not the root resource.
+    _CATEGORY_URI_MAP: dict[str, list[str]] = {
+        "word": ["window://office4ai/word"],
+        "ppt": ["window://office4ai/ppt"],
+        "excel": ["window://office4ai/excel"],
+    }
+
+    def _category_to_resource_uris(self, category: str) -> list[str]:
+        """Map a tool category to the resource URIs it affects."""
+        return self._CATEGORY_URI_MAP.get(category, [])
 
     async def _async_startup(self) -> None:  # noqa: B027
         """async 启动钩子, 子类可 override | Async startup hook, subclass can override"""
@@ -78,6 +127,10 @@ class BaseMCPServer(ABC):
 
             try:
                 result = await tool.execute(arguments)
+                # Notify subscribers of affected resources
+                affected = self._category_to_resource_uris(tool.category)
+                if affected:
+                    await self.subscription_manager.notify_many(affected)
                 return [{"type": "text", "text": str(result)}]
             except Exception as e:
                 logger.exception(f"工具执行失败 | Tool execution failed: {e}")
@@ -94,6 +147,24 @@ class BaseMCPServer(ABC):
                 )
                 for resource in self.resources.values()
             ]
+
+        @self.server.subscribe_resource()  # type: ignore[no-untyped-call]
+        async def subscribe_resource(uri: AnyUrl) -> None:
+            from mcp.server.lowlevel.server import request_ctx
+
+            session = request_ctx.get().session
+            uri_str = str(uri)
+            self.subscription_manager.subscribe(uri_str, session)
+            logger.debug(f"Client subscribed to resource: {uri}")
+
+        @self.server.unsubscribe_resource()  # type: ignore[no-untyped-call]
+        async def unsubscribe_resource(uri: AnyUrl) -> None:
+            from mcp.server.lowlevel.server import request_ctx
+
+            session = request_ctx.get().session
+            uri_str = str(uri)
+            self.subscription_manager.unsubscribe(uri_str, session)
+            logger.debug(f"Client unsubscribed from resource: {uri}")
 
         @self.server.read_resource()  # type: ignore[no-untyped-call]
         async def read_resource(uri: Any) -> str:
