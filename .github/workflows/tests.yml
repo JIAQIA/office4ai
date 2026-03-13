@@ -88,6 +88,19 @@ jobs:
         run: |
           uv run poe typecheck
 
+      # 生成 SSL 证书用于集成测试（非交互式）
+      # Generate SSL certificates for integration tests (non-interactive)
+      - name: Generate SSL certificates
+        run: |
+          uv run python -c "
+          from office4ai.certs.generator import generate_ca, generate_server_cert
+          from office4ai.certs.paths import get_cert_dir
+          cert_dir = get_cert_dir()
+          ca_cert, ca_key = generate_ca(cert_dir)
+          generate_server_cert(cert_dir, ca_cert, ca_key)
+          print(f'Certificates generated at {cert_dir}')
+          "
+
       # 运行测试
       # Run tests
       - name: Run tests

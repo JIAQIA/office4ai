@@ -179,3 +179,54 @@ class TestConnectionManager:
 
         connection_manager.unregister_client("socket2")
         assert not connection_manager.is_document_active("file:///test.docx")
+
+
+class TestConnectionCallbacks:
+    """Test connect/disconnect callback mechanisms."""
+
+    @pytest.fixture
+    def cm(self) -> ConnectionManager:
+        return ConnectionManager()
+
+    def test_connect_callback_fires_on_first_connection(self, cm: ConnectionManager) -> None:
+        calls: list[tuple[str, str]] = []
+        cm.register_connect_callback(lambda uri, ns: calls.append((uri, ns)))
+
+        cm.register_client("s1", "c1", "file:///doc.docx", "/word")
+        assert len(calls) == 1
+        assert calls[0][1] == "/word"
+
+    def test_connect_callback_not_fired_on_second_connection(self, cm: ConnectionManager) -> None:
+        calls: list[tuple[str, str]] = []
+        cm.register_connect_callback(lambda uri, ns: calls.append((uri, ns)))
+
+        cm.register_client("s1", "c1", "file:///doc.docx", "/word")
+        cm.register_client("s2", "c2", "file:///doc.docx", "/word")
+        # Only fires once (first connection)
+        assert len(calls) == 1
+
+    def test_disconnect_ns_callback_fires_on_full_disconnect(self, cm: ConnectionManager) -> None:
+        calls: list[tuple[str, str]] = []
+        cm.register_disconnect_callback_ns(lambda uri, ns: calls.append((uri, ns)))
+
+        cm.register_client("s1", "c1", "file:///doc.docx", "/word")
+        cm.register_client("s2", "c2", "file:///doc.docx", "/word")
+
+        cm.unregister_client("s1")
+        assert len(calls) == 0  # Not yet — still has s2
+
+        cm.unregister_client("s2")
+        assert len(calls) == 1
+        assert calls[0][1] == "/word"
+
+    def test_callback_exception_does_not_break_registration(self, cm: ConnectionManager) -> None:
+        def bad_cb(uri: str, ns: str) -> None:
+            raise RuntimeError("boom")
+
+        calls: list[tuple[str, str]] = []
+        cm.register_connect_callback(bad_cb)
+        cm.register_connect_callback(lambda uri, ns: calls.append((uri, ns)))
+
+        # Should not raise; second callback still fires
+        cm.register_client("s1", "c1", "file:///doc.docx", "/word")
+        assert len(calls) == 1

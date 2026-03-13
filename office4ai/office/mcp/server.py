@@ -19,6 +19,7 @@ from office4ai.certs.paths import get_cert_dir
 from office4ai.certs.trust_store import get_trust_store
 from office4ai.certs.validator import CertStatus, get_cert_expiry_info, validate_certs
 from office4ai.environment.workspace.office_workspace import OfficeWorkspace
+from office4ai.environment.workspace.socketio.services.connection_manager import connection_manager
 
 
 class OfficeMCPServer(BaseMCPServer):
@@ -98,25 +99,119 @@ class OfficeMCPServer(BaseMCPServer):
 
         logger.info(f"已注册 {len(word_tools)} 个 Word 工具 | Registered {len(word_tools)} Word tools")
 
-        # PPT 工具 (未来) | PPT tools (future)
+        from office4ai.a2c_smcp.tools.ppt import (
+            PptAddSlideTool,
+            PptDeleteElementTool,
+            PptDeleteSlideTool,
+            PptGetCurrentSlideElementsTool,
+            PptGetSlideElementsTool,
+            PptGetSlideInfoTool,
+            PptGetSlideLayoutsTool,
+            PptGetSlideScreenshotTool,
+            PptGotoSlideTool,
+            PptInsertImageTool,
+            PptInsertShapeTool,
+            PptInsertTableTool,
+            PptInsertTextTool,
+            PptMoveSlideTool,
+            PptReorderElementTool,
+            PptUpdateElementTool,
+            PptUpdateImageTool,
+            PptUpdateTableCellTool,
+            PptUpdateTableFormatTool,
+            PptUpdateTableRowColumnTool,
+            PptUpdateTextBoxTool,
+        )
+
+        ppt_tools = [
+            # Content retrieval tools
+            PptGetCurrentSlideElementsTool(self.workspace),
+            PptGetSlideElementsTool(self.workspace),
+            PptGetSlideScreenshotTool(self.workspace),
+            PptGetSlideInfoTool(self.workspace),
+            PptGetSlideLayoutsTool(self.workspace),
+            # Content insertion tools
+            PptInsertTextTool(self.workspace),
+            PptInsertImageTool(self.workspace),
+            PptInsertTableTool(self.workspace),
+            PptInsertShapeTool(self.workspace),
+            # Update operation tools
+            PptUpdateTextBoxTool(self.workspace),
+            PptUpdateImageTool(self.workspace),
+            PptUpdateTableCellTool(self.workspace),
+            PptUpdateTableRowColumnTool(self.workspace),
+            PptUpdateTableFormatTool(self.workspace),
+            PptUpdateElementTool(self.workspace),
+            # Delete & layout tools
+            PptDeleteElementTool(self.workspace),
+            PptReorderElementTool(self.workspace),
+            # Slide management tools
+            PptAddSlideTool(self.workspace),
+            PptDeleteSlideTool(self.workspace),
+            PptMoveSlideTool(self.workspace),
+            PptGotoSlideTool(self.workspace),
+        ]
+
+        for tool in ppt_tools:
+            self.tools[tool.name] = tool
+
+        logger.info(f"已注册 {len(ppt_tools)} 个 PPT 工具 | Registered {len(ppt_tools)} PPT tools")
+
         # Excel 工具 (未来) | Excel tools (future)
 
     def _register_resources(self) -> None:
         """注册资源 | Register resources"""
-        from office4ai.a2c_smcp.resources.connected_documents import ConnectedDocumentsResource
+        from office4ai.a2c_smcp.resources.ppt_window import PptWindowResource
+        from office4ai.a2c_smcp.resources.window import WindowResource
+        from office4ai.a2c_smcp.resources.word_window import WordWindowResource
 
-        docs_resource = ConnectedDocumentsResource(self.workspace)
-        self.resources[docs_resource.base_uri] = docs_resource
+        root = WindowResource(self.workspace, priority=0, fullscreen=False)
+        word = WordWindowResource(self.workspace, priority=50, fullscreen=False)
+        ppt = PptWindowResource(self.workspace, priority=50, fullscreen=False)
+
+        self.resources[root.base_uri] = root
+        self.resources[word.base_uri] = word
+        self.resources[ppt.base_uri] = ppt
+
+    # Namespace → resource URIs mapping
+    _NAMESPACE_URI_MAP: dict[str, str] = {
+        "/word": "window://office4ai/word",
+        "/ppt": "window://office4ai/ppt",
+        "/excel": "window://office4ai/excel",
+    }
+    _ROOT_URI = "window://office4ai"
 
     async def _async_startup(self) -> None:
         """启动 OfficeWorkspace (Socket.IO Server) | Start OfficeWorkspace"""
         logger.info("启动 OfficeWorkspace | Starting OfficeWorkspace...")
         await self.workspace.start()
 
+        connection_manager.register_connect_callback(self._on_doc_connect)
+        connection_manager.register_disconnect_callback_ns(self._on_doc_disconnect)
+
     async def _async_shutdown(self) -> None:
         """停止 OfficeWorkspace (Socket.IO Server) | Stop OfficeWorkspace"""
         logger.info("停止 OfficeWorkspace | Stopping OfficeWorkspace...")
+        self.subscription_manager.clear()
         await self.workspace.stop()
+
+    def _on_doc_connect(self, doc_uri: str, namespace: str) -> None:
+        """Bridge document connect event to MCP resource subscription notifications."""
+        uris = self._namespace_to_uris(namespace)
+        self.subscription_manager.notify_fire_and_forget(uris)
+
+    def _on_doc_disconnect(self, doc_uri: str, namespace: str) -> None:
+        """Bridge document disconnect event to MCP resource subscription notifications."""
+        uris = self._namespace_to_uris(namespace)
+        self.subscription_manager.notify_fire_and_forget(uris)
+
+    def _namespace_to_uris(self, namespace: str) -> list[str]:
+        """Map a Socket.IO namespace to affected resource URIs (platform + root)."""
+        uris = [self._ROOT_URI]
+        platform_uri = self._NAMESPACE_URI_MAP.get(namespace)
+        if platform_uri:
+            uris.append(platform_uri)
+        return uris
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +366,10 @@ async def async_main() -> None:
 
 
 def main() -> None:
+    from office4ai.logging import setup_logging
+
+    setup_logging()
+
     # Extract subcommand before confz sees sys.argv
     # Use simple argv inspection: first non-flag arg is the subcommand
     args = sys.argv[1:]

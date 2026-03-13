@@ -38,36 +38,62 @@ class TestOfficeMCPServer:
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            # 21 个 Word 工具 | 21 Word tools
-            assert len(server.tools) == 21
+            # 21 Word + 21 PPT = 42 tools
+            assert len(server.tools) == 42
 
             expected_tools = [
-                # Get tools
+                # Word Get tools
                 "word_get_selected_content",
                 "word_get_visible_content",
                 "word_get_selection",
                 "word_get_document_structure",
                 "word_get_document_stats",
                 "word_get_styles",
-                # Text operation tools
+                # Word Text operation tools
                 "word_insert_text",
                 "word_append_text",
                 "word_replace_text",
                 "word_replace_selection",
                 "word_select_text",
-                # Multimedia tools
+                # Word Multimedia tools
                 "word_insert_image",
                 "word_insert_table",
                 "word_insert_equation",
                 "word_insert_toc",
-                # Export tool
+                # Word Export tool
                 "word_export_content",
-                # Comment tools
+                # Word Comment tools
                 "word_get_comments",
                 "word_insert_comment",
                 "word_delete_comment",
                 "word_reply_comment",
                 "word_resolve_comment",
+                # PPT Content retrieval tools
+                "ppt_get_current_slide_elements",
+                "ppt_get_slide_elements",
+                "ppt_get_slide_screenshot",
+                "ppt_get_slide_info",
+                "ppt_get_slide_layouts",
+                # PPT Content insertion tools
+                "ppt_insert_text",
+                "ppt_insert_image",
+                "ppt_insert_table",
+                "ppt_insert_shape",
+                # PPT Update tools
+                "ppt_update_text_box",
+                "ppt_update_image",
+                "ppt_update_table_cell",
+                "ppt_update_table_row_column",
+                "ppt_update_table_format",
+                "ppt_update_element",
+                # PPT Delete & layout tools
+                "ppt_delete_element",
+                "ppt_reorder_element",
+                # PPT Slide management tools
+                "ppt_add_slide",
+                "ppt_delete_slide",
+                "ppt_move_slide",
+                "ppt_goto_slide",
             ]
             for tool_name in expected_tools:
                 assert tool_name in server.tools, f"Tool {tool_name} not registered"
@@ -78,8 +104,10 @@ class TestOfficeMCPServer:
             config = MCPServerConfig()
             server = OfficeMCPServer(config)
 
-            assert len(server.resources) == 1
-            assert "office://workspace/documents" in server.resources
+            assert len(server.resources) == 3
+            assert "window://office4ai" in server.resources
+            assert "window://office4ai/word" in server.resources
+            assert "window://office4ai/ppt" in server.resources
 
     @pytest.mark.parametrize("transport", ["stdio", "sse", "streamable-http"])
     def test_server_supports_all_transports(self, transport):

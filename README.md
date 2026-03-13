@@ -39,7 +39,7 @@ uvx office4ai-mcp serve
 #### Claude Code（推荐）
 
 ```bash
-claude mcp add office4ai -- uvx office4ai-mcp serve
+claude mcp add office4ai -- uvx --from office4ai office4ai-mcp
 ```
 
 #### Claude Desktop / Cursor 等 MCP 客户端

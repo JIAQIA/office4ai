@@ -3,6 +3,9 @@ Office4AI 测试的 Pytest 配置和 fixtures | Pytest configuration and fixture
 """
 
 import os
+
+# Prevent tests from creating a logs/ directory in the working directory
+os.environ.setdefault("OFFICE4AI_LOG_DIR", "")
 import tempfile
 from collections.abc import Generator
 from pathlib import Path

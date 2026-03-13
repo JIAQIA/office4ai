@@ -105,6 +105,33 @@ office4ai/
 - **类型注解**: 强制 (mypy `disallow_untyped_defs = true`)
 - **导入顺序**: 标准库 → 第三方 → 本地 (ruff 自动)
 
+### DTO 命名规范 (Socket.IO 数据传输对象)
+
+OASP 协议的 wire format 使用 camelCase，但 Python 内部统一遵循 PEP 8 snake_case。所有 DTO（`dtos/word.py`, `dtos/ppt.py`, `dtos/excel.py`）必须遵循以下模式：
+
+```python
+# ✅ 正确: snake_case 字段名 + camelCase alias
+class ExampleRequest(BaseRequest):
+    slide_index: int = Field(..., alias="slideIndex")
+    font_size: int | None = Field(default=None, alias="fontSize")
+
+# ✅ 嵌套选项模型继承 SocketIOBaseModel (而非 BaseModel)
+class ExampleOptions(SocketIOBaseModel):
+    include_text: bool = Field(default=True, alias="includeText")
+
+# ❌ 错误: 直接使用 camelCase 字段名
+class BadRequest(BaseRequest):
+    slideIndex: int = Field(...)  # 违反 PEP 8
+```
+
+**规则摘要**:
+- Python 字段名: `snake_case` (PEP 8)
+- Wire format alias: `camelCase` (OASP 协议)
+- `SocketIOBaseModel` 配置 `populate_by_name=True`：输入时接受 snake_case 和 camelCase
+- `model_dump(by_alias=True)`: 输出时始终使用 camelCase
+- 嵌套选项模型继承 `SocketIOBaseModel`，不要继承 `BaseModel`
+- 参考实现: `dtos/word.py` (Word DTO)
+
 ### 测试组织
 ```
 tests/
@@ -148,5 +175,5 @@ ignore = ["E501", "B008", "C901"]
 
 ---
 
-**最后更新**: 2026-01-05
+**最后更新**: 2026-02-17
 **维护者**: JQQ <jqq1716@gmail.com>

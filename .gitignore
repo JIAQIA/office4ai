@@ -219,4 +219,11 @@ __marimo__/
 # E2E test working directory
 manual_tests/.test_working/
 
+# Auto-generated fixture files (recreated by ensure_fixtures / create_*_fixtures.py)
+manual_tests/word/fixtures/*/
+manual_tests/ppt/fixtures/*/
+
+# Log output directory
+logs/
+
 # End

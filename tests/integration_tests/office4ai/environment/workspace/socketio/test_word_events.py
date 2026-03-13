@@ -136,6 +136,77 @@ async def test_replace_text_with_whole_word(socketio_client: AsyncClient) -> Non
 
 @pytest.mark.asyncio
 @pytest.mark.integration
+async def test_replace_text_with_format(socketio_client: AsyncClient) -> None:
+    """Test replace text with formatting options (apply format to existing text)"""
+    request_data = {
+        "requestId": "req_test_replace_005",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "important",
+        "replaceText": "important",
+        "format": {
+            "bold": True,
+            "color": "#FF0000",
+            "fontSize": 16,
+        },
+        "options": {
+            "replaceAll": True,
+        },
+    }
+
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
+
+    # Note: Current implementation just logs
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_replace_text_with_style_name_format(socketio_client: AsyncClient) -> None:
+    """Test replace text with styleName format (apply Word style to existing text)"""
+    request_data = {
+        "requestId": "req_test_replace_006",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "Chapter Title",
+        "replaceText": "Chapter Title",
+        "format": {
+            "styleName": "Heading 1",
+        },
+    }
+
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_replace_text_with_format_and_options(socketio_client: AsyncClient) -> None:
+    """Test replace text with both format and options combined"""
+    request_data = {
+        "requestId": "req_test_replace_007",
+        "documentUri": "file:///tmp/test.docx",
+        "searchText": "warning",
+        "replaceText": "WARNING",
+        "format": {
+            "bold": True,
+            "italic": False,
+            "underline": "Single",
+            "color": "#FF8800",
+        },
+        "options": {
+            "matchCase": False,
+            "matchWholeWord": True,
+            "replaceAll": True,
+        },
+    }
+
+    await socketio_client.emit("word:replace:text", request_data, namespace="/word")
+
+    await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
 async def test_replace_text_empty_validation(socketio_client: AsyncClient) -> None:
     """Test replace text with empty search/replace strings (should log warning)"""
     request_data = {

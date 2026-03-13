@@ -13,6 +13,7 @@ from office4ai.environment.workspace.dtos.common import ErrorResponse
 from office4ai.environment.workspace.dtos.word import (
     ReplaceOptions,
     ReplaceTextResult,
+    TextFormat,
     WordReplaceTextRequest,
     WordReplaceTextResponse,
 )
@@ -180,6 +181,52 @@ class TestWordReplaceTextRequest:
         assert request.document_uri == "file:///test.docx"
         assert request.search_text == "find me"
         assert request.replace_text == "replaced"
+
+    def test_valid_request_with_format(self) -> None:
+        """Test creating valid request with text formatting"""
+        fmt = TextFormat(bold=True, italic=False, fontSize=14, color="#FF0000")
+
+        request = WordReplaceTextRequest(
+            requestId="req_010",
+            documentUri="file:///test.docx",
+            searchText="hello",
+            replaceText="hello",
+            format=fmt,
+        )
+
+        assert request.format is not None
+        assert request.format.bold is True
+        assert request.format.italic is False
+        assert request.format.font_size == 14
+        assert request.format.color == "#FF0000"
+
+    def test_request_with_format_serialization(self) -> None:
+        """Test format field serializes to camelCase payload"""
+        fmt = TextFormat(bold=True, styleName="Heading 1")
+
+        request = WordReplaceTextRequest(
+            requestId="req_011",
+            documentUri="file:///test.docx",
+            searchText="title",
+            replaceText="title",
+            format=fmt,
+        )
+
+        payload = request.to_payload()
+
+        assert payload["format"]["bold"] is True
+        assert payload["format"]["styleName"] == "Heading 1"
+
+    def test_request_without_format(self) -> None:
+        """Test format field defaults to None"""
+        request = WordReplaceTextRequest(
+            requestId="req_012",
+            documentUri="file:///test.docx",
+            searchText="old",
+            replaceText="new",
+        )
+
+        assert request.format is None
 
     def test_unicode_and_special_characters(self) -> None:
         """Test handling of unicode and special characters"""

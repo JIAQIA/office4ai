@@ -105,6 +105,14 @@ class BaseTool(ABC):
             logger.exception(f"工具执行失败 | Tool execution failed: {self.name}")
             return {"success": False, "error": str(e)}
 
+        # 4.5 活动追踪 | Activity tracking
+        if obs.success:
+            self.workspace.update_last_activity(
+                document_uri=document_uri,
+                tool_name=self.name,
+                result_data=obs.data,
+            )
+
         # 5. 格式化返回 (hook)
         return self.format_result(obs)
 

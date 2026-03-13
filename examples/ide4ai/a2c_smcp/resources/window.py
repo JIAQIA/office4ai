@@ -73,7 +73,7 @@ class WindowResource(BaseResource):
         Returns:
             str: 资源名称 | Resource name
         """
-        return f"IDE Window - {self.ide.project_name}"
+        return f"IDE 窗口 - {self.ide.project_name}"
 
     @property
     def description(self) -> str:
@@ -83,7 +83,7 @@ class WindowResource(BaseResource):
         Returns:
             str: 资源描述 | Resource description
         """
-        return "IDE 窗口内容，包含工作区和终端信息 | IDE window content including workspace and terminal information"
+        return "IDE 窗口内容，包含工作区和终端信息"
 
     @property
     def mime_type(self) -> str:

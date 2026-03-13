@@ -15,14 +15,10 @@ import socketio  # type: ignore[import-untyped]
 from aiohttp import web
 
 from .config import SocketIOConfig, default_config
+from .namespaces.ppt import PptNamespace
 from .namespaces.word import WordNamespace
 from .services.connection_manager import connection_manager
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
 
 
@@ -51,10 +47,11 @@ def create_socketio_server(config: SocketIOConfig = default_config) -> socketio.
     word_namespace = WordNamespace()
     sio.register_namespace(word_namespace)
 
-    # TODO: Register PPT and Excel namespaces in future phases
-    # from .namespaces.ppt import PptNamespace
+    ppt_namespace = PptNamespace()
+    sio.register_namespace(ppt_namespace)
+
+    # TODO: Register Excel namespace in future phases
     # from .namespaces.excel import ExcelNamespace
-    # sio.register_namespace(PptNamespace())
     # sio.register_namespace(ExcelNamespace())
 
     # Log startup

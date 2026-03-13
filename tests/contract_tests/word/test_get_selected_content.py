@@ -308,10 +308,14 @@ async def test_get_selected_content_timeout(
     5. 验证超时错误
     """
 
-    # Arrange: 注册延迟响应
+    # Arrange: 临时缩短超时时间，避免测试等待过久
+    original_timeout = workspace.config.request_timeout
+    workspace.config.request_timeout = 1000  # 1 秒
+
+    # 注册延迟响应
     async def slow_response(request: dict) -> dict:
         """延迟响应工厂"""
-        await asyncio.sleep(15)  # 超过默认超时时间（10秒）
+        await asyncio.sleep(2)  # 超过测试超时时间（1秒）
         return {
             "requestId": request["requestId"],
             "success": True,
@@ -345,4 +349,5 @@ async def test_get_selected_content_timeout(
             f"Expected error, got: error='{result.error}', metadata={result.metadata}"
         )
     finally:
+        workspace.config.request_timeout = original_timeout
         await client.disconnect()

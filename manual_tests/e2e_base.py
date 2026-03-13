@@ -161,6 +161,47 @@ class DocumentReader:
             return self.doc.paragraphs[index].text.startswith(text)
         return False
 
+    def paragraph_has_style(self, text: str, style_name: str) -> bool:
+        """
+        检查包含指定文本的段落是否使用了指定样式
+
+        Args:
+            text: 要搜索的文本
+            style_name: 预期的段落样式名（如 "Heading 2", "Normal"）
+
+        Returns:
+            如果找到包含文本的段落且样式匹配返回 True
+        """
+        for paragraph in self.doc.paragraphs:
+            if text in paragraph.text:
+                if paragraph.style and paragraph.style.name == style_name:
+                    return True
+        return False
+
+    def run_has_style(self, text: str, style_name: str) -> bool:
+        """
+        检查包含指定文本的 run 是否被应用了指定的字符样式
+
+        Word 的 replace:text + format.styleName 会将段落样式的字符部分
+        以 rStyle 应用到匹配的 run 上。例如 "Heading 2" 会产生
+        "Heading 2 Char"（英文）或 "标题 2 字符"（中文）。
+
+        本方法通过匹配 style_name 子串来兼容不同 locale。
+
+        Args:
+            text: 要搜索的文本
+            style_name: 样式名关键词（如 "Heading 2" 或 "标题 2"）
+
+        Returns:
+            如果找到匹配的 run 且其 rStyle 包含关键词返回 True
+        """
+        for paragraph in self.doc.paragraphs:
+            for run in paragraph.runs:
+                if text in run.text and run.style and run.style.name:
+                    if style_name in run.style.name:
+                        return True
+        return False
+
     def run_has_format(
         self,
         text: str,
@@ -343,6 +384,8 @@ class TestCase:
         validator: 自定义验证函数（可选）
             - DataValidator: (data) -> bool - 仅验证协议返回
             - ContentValidator: (data, reader) -> bool - 双重验证（协议 + 文档内容）
+        expect_failure: 预期失败（哨兵测试）— 操作失败时判定为通过，
+            若意外成功则提示能力可能已更新，需人工确认
     """
 
     name: str
@@ -351,6 +394,7 @@ class TestCase:
     expected: ExpectedStats | None = None
     validator: Validator | None = None
     tags: list[str] = field(default_factory=list)
+    expect_failure: bool = False
 
 
 # ==============================================================================
@@ -722,6 +766,7 @@ class E2ETestRunner:
         port: int = 3000,
         connection_timeout: float = 30.0,
         auto_open: bool = True,
+        auto_close: bool = True,
         auto_activate: bool = True,
         cleanup_on_success: bool = True,
     ):
@@ -734,6 +779,7 @@ class E2ETestRunner:
             port: Workspace 服务器端口
             connection_timeout: Add-In 连接超时时间（秒）
             auto_open: 是否自动打开文档
+            auto_close: 是否自动关闭文档（独立于 auto_open，调试时可只禁用关闭）
             auto_activate: 是否自动激活 Add-In（通过 AppleScript，仅 macOS）
             cleanup_on_success: 成功后是否清理测试副本
         """
@@ -742,6 +788,7 @@ class E2ETestRunner:
         self.port = port
         self.connection_timeout = connection_timeout
         self.auto_open = auto_open
+        self.auto_close = auto_close
         self.auto_activate = auto_activate
         self.cleanup_on_success = cleanup_on_success
 
@@ -821,7 +868,7 @@ class E2ETestRunner:
             # 清理逻辑
             if success and fixture.cleanup_on_success:
                 # 尝试关闭文档（如果还没关闭的话）
-                if self.auto_open and not fixture.document_closed:
+                if self.auto_close and not fixture.document_closed:
                     close_document(working_path)
                     fixture.document_closed = True
                     await asyncio.sleep(0.5)
@@ -881,7 +928,8 @@ class E2ETestRunner:
             finally:
                 # 先关闭文档，让 Add-In 断开连接
                 # 这样 workspace.stop() 就不用等待连接超时
-                if self.auto_open and not fixture.document_closed:
+                # 如果 cleanup_on_success=False，保留文档供人工检查
+                if self.auto_close and not fixture.document_closed and fixture.cleanup_on_success:
                     close_document(fixture.working_path)
                     fixture.document_closed = True
                     await asyncio.sleep(0.5)  # 等待 Add-In 断开

@@ -194,6 +194,67 @@ class TestExecuteFlow:
         assert result["success"] is True
 
     @pytest.mark.asyncio
+    async def test_replace_text_with_format(self, mock_workspace):
+        """验证 replace_text 带格式参数构建正确的 OfficeAction"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={"replaceCount": 2})
+
+        tool = WordReplaceTextTool(mock_workspace)
+        result = await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "search_text": "important",
+                "replace_text": "important",
+                "format": {"bold": True, "color": "#FF0000", "font_size": 16},
+                "options": {"replace_all": True},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.category == "word"
+        assert action.action_name == "replace:text"
+        assert action.params["search_text"] == "important"
+        assert action.params["replace_text"] == "important"
+        assert action.params["format"]["bold"] is True
+        assert action.params["format"]["color"] == "#FF0000"
+        assert action.params["format"]["font_size"] == 16
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_replace_text_without_format(self, mock_workspace):
+        """验证 replace_text 不带格式时 format 为 None"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={"replaceCount": 1})
+
+        tool = WordReplaceTextTool(mock_workspace)
+        await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "search_text": "old",
+                "replace_text": "new",
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.params.get("format") is None
+
+    @pytest.mark.asyncio
+    async def test_replace_text_with_style_name_format(self, mock_workspace):
+        """验证 replace_text 使用 styleName 格式化"""
+        mock_workspace.execute.return_value = OfficeObs(success=True, data={"replaceCount": 1})
+
+        tool = WordReplaceTextTool(mock_workspace)
+        await tool.execute(
+            {
+                "document_uri": "file:///test.docx",
+                "search_text": "Chapter Title",
+                "replace_text": "Chapter Title",
+                "format": {"style_name": "Heading 1"},
+            }
+        )
+
+        action = mock_workspace.execute.call_args[0][0]
+        assert action.params["format"]["style_name"] == "Heading 1"
+
+    @pytest.mark.asyncio
     async def test_insert_image_builds_correct_action(self, mock_workspace):
         """验证 insert_image 构建正确的 OfficeAction"""
         mock_workspace.execute.return_value = OfficeObs(success=True, data={})
